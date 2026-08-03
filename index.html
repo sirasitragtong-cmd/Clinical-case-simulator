@@ -451,9 +451,9 @@
     <!-- ═══════════════════════════════════════════════════════════
          SCRIPTS
          ═══════════════════════════════════════════════════════════ -->
-    <script src="./js/firebase-service.js"></script>
-    <script src="./js/ui-controller.js"></script>
-    <script src="./js/game-engine.js"></script>
+    <script src="./js/firebase-service.js?v=20260803"></script>
+    <script src="./js/ui-controller.js?v=20260803"></script>
+    <script src="./js/game-engine.js?v=20260803"></script>
 
     <!-- Launch Script: Wiring & Integration -->
     <script>
@@ -549,7 +549,7 @@
             `;
 
             try {
-                const response = await fetch('./data/case_001.json');
+                const response = await fetch('./data/case_001.json?v=20260803');
 
                 if (!response.ok) {
                     throw new Error(`HTTP ${response.status}: ${response.statusText}`);
