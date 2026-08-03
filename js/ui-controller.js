@@ -213,6 +213,8 @@ const UIController = (function() {
         if (closeBtn) closeBtn.addEventListener('click', closeDrawer);
         if (drawerBackdrop) drawerBackdrop.addEventListener('click', closeDrawer);
 
+        initPanelNav();
+
         // SOAP tabs exist in both the side panel and the drawer.
         document.querySelectorAll('.soap-tab').forEach(tab => {
             tab.addEventListener('click', function() {
@@ -254,6 +256,8 @@ const UIController = (function() {
         if (tagWrap) {
             tagWrap.innerHTML = tags.map(t => `<span class="tag-pill">${esc(t)}</span>`).join('');
         }
+
+        initPatientAvatar(caseData);
     }
 
     // ─── Vitals (rendered into every breakpoint host) ───────────
@@ -536,6 +540,9 @@ const UIController = (function() {
 
         document.querySelectorAll('.choice-btn').forEach(btn => { btn.disabled = true; });
 
+        // The patient responds to the decision.
+        adjustPatientHealth(isCorrect ? 8 : -12, isCorrect ? 'improving' : 'pain');
+
         const tone = isCorrect
             ? { cls: 'border-teal-400/50 bg-teal-400/10', text: 'text-teal-400', icon: '✓', title: 'ถูกต้อง!' }
             : { cls: 'border-acuity-500/50 bg-acuity-500/10', text: 'text-acuity-500', icon: '✕', title: 'ยังไม่ถูกต้อง' };
@@ -565,6 +572,11 @@ const UIController = (function() {
 
         const dock = document.querySelector('.submit-dock');
         if (dock) dock.remove();
+
+        // Condition tracks how well the plan was executed.
+        if (result.allCorrect)      adjustPatientHealth(10, 'improving');
+        else if (result.earned > 0) adjustPatientHealth(2,  'pain');
+        else                        adjustPatientHealth(-14, 'distress');
 
         const feedbackArea = byId('feedback-area');
         if (!feedbackArea) return;
@@ -634,6 +646,10 @@ const UIController = (function() {
         document.querySelectorAll('.choice-multi.is-selected, .choice-btn.is-selected')
             .forEach(b => b.classList.add('is-fatal-pick'));
 
+        clearTimeout(reactionTimer);
+        setPatientHealth(0, { holdReaction: true });
+        setPatientReaction('critical');
+
         renderEndScreen({
             icon: '☠',
             ringClass: 'border-acuity-500/50 bg-acuity-500/10',
@@ -650,6 +666,13 @@ const UIController = (function() {
     }
 
     function renderSummary(state) {
+        clearTimeout(reactionTimer);
+        const score = state.maxPossibleScore > 0
+            ? state.currentScore / state.maxPossibleScore : 0;
+        // A well-managed case leaves the patient visibly better.
+        setPatientHealth(Math.max(patientHealth, 40 + Math.round(score * 58)), { holdReaction: true });
+        setPatientReaction(score >= 0.6 ? 'recovered' : 'neutral');
+
         renderEndScreen({
             icon: '🎓',
             ringClass: 'border-teal-400/50 bg-teal-400/10',
@@ -668,6 +691,8 @@ const UIController = (function() {
     // ─── Dashboard: Case Map ───────────────────────────────────
     // Every case in the registry is playable; no artificial locks.
     function renderCaseMap(cases, onStart) {
+        allCases = cases || [];
+        onStartCase = onStart;
         if (!questTrack) return;
 
         if (!cases || cases.length === 0) {
@@ -726,6 +751,434 @@ const UIController = (function() {
         });
     }
 
+    // ═══ ANIMATED PATIENT AVATAR ═══════════════════════════════
+    // A half-body character whose face, breathing rate, colour and
+    // aura react to the learner's clinical decisions.
+    // Desktop/tablet avatar lives in column 2; the mobile layout hides that
+    // column, so a compact second host keeps the patient visible on phones.
+    const avatarHosts = ['patient-avatar', 'patient-avatar-mobile']
+        .map(id => byId(id)).filter(Boolean);
+    const avatarEl = avatarHosts[0];
+
+    function eyesOpen(cx) {
+        return `<ellipse cx="${cx}" cy="86" rx="7.5" ry="6.5" fill="#FFFFFF"/>
+                <circle cx="${cx}" cy="86" r="3.4" fill="#2A2118"/>
+                <circle cx="${cx + 1.6}" cy="84.2" r="1.1" fill="#FFFFFF"/>
+                <rect class="pa-eyelid pa-skin" x="${cx - 8}" y="79" width="16" height="8" rx="3"/>`;
+    }
+    function eyesSquint(cx) {
+        return `<path d="M${cx - 8} 87q8 -6 16 0" stroke="#2A2118" stroke-width="2.6" fill="none" stroke-linecap="round"/>`;
+    }
+    function eyesClosed(cx) {
+        return `<path d="M${cx - 8} 86h16" stroke="#2A2118" stroke-width="2.6" stroke-linecap="round"/>`;
+    }
+    function eyesWide(cx) {
+        return `<ellipse cx="${cx}" cy="86" rx="8.5" ry="8" fill="#FFFFFF"/>
+                <circle cx="${cx}" cy="86" r="3.2" fill="#2A2118"/>`;
+    }
+    function eyesHappy(cx) {
+        return `<path d="M${cx - 8} 88q8 -9 16 0" stroke="#2A2118" stroke-width="2.8" fill="none" stroke-linecap="round"/>`;
+    }
+
+    function buildAvatarSVG() {
+        return `
+<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Patient">
+  <defs>
+    <radialGradient id="paAura">
+      <stop offset="40%" stop-color="#E63946" stop-opacity=".45"/>
+      <stop offset="100%" stop-color="#E63946" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="paGown" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#3FD6B4"/><stop offset="100%" stop-color="#15907A"/>
+    </linearGradient>
+  </defs>
+
+  <ellipse class="pa-aura" cx="100" cy="105" rx="95" ry="90" fill="url(#paAura)"/>
+  <rect x="24" y="122" width="152" height="42" rx="20" fill="rgba(51,65,95,.40)"/>
+
+  <g class="pa-chest">
+    <path d="M50 200v-24c0-21 17-36 36-40h28c19 4 36 19 36 40v24Z" fill="url(#paGown)" opacity=".92"/>
+    <path d="M100 136 85 151l15 14 15-14Z" fill="rgba(11,19,43,.30)"/>
+    <path d="M74 168h14" stroke="rgba(11,19,43,.25)" stroke-width="3" stroke-linecap="round"/>
+  </g>
+
+  <rect x="88" y="110" width="24" height="28" rx="10" class="pa-skin"/>
+  <ellipse cx="63" cy="92" rx="6" ry="9.5" class="pa-skin"/>
+  <ellipse cx="137" cy="92" rx="6" ry="9.5" class="pa-skin"/>
+  <ellipse cx="100" cy="88" rx="37" ry="41" class="pa-skin"/>
+
+  <path d="M63 84c0-25 17-40 37-40s37 15 37 40c0-11-8-17-17-19-7 7-41 9-47-2-6 4-10 10-10 21Z" fill="#2A2118"/>
+
+  <path d="M77 103c7 7 39 7 46 0" stroke="rgba(226,232,240,.45)" stroke-width="2" fill="none"/>
+  <circle cx="77" cy="103" r="2" fill="rgba(226,232,240,.5)"/>
+  <circle cx="123" cy="103" r="2" fill="rgba(226,232,240,.5)"/>
+
+  <g class="pa-sweat">
+    <ellipse cx="68" cy="74" rx="3" ry="4.6" fill="#7DD3FC"/>
+    <ellipse cx="133" cy="79" rx="2.6" ry="4" fill="#7DD3FC"/>
+  </g>
+
+  <path d="M162 182c15-18 19-44 10-66" stroke="rgba(72,229,194,.40)" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+  <circle cx="170" cy="112" r="4.5" fill="rgba(72,229,194,.55)"/>
+
+  <!-- NEUTRAL -->
+  <g class="pa-variant pa-neutral">
+    <path d="M79 73h15M106 73h15" stroke="#2A2118" stroke-width="3.2" stroke-linecap="round"/>
+    ${eyesOpen(86)}${eyesOpen(114)}
+    <path d="M92 109h16" stroke="#9C4A3C" stroke-width="3.2" stroke-linecap="round"/>
+  </g>
+
+  <!-- PAIN -->
+  <g class="pa-variant pa-pain">
+    <path d="M79 70l15 6M121 70l-15 6" stroke="#2A2118" stroke-width="3.4" stroke-linecap="round"/>
+    ${eyesSquint(86)}${eyesSquint(114)}
+    <path d="M89 111q5.5 -7 11 0t11 0" stroke="#9C4A3C" stroke-width="3.2" fill="none" stroke-linecap="round"/>
+  </g>
+
+  <!-- DISTRESS -->
+  <g class="pa-variant pa-distress">
+    <path d="M78 68q8 -5 16 -1M122 68q-8 -5 -16 -1" stroke="#2A2118" stroke-width="3.2" fill="none" stroke-linecap="round"/>
+    ${eyesWide(86)}${eyesWide(114)}
+    <ellipse cx="100" cy="111" rx="8" ry="9" fill="#7A2E28"/>
+  </g>
+
+  <!-- CRITICAL -->
+  <g class="pa-variant pa-critical">
+    <path d="M79 74h15M106 74h15" stroke="#2A2118" stroke-width="2.8" stroke-linecap="round"/>
+    ${eyesClosed(86)}${eyesClosed(114)}
+    <ellipse cx="100" cy="112" rx="7" ry="8.5" fill="#5E2723"/>
+  </g>
+
+  <!-- IMPROVING -->
+  <g class="pa-variant pa-improving">
+    <path d="M79 72h15M106 72h15" stroke="#2A2118" stroke-width="3.2" stroke-linecap="round"/>
+    ${eyesOpen(86)}${eyesOpen(114)}
+    <path d="M91 108q9 5 18 0" stroke="#9C4A3C" stroke-width="3.2" fill="none" stroke-linecap="round"/>
+  </g>
+
+  <!-- RECOVERED -->
+  <g class="pa-variant pa-recovered">
+    <path d="M79 71h15M106 71h15" stroke="#2A2118" stroke-width="3.2" stroke-linecap="round"/>
+    ${eyesHappy(86)}${eyesHappy(114)}
+    <path d="M88 106q12 10 24 0" stroke="#9C4A3C" stroke-width="3.4" fill="none" stroke-linecap="round"/>
+  </g>
+</svg>`;
+    }
+
+    const REACTIONS = ['neutral', 'pain', 'distress', 'critical', 'improving', 'recovered'];
+    let patientHealth = 60;
+    let reactionTimer = null;
+
+    function setPatientReaction(state) {
+        const next = REACTIONS.indexOf(state) !== -1 ? state : 'neutral';
+        avatarHosts.forEach(host => {
+            REACTIONS.forEach(r => host.classList.remove('reaction-' + r));
+            host.classList.add('reaction-' + next);
+            host.dataset.reaction = next;
+        });
+    }
+
+    function reactionForHealth(h) {
+        if (h <= 0)  return 'critical';
+        if (h < 30)  return 'distress';
+        if (h < 55)  return 'pain';
+        if (h < 85)  return 'neutral';
+        return 'recovered';
+    }
+
+    function paintHealth() {
+        const w = Math.max(0, Math.min(100, patientHealth)) + '%';
+        const txt = Math.round(patientHealth) + '%';
+        ['patient-health-bar', 'patient-health-bar-mobile'].forEach(id => {
+            const el = byId(id); if (el) el.style.width = w;
+        });
+        ['patient-health-label', 'patient-health-label-mobile'].forEach(id => {
+            const el = byId(id); if (el) el.textContent = txt;
+        });
+    }
+
+    function setPatientHealth(value, opts) {
+        patientHealth = Math.max(0, Math.min(100, value));
+        paintHealth();
+        if (!opts || !opts.holdReaction) setPatientReaction(reactionForHealth(patientHealth));
+    }
+
+    // Temporary reaction that decays back to the health-derived state.
+    function flashReaction(state, ms) {
+        clearTimeout(reactionTimer);
+        setPatientReaction(state);
+        reactionTimer = setTimeout(() => {
+            setPatientReaction(reactionForHealth(patientHealth));
+        }, ms || 2200);
+    }
+
+    function adjustPatientHealth(delta, flash) {
+        patientHealth = Math.max(0, Math.min(100, patientHealth + delta));
+        paintHealth();
+        if (flash) flashReaction(flash);
+        else setPatientReaction(reactionForHealth(patientHealth));
+    }
+
+    function initPatientAvatar(caseData) {
+        if (avatarHosts.length === 0) return;
+        const svg = buildAvatarSVG();
+        avatarHosts.forEach(h => { h.innerHTML = svg; });
+        clearTimeout(reactionTimer);
+
+        const p = (caseData && caseData.patient) || {};
+        setText('patient-name-strip',
+            `${p.name || 'ผู้ป่วย'}${p.age ? `, ${p.age}${p.sex || ''}` : ''}`);
+
+        const acuity = String((caseData && caseData.patient && caseData.patient.acuity) || '').toUpperCase();
+        const critical = (caseData && caseData.vitals || []).filter(v => v.severity === 'critical').length;
+
+        // Baseline condition derives from the case's own acuity and vitals.
+        let start = 70;
+        if (acuity.indexOf('HIGH') !== -1 || acuity.indexOf('CRITICAL') !== -1) start = 32;
+        else if (acuity.indexOf('URGENCY') !== -1) start = 50;
+        start = Math.max(12, start - critical * 3);
+
+        setPatientHealth(start);
+    }
+
+    // ═══ DASHBOARD PANELS ══════════════════════════════════════
+    let allCases = [];
+    let onStartCase = null;
+    let activePanel = 'campaign';
+
+    function switchPanel(name) {
+        activePanel = name;
+
+        document.querySelectorAll('[data-panel]').forEach(el => {
+            el.classList.toggle('is-active', el.dataset.panel === name);
+        });
+        document.querySelectorAll('[data-panel-body]').forEach(el => {
+            el.classList.toggle('hidden', el.dataset.panelBody !== name);
+        });
+
+        if (name === 'library')      renderLibraryPanel();
+        if (name === 'stats')        renderStatsPanel();
+        if (name === 'leaderboard')  renderLeaderboardPanel();
+        if (name === 'achievements') renderAchievementsPanel();
+    }
+
+    function loadingBlock(text) {
+        return `<div class="panel rounded-2xl p-6 text-center">
+                    <p class="text-xs text-slate-400">${esc(text)}</p>
+                </div>`;
+    }
+
+    // Honest empty/blocked states — never a fake number.
+    function stateBlock(result, emptyMsg) {
+        if (result.reason === 'signed-out') {
+            return `<div class="panel rounded-2xl p-6 text-center">
+                        <p class="text-2xl mb-2">🔒</p>
+                        <p class="text-xs font-bold text-white mb-1">ต้องเข้าสู่ระบบก่อน</p>
+                        <p class="text-[.7rem] text-slate-500">โหมด Anonymous ไม่บันทึกผล จึงไม่มีสถิติให้แสดง</p>
+                    </div>`;
+        }
+        if (result.reason === 'permission-denied') {
+            return `<div class="panel rounded-2xl p-6 text-center border-gold-400/30">
+                        <p class="text-2xl mb-2">⚠</p>
+                        <p class="text-xs font-bold text-gold-400 mb-1">Firestore ปฏิเสธการอ่านข้อมูล</p>
+                        <p class="text-[.7rem] text-slate-400 leading-relaxed">
+                            Security Rules ของคอลเลกชัน <code class="text-teal-400">user_attempts</code>
+                            ยังไม่อนุญาตให้อ่าน — ต้องแก้ที่ Firebase Console
+                        </p>
+                    </div>`;
+        }
+        if (result.reason === 'offline' || result.reason === 'error') {
+            return `<div class="panel rounded-2xl p-6 text-center border-acuity-500/30">
+                        <p class="text-xs font-bold text-acuity-500 mb-1">เชื่อมต่อฐานข้อมูลไม่ได้</p>
+                        <p class="text-[.7rem] text-slate-500">${esc(result.message || '')}</p>
+                    </div>`;
+        }
+        return `<div class="panel rounded-2xl p-6 text-center">
+                    <p class="text-2xl mb-2">📭</p>
+                    <p class="text-xs text-slate-400">${esc(emptyMsg)}</p>
+                </div>`;
+    }
+
+    function pct(a, b) { return b > 0 ? Math.round((a / b) * 100) : 0; }
+
+    // ─── Free-Play Library ─────────────────────────────────────
+    function renderLibraryPanel() {
+        const host = byId('library-list');
+        if (!host) return;
+
+        if (!allCases.length) {
+            host.innerHTML = stateBlock({ reason: 'empty' }, 'ยังไม่มีเคสในระบบ');
+            return;
+        }
+
+        host.innerHTML = allCases.map((c, i) => {
+            let steps = 0, pts = 0;
+            Object.values(c.stages || {}).forEach(st =>
+                Object.values(st.steps || {}).forEach(s => { steps++; pts += (s.point_value || 0); }));
+            return `
+                <div class="panel rounded-xl p-3 flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-lg bg-navy-700 grid place-items-center text-lg flex-shrink-0">🩺</div>
+                    <div class="min-w-0 flex-1">
+                        <p class="text-xs font-bold text-white truncate">${esc(c.case_title || c.case_id)}</p>
+                        <p class="text-[.65rem] text-slate-500">${steps} steps · ${pts.toLocaleString('en-US')} pts · ${esc(c.difficulty || '')}</p>
+                    </div>
+                    <button class="primary-btn !min-h-[40px] !px-4 flex-shrink-0" data-library-index="${i}">เล่น</button>
+                </div>`;
+        }).join('');
+
+        host.querySelectorAll('[data-library-index]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const idx = parseInt(btn.dataset.libraryIndex, 10);
+                if (typeof onStartCase === 'function') onStartCase(allCases[idx]);
+            });
+        });
+    }
+
+    // ─── My Stats ──────────────────────────────────────────────
+    async function renderStatsPanel() {
+        const host = byId('stats-body');
+        if (!host) return;
+        host.innerHTML = loadingBlock('กำลังโหลดสถิติจาก Firestore…');
+
+        const res = await window.DBService.getMyAttempts();
+        if (!res.ok || res.rows.length === 0) {
+            host.innerHTML = stateBlock(res, 'ยังไม่มีประวัติการเล่น — เล่นเคสให้จบสักครั้งแล้วกลับมาดูใหม่');
+            return;
+        }
+
+        const rows = res.rows;
+        const best = Math.max(...rows.map(r => pct(r.finalScore, r.maxScore)));
+        const avg  = Math.round(rows.reduce((s, r) => s + pct(r.finalScore, r.maxScore), 0) / rows.length);
+        const distinct = new Set(rows.map(r => r.caseId)).size;
+        const fatals = rows.filter(r => r.isFatal).length;
+
+        const card = (label, value, tone) => `
+            <div class="panel rounded-xl p-3">
+                <p class="text-[.58rem] font-bold tracking-widest text-slate-500 uppercase">${label}</p>
+                <p class="text-lg font-mono font-extrabold ${tone || 'text-white'} mt-0.5">${value}</p>
+            </div>`;
+
+        host.innerHTML = `
+            <div class="grid grid-cols-2 md:grid-cols-5 gap-2 mb-4">
+                ${card('Attempts', rows.length)}
+                ${card('Best', best + '%', 'text-teal-400')}
+                ${card('Average', avg + '%', 'text-gold-400')}
+                ${card('Cases', distinct)}
+                ${card('Fatal', fatals, fatals ? 'text-acuity-500' : 'text-white')}
+            </div>
+            <p class="text-[.6rem] font-bold tracking-widest text-slate-500 uppercase mb-2">ประวัติล่าสุด</p>
+            <div class="flex flex-col gap-1.5">
+                ${rows.slice(0, 12).map(r => {
+                    const p = pct(r.finalScore, r.maxScore);
+                    const when = r.completedAt && r.completedAt.seconds
+                        ? new Date(r.completedAt.seconds * 1000).toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' })
+                        : '—';
+                    return `
+                        <div class="panel rounded-lg p-2.5 flex items-center gap-3">
+                            <span class="tag-pill !text-[.6rem] flex-shrink-0">${esc(r.caseId || '')}</span>
+                            <span class="text-[.65rem] text-slate-500 flex-shrink-0 hidden sm:block">${esc(when)}</span>
+                            <span class="text-[.65rem] text-slate-400 ml-auto">${r.completedSteps || 0}/${r.totalSteps || 0} steps</span>
+                            ${r.isFatal ? '<span class="tag-pill !bg-acuity-500/12 !text-acuity-500 !border-acuity-500/35 !text-[.58rem]">FATAL</span>' : ''}
+                            <span class="text-[.72rem] font-mono font-bold ${p >= 85 ? 'text-teal-400' : p >= 60 ? 'text-gold-400' : 'text-slate-400'} flex-shrink-0 w-20 text-right">
+                                ${r.finalScore}/${r.maxScore}
+                            </span>
+                        </div>`;
+                }).join('')}
+            </div>`;
+    }
+
+    // ─── Leaderboard ───────────────────────────────────────────
+    async function renderLeaderboardPanel() {
+        const host = byId('leaderboard-body');
+        if (!host) return;
+        host.innerHTML = loadingBlock('กำลังจัดอันดับ…');
+
+        const res = await window.DBService.getLeaderboard(20);
+        if (!res.ok || res.rows.length === 0) {
+            host.innerHTML = stateBlock(res, 'ยังไม่มีผู้เล่นที่ทำคะแนนไว้');
+            return;
+        }
+
+        const me = window.AuthService.getCurrentUser();
+        const medals = ['🥇', '🥈', '🥉'];
+
+        host.innerHTML = `<div class="flex flex-col gap-1.5">
+            ${res.rows.map((r, i) => {
+                const isMe = me && r.uid === me.uid;
+                return `
+                    <div class="panel rounded-lg p-2.5 flex items-center gap-3 ${isMe ? '!border-teal-400/50 !bg-teal-400/[.06]' : ''}">
+                        <span class="w-7 text-center text-sm flex-shrink-0">${medals[i] || `<span class="text-[.7rem] font-mono text-slate-500">${i + 1}</span>`}</span>
+                        <span class="text-xs font-bold ${isMe ? 'text-teal-400' : 'text-white'} truncate flex-1">
+                            ${esc(r.displayName)}${isMe ? ' <span class="tag-pill !text-[.55rem] !text-teal-400 !border-teal-400/35">คุณ</span>' : ''}
+                        </span>
+                        <span class="tag-pill !text-[.58rem] hidden sm:inline-flex flex-shrink-0">${esc(r.caseId || '')}</span>
+                        <span class="text-[.72rem] font-mono font-bold text-gold-400 flex-shrink-0">${Math.round(r.pct * 100)}%</span>
+                        <span class="text-[.65rem] font-mono text-slate-500 flex-shrink-0 w-16 text-right">${r.finalScore}</span>
+                    </div>`;
+            }).join('')}
+        </div>`;
+    }
+
+    // ─── Achievements ──────────────────────────────────────────
+    const ACHIEVEMENTS = [
+        { id: 'first',    icon: '🩺', name: 'First Case',      desc: 'เล่นจบเคสแรก',                     test: r => r.length >= 1 },
+        { id: 'perfect',  icon: '💯', name: 'Perfect Score',   desc: 'ทำคะแนนเต็มในเคสใดก็ได้',           test: r => r.some(a => !a.isFatal && a.maxScore > 0 && a.finalScore === a.maxScore) },
+        { id: 'sharp',    icon: '🎯', name: 'Sharp Shooter',   desc: 'ทำคะแนนถึง 80% ขึ้นไป',            test: r => r.some(a => pct(a.finalScore, a.maxScore) >= 80) },
+        { id: 'noharm',   icon: '🛡', name: 'Do No Harm',      desc: 'เล่นจบ 3 ครั้งโดยไม่เจอ Fatal',     test: r => r.filter(a => !a.isFatal).length >= 3 },
+        { id: 'explorer', icon: '📚', name: 'Case Explorer',   desc: 'เล่นครบ 2 เคสที่แตกต่างกัน',        test: r => new Set(r.map(a => a.caseId)).size >= 2 },
+        { id: 'marathon', icon: '🔥', name: 'Marathon',        desc: 'เล่นสะสมครบ 5 ครั้ง',              test: r => r.length >= 5 }
+    ];
+
+    async function renderAchievementsPanel() {
+        const host = byId('achievements-body');
+        if (!host) return;
+        host.innerHTML = loadingBlock('กำลังตรวจสอบความสำเร็จ…');
+
+        const res = await window.DBService.getMyAttempts();
+        if (!res.ok) {
+            host.innerHTML = stateBlock(res, '');
+            return;
+        }
+
+        const rows = res.rows;
+        const unlocked = ACHIEVEMENTS.filter(a => a.test(rows)).length;
+
+        host.innerHTML = `
+            <div class="panel rounded-xl p-3 mb-3 flex items-center gap-3">
+                <span class="text-[.6rem] font-bold tracking-widest text-slate-500 uppercase flex-shrink-0">Unlocked</span>
+                <div class="flex-1 h-2 rounded-full bg-navy-700 overflow-hidden">
+                    <div class="h-full rounded-full transition-all duration-500"
+                         style="width:${pct(unlocked, ACHIEVEMENTS.length)}%; background:linear-gradient(90deg,#48E5C2,#17A98A);"></div>
+                </div>
+                <span class="text-xs font-mono font-bold text-teal-400 flex-shrink-0">${unlocked}/${ACHIEVEMENTS.length}</span>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-2">
+                ${ACHIEVEMENTS.map(a => {
+                    const on = a.test(rows);
+                    return `
+                        <div class="panel rounded-xl p-3 flex items-center gap-3 ${on ? '!border-gold-400/40' : 'opacity-55'}">
+                            <div class="w-10 h-10 rounded-xl grid place-items-center text-xl flex-shrink-0
+                                        ${on ? 'bg-gold-400/15 border border-gold-400/40' : 'bg-navy-700 border border-navy-600 grayscale'}">
+                                ${on ? a.icon : '🔒'}
+                            </div>
+                            <div class="min-w-0">
+                                <p class="text-xs font-bold ${on ? 'text-white' : 'text-slate-500'} truncate">${a.name}</p>
+                                <p class="text-[.65rem] text-slate-500 leading-snug">${a.desc}</p>
+                            </div>
+                        </div>`;
+                }).join('')}
+            </div>`;
+    }
+
+    function initPanelNav() {
+        document.querySelectorAll('[data-panel]').forEach(el => {
+            el.addEventListener('click', () => switchPanel(el.dataset.panel));
+        });
+        document.querySelectorAll('.refresh-btn').forEach(btn => {
+            btn.addEventListener('click', () => switchPanel(btn.dataset.refresh));
+        });
+    }
+
     // ─── Pause ─────────────────────────────────────────────────
     function setPaused(value) {
         if (!gameArea) return;
@@ -764,7 +1217,12 @@ const UIController = (function() {
 
         renderCaseMap,
         openDrawer,
-        closeDrawer
+        closeDrawer,
+
+        switchPanel,
+        setPatientReaction,
+        setPatientHealth,
+        getPatientHealth: () => patientHealth
     };
 })();
 

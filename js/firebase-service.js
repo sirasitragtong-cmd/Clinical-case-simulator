@@ -182,6 +182,89 @@
                 console.error('[DB Service Error] Failed to write to user_attempts:', error);
                 throw error;
             }
+        },
+
+        /**
+         * Read this user's own attempt history.
+         * Returns { ok, reason, rows } — never throws, so the UI can show a
+         * truthful state instead of an empty panel that looks like "no data".
+         */
+        getMyAttempts: async function() {
+            if (!db) return { ok: false, reason: 'offline', rows: [] };
+
+            const user = AuthService.getCurrentUser();
+            if (!user) return { ok: false, reason: 'signed-out', rows: [] };
+
+            try {
+                const snap = await db.collection('user_attempts')
+                    .where('uid', '==', user.uid)
+                    .limit(200)
+                    .get();
+
+                const rows = snap.docs.map(d => Object.assign({ id: d.id }, d.data()));
+                // Sort client-side so no composite index is required.
+                rows.sort((a, b) => {
+                    const ta = a.completedAt && a.completedAt.seconds ? a.completedAt.seconds : 0;
+                    const tb = b.completedAt && b.completedAt.seconds ? b.completedAt.seconds : 0;
+                    return tb - ta;
+                });
+                console.log(`[DB Service] Loaded ${rows.length} attempt(s) for ${user.uid}.`);
+                return { ok: true, reason: null, rows: rows };
+            } catch (error) {
+                console.error('[DB Service Error] getMyAttempts failed:', error);
+                return {
+                    ok: false,
+                    reason: error.code === 'permission-denied' ? 'permission-denied' : 'error',
+                    rows: [],
+                    message: error.message
+                };
+            }
+        },
+
+        /**
+         * Read the global best-score leaderboard.
+         * Requires Firestore rules that permit reading user_attempts.
+         */
+        getLeaderboard: async function(max) {
+            if (!db) return { ok: false, reason: 'offline', rows: [] };
+
+            try {
+                const snap = await db.collection('user_attempts').limit(500).get();
+
+                // Best attempt per user, ranked by accuracy then raw score.
+                const best = {};
+                snap.docs.forEach(d => {
+                    const a = d.data();
+                    if (!a || !a.uid || a.isFatal) return;
+                    const pct = a.maxScore > 0 ? a.finalScore / a.maxScore : 0;
+                    const cur = best[a.uid];
+                    if (!cur || pct > cur.pct || (pct === cur.pct && a.finalScore > cur.finalScore)) {
+                        best[a.uid] = {
+                            uid: a.uid,
+                            displayName: a.displayName || 'Clinician',
+                            finalScore: a.finalScore || 0,
+                            maxScore: a.maxScore || 0,
+                            caseId: a.caseId,
+                            pct: pct
+                        };
+                    }
+                });
+
+                const rows = Object.values(best)
+                    .sort((x, y) => y.pct - x.pct || y.finalScore - x.finalScore)
+                    .slice(0, max || 20);
+
+                console.log(`[DB Service] Leaderboard built from ${snap.size} attempt(s) → ${rows.length} player(s).`);
+                return { ok: true, reason: null, rows: rows };
+            } catch (error) {
+                console.error('[DB Service Error] getLeaderboard failed:', error);
+                return {
+                    ok: false,
+                    reason: error.code === 'permission-denied' ? 'permission-denied' : 'error',
+                    rows: [],
+                    message: error.message
+                };
+            }
         }
     };
 

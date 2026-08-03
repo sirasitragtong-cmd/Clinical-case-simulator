@@ -268,6 +268,77 @@
         .nav-link.is-active { color: #0A0F1D; background: #48E5C2; font-weight: 700; }
         .nav-link.is-disabled { color: #475569; cursor: not-allowed; }
         .nav-link.is-disabled:hover { background: transparent; color: #475569; }
+
+        .nav-chip {
+            flex-shrink: 0; white-space: nowrap;
+            padding: .5rem .8rem; min-height: 40px;
+            border-radius: 9999px;
+            font-size: .72rem; font-weight: 600;
+            color: #94A3B8;
+            background: rgba(28,37,65,.6);
+            border: 1px solid rgba(51,65,95,.6);
+            cursor: pointer;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .nav-chip.is-active { color: #0A0F1D; background: #48E5C2; border-color: #48E5C2; font-weight: 700; }
+
+        /* ═══ Patient avatar ═══════════════════════════════════
+           Expression variants are all present in the DOM; the
+           reaction class on #patient-avatar decides which is
+           visible. Opacity is switched without a transition so the
+           state is immediate and testable. */
+        #patient-avatar svg { width: 100%; height: auto; display: block; }
+
+        .pa-variant { opacity: 0; }
+        .reaction-neutral   .pa-neutral,
+        .reaction-pain      .pa-pain,
+        .reaction-distress  .pa-distress,
+        .reaction-critical  .pa-critical,
+        .reaction-improving .pa-improving,
+        .reaction-recovered .pa-recovered { opacity: 1; }
+
+        /* Skin tone shifts with condition */
+        .pa-skin { fill: #E8B48F; transition: fill .5s ease; }
+        .reaction-distress .pa-skin { fill: #DBAE94; }
+        .reaction-critical .pa-skin { fill: #C9AFA4; }
+        .reaction-recovered .pa-skin { fill: #EFBE96; }
+
+        /* Breathing — rate follows severity */
+        .pa-chest { transform-origin: 100px 150px; animation: paBreathe 3.4s ease-in-out infinite; }
+        .reaction-pain     .pa-chest { animation-duration: 2.4s; }
+        .reaction-distress .pa-chest { animation-duration: 1.5s; }
+        .reaction-critical .pa-chest { animation-duration: 4.6s; }
+        @keyframes paBreathe {
+            0%, 100% { transform: scaleY(1); }
+            50%      { transform: scaleY(1.035); }
+        }
+
+        /* Blink */
+        .pa-eyelid { transform-origin: center; animation: paBlink 5s ease-in-out infinite; }
+        @keyframes paBlink {
+            0%, 92%, 100% { transform: scaleY(0); }
+            95%           { transform: scaleY(1); }
+        }
+        .reaction-critical .pa-eyelid { animation: none; transform: scaleY(1); }
+
+        /* Sweat */
+        .pa-sweat { opacity: 0; }
+        .reaction-pain .pa-sweat,
+        .reaction-distress .pa-sweat { opacity: 1; animation: paSweat 2.6s ease-in infinite; }
+        @keyframes paSweat {
+            0%   { transform: translateY(0); opacity: 0; }
+            30%  { opacity: .9; }
+            100% { transform: translateY(14px); opacity: 0; }
+        }
+
+        /* Pain aura */
+        .pa-aura { opacity: 0; transition: opacity .4s ease; }
+        .reaction-pain .pa-aura, .reaction-distress .pa-aura { opacity: .55; }
+        .reaction-critical .pa-aura { opacity: .9; }
+
+        @media (prefers-reduced-motion: reduce) {
+            .pa-chest, .pa-eyelid, .pa-sweat { animation: none !important; }
+        }
     </style>
 </head>
 <body>
@@ -425,26 +496,82 @@
 
     <div class="flex-1 flex overflow-hidden">
 
+      <!-- Sidebar nav (lg+) — every item is functional -->
       <aside class="hidden lg:flex flex-col w-56 flex-shrink-0 border-r border-navy-700/60 bg-navy-850/50 p-3 gap-1">
-        <a class="nav-link is-active">🗺 Campaign Map</a>
-        <a class="nav-link is-disabled" title="อยู่ระหว่างพัฒนา">
-          🏅 Leaderboard <span class="ml-auto text-[.55rem] tag-pill">Coming Soon</span>
-        </a>
-        <a class="nav-link is-disabled" title="อยู่ระหว่างพัฒนา">
-          🎖 Achievements <span class="ml-auto text-[.55rem] tag-pill">Coming Soon</span>
-        </a>
+        <a class="nav-link is-active" data-panel="campaign">🗺 Campaign Map</a>
+        <a class="nav-link" data-panel="library">📖 Free-Play Library</a>
+        <a class="nav-link" data-panel="stats">📊 My Stats</a>
+        <a class="nav-link" data-panel="leaderboard">🏅 Leaderboard</a>
+        <a class="nav-link" data-panel="achievements">🎖 Achievements</a>
+
+        <div class="mt-auto panel rounded-xl p-3">
+          <p class="text-[.6rem] font-bold tracking-widest text-slate-500 uppercase mb-1.5">Session</p>
+          <p id="sidebar-user-name" class="text-[.72rem] font-bold text-white truncate">—</p>
+          <p id="sidebar-user-mode" class="text-[.62rem] text-slate-500">—</p>
+        </div>
       </aside>
 
-      <main class="flex-1 overflow-y-auto p-3 sm:p-5">
-        <div class="flex items-center justify-between mb-4">
-          <div>
-            <h2 class="text-base font-extrabold text-white">เลือกกรณีศึกษา</h2>
-            <p class="text-[.7rem] text-slate-500 mt-0.5">แต่ละเคสดำเนินตามกระบวนการ SOAP — DATA → IDENTIFY → ASSESSMENT → PLAN</p>
-          </div>
+      <main class="flex-1 overflow-y-auto min-w-0">
+        <!-- Mobile/tablet nav -->
+        <div class="lg:hidden sticky top-0 z-20 flex gap-1.5 overflow-x-auto px-3 py-2 bg-navy-900/95 backdrop-blur border-b border-navy-700/60">
+          <button class="nav-chip is-active" data-panel="campaign">🗺 Campaign</button>
+          <button class="nav-chip" data-panel="library">📖 Library</button>
+          <button class="nav-chip" data-panel="stats">📊 Stats</button>
+          <button class="nav-chip" data-panel="leaderboard">🏅 Ranking</button>
+          <button class="nav-chip" data-panel="achievements">🎖 Badges</button>
         </div>
 
-        <!-- Case nodes — rendered by UIController.renderCaseMap() -->
-        <div id="quest-track" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3"></div>
+        <div class="p-3 sm:p-5">
+          <!-- CAMPAIGN -->
+          <section data-panel-body="campaign">
+            <h2 class="text-base font-extrabold text-white">เลือกกรณีศึกษา</h2>
+            <p class="text-[.7rem] text-slate-500 mt-0.5 mb-4">แต่ละเคสดำเนินตามกระบวนการ SOAP — DATA → IDENTIFY → ASSESSMENT → PLAN</p>
+            <div id="quest-track" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3"></div>
+          </section>
+
+          <!-- FREE-PLAY LIBRARY -->
+          <section data-panel-body="library" class="hidden">
+            <h2 class="text-base font-extrabold text-white">Free-Play Library</h2>
+            <p class="text-[.7rem] text-slate-500 mt-0.5 mb-4">เล่นเคสใดก็ได้ซ้ำได้ไม่จำกัด — เหมาะสำหรับทบทวนก่อนสอบ</p>
+            <div id="library-list" class="flex flex-col gap-2"></div>
+          </section>
+
+          <!-- MY STATS -->
+          <section data-panel-body="stats" class="hidden">
+            <div class="flex items-center justify-between mb-4">
+              <div>
+                <h2 class="text-base font-extrabold text-white">My Stats</h2>
+                <p class="text-[.7rem] text-slate-500 mt-0.5">สถิติจากผลการเล่นจริงของคุณใน Firestore</p>
+              </div>
+              <button class="refresh-btn px-3 py-2 rounded-lg text-xs font-semibold text-slate-300 bg-navy-700/70 border border-navy-600 hover:text-white transition" data-refresh="stats">↻ รีเฟรช</button>
+            </div>
+            <div id="stats-body"></div>
+          </section>
+
+          <!-- LEADERBOARD -->
+          <section data-panel-body="leaderboard" class="hidden">
+            <div class="flex items-center justify-between mb-4">
+              <div>
+                <h2 class="text-base font-extrabold text-white">Leaderboard</h2>
+                <p class="text-[.7rem] text-slate-500 mt-0.5">อันดับจากคะแนนที่ดีที่สุดของผู้เล่นแต่ละคน</p>
+              </div>
+              <button class="refresh-btn px-3 py-2 rounded-lg text-xs font-semibold text-slate-300 bg-navy-700/70 border border-navy-600 hover:text-white transition" data-refresh="leaderboard">↻ รีเฟรช</button>
+            </div>
+            <div id="leaderboard-body"></div>
+          </section>
+
+          <!-- ACHIEVEMENTS -->
+          <section data-panel-body="achievements" class="hidden">
+            <div class="flex items-center justify-between mb-4">
+              <div>
+                <h2 class="text-base font-extrabold text-white">Achievements</h2>
+                <p class="text-[.7rem] text-slate-500 mt-0.5">ปลดล็อกจากผลการเล่นจริง — ไม่ใช่ค่าตัวอย่าง</p>
+              </div>
+              <button class="refresh-btn px-3 py-2 rounded-lg text-xs font-semibold text-slate-300 bg-navy-700/70 border border-navy-600 hover:text-white transition" data-refresh="achievements">↻ รีเฟรช</button>
+            </div>
+            <div id="achievements-body"></div>
+          </section>
+        </div>
       </main>
     </div>
   </div>
@@ -507,6 +634,22 @@
     <div id="vitals-mobile"
          class="md:hidden sticky top-[3.25rem] z-30 grid grid-cols-4 gap-px bg-navy-700/60 border-b border-navy-700/60"></div>
 
+    <!-- MOBILE: compact reactive patient strip -->
+    <div class="md:hidden flex items-center gap-3 px-3 py-2 border-b border-navy-700/60 bg-navy-850/60">
+      <div id="patient-avatar-mobile" class="reaction-neutral w-14 flex-shrink-0"></div>
+      <div class="flex-1 min-w-0">
+        <p id="patient-name-strip" class="text-[.7rem] font-bold text-white truncate">—</p>
+        <div class="flex items-center gap-2 mt-1">
+          <span class="text-[.52rem] font-bold tracking-widest text-slate-500 uppercase flex-shrink-0">Condition</span>
+          <div class="flex-1 h-1.5 rounded-full bg-navy-700 overflow-hidden">
+            <div id="patient-health-bar-mobile" class="h-full rounded-full transition-all duration-500"
+                 style="width:60%; background:linear-gradient(90deg,#E63946,#FFB703,#48E5C2);"></div>
+          </div>
+          <span id="patient-health-label-mobile" class="text-[.6rem] font-mono font-bold text-slate-400 flex-shrink-0">—</span>
+        </div>
+      </div>
+    </div>
+
     <!-- ── Responsive grid ──
          base : 1 column  (question + choices; SOAP in drawer)
          md   : 2 columns (40% left = vitals + SOAP | 60% right = bedside + decision)
@@ -547,13 +690,17 @@
                  class="px-3 py-1 rounded-full text-[.62rem] font-bold text-acuity-500 bg-acuity-500/12 border border-acuity-500/35 animate-vital-pulse">
               ● —
             </div>
-            <svg class="w-48 h-24 mt-3" viewBox="0 0 220 110" fill="none" stroke="#33415F" stroke-width="2.5" stroke-linecap="round">
-              <rect x="20" y="55" width="180" height="26" rx="6" fill="rgba(51,65,95,.28)"/>
-              <path d="M20 81v18M200 81v18" />
-              <rect x="30" y="38" width="52" height="20" rx="8" fill="rgba(72,229,194,.10)" stroke="rgba(72,229,194,.35)"/>
-              <circle cx="96" cy="46" r="13" fill="rgba(72,229,194,.12)" stroke="rgba(72,229,194,.45)"/>
-              <path d="M110 55h72" stroke="rgba(72,229,194,.22)"/>
-            </svg>
+            <!-- Animated half-body patient — reactions driven by UIController.setPatientReaction() -->
+            <div id="patient-avatar" class="reaction-neutral w-full max-w-[15rem] mt-2"></div>
+
+            <div class="flex items-center gap-2 mt-2 w-full max-w-[15rem]">
+              <span class="text-[.55rem] font-bold tracking-widest text-slate-500 uppercase flex-shrink-0">Condition</span>
+              <div class="flex-1 h-1.5 rounded-full bg-navy-700 overflow-hidden">
+                <div id="patient-health-bar" class="h-full rounded-full transition-all duration-500" style="width:60%; background:linear-gradient(90deg,#E63946,#FFB703,#48E5C2);"></div>
+              </div>
+              <span id="patient-health-label" class="text-[.6rem] font-mono font-bold text-slate-400 flex-shrink-0">—</span>
+            </div>
+
             <div id="bedside-tags" class="flex flex-wrap items-center justify-center gap-1.5 mt-2"></div>
           </div>
 
@@ -628,9 +775,9 @@
 <!-- ═══════════════════════════════════════════════════════════════
      SCRIPTS
      ═══════════════════════════════════════════════════════════════ -->
-<script src="./js/firebase-service.js?v=202608031930"></script>
-<script src="./js/ui-controller.js?v=202608031930"></script>
-<script src="./js/game-engine.js?v=202608031930"></script>
+<script src="./js/firebase-service.js?v=202608032045"></script>
+<script src="./js/ui-controller.js?v=202608032045"></script>
+<script src="./js/game-engine.js?v=202608032045"></script>
 
 <script>
 (function() {
@@ -638,8 +785,8 @@
 
     // Case registry — every playable case, all unlocked.
     const CASE_FILES = [
-        './data/case_001.json?v=202608031930',
-        './data/case_002.json?v=202608031930'
+        './data/case_001.json?v=202608032045',
+        './data/case_002.json?v=202608032045'
     ];
 
     const btnLogin       = document.getElementById('btn-google-login');
@@ -783,6 +930,11 @@
 
         if (nameEl) nameEl.textContent = label;
         if (modeEl) modeEl.textContent = isGuest ? 'Anonymous Mode' : 'Progress Saved';
+
+        const sbName = document.getElementById('sidebar-user-name');
+        const sbMode = document.getElementById('sidebar-user-mode');
+        if (sbName) sbName.textContent = label;
+        if (sbMode) sbMode.textContent = isGuest ? 'Anonymous · ไม่บันทึกผล' : 'Signed In · บันทึกผลแล้ว';
 
         if (user && user.photoURL && badgeEl) {
             badgeEl.innerHTML = `<img src="${user.photoURL}" alt="" class="w-full h-full object-cover" />`;
