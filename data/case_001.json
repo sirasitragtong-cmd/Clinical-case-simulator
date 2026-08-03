@@ -1,0 +1,256 @@
+{
+  "case_id": "case_001",
+  "case_title": "Hypertensive Urgency & Medication Non-adherence",
+  "difficulty": "Intermediate",
+  "tags": ["Cardiology", "Ambulatory Care"],
+  "stages": {
+    "stage_1_data": {
+      "title": "DATA (รวบรวมข้อมูล)",
+      "steps": {
+        "step_1_subjective_data": {
+          "type": "info",
+          "content": [
+            "<strong>ผู้ป่วยชายไทย อายุ 55 ปี อาชีพพนักงานขับรถบรรทุก</strong>",
+            "<strong>CC:</strong> ปวดศีรษะบริเวณท้ายทอย ตึงๆ มา 2 วัน",
+            "<strong>HPI:</strong> 2 วันก่อนเริ่มมีอาการปวดศีรษะท้ายทอย ทาน Paracetamol ไม่ดีขึ้น ไม่แน่ใจเรื่องการทานยาประจำ",
+            "<strong>PMH:</strong> HTN, DLP เป็นมา 5 ปี",
+            "<strong>Meds:</strong> Amlodipine (10) 1 tab po qd, Simvastatin (20) 1 tab po hs",
+            "<strong>Allergy:</strong> NKDA | <strong>SH:</strong> ดื่มสุราสัปดาห์ละ 2-3 ครั้ง, ขาดยาประจำมา 2 สัปดาห์เนื่องจากเดินทางขับรถต่างจังหวัด"
+          ]
+        },
+        "step_2_objective_data": {
+          "type": "info",
+          "content": [
+            "<strong>V/S:</strong> BP 180/110 mmHg, HR 82 bpm, RR 18/min, BT 36.8 °C",
+            "<strong>Physical Exam:</strong> Clear lungs, no S3/S4, no pedal edema, Neuro: E4V5M6, Pupil 3mm RTLBE",
+            "<strong>Labs:</strong> SCr 1.0 mg/dL, eGFR 85 mL/min/1.73m2, K+ 4.2 mEq/L, LFTs WNL"
+          ]
+        }
+      }
+    },
+    "stage_2_identify": {
+      "title": "IDENTIFY (ระบุปัญหา)",
+      "steps": {
+        "step_3_problem_list": {
+          "type": "mcq",
+          "question": "จากข้อมูลข้างต้น ปัญหาหลักของผู้ป่วยรายนี้คืออะไร?",
+          "point_value": 100,
+          "choices": [
+            { "id": "A", "text": "Hypertensive Emergency", "is_fatal": false },
+            { "id": "B", "text": "Hypertensive Urgency", "is_fatal": false },
+            { "id": "C", "text": "Ischemic Stroke", "is_fatal": false },
+            { "id": "D", "text": "Essential Hypertension Controlled", "is_fatal": false }
+          ],
+          "correct_answer": "B",
+          "feedback": {
+            "correct": "ถูกต้อง! ความดันโลหิตสูงวิกฤต (>180/120) โดยไม่มี Target Organ Damage เฉียบพลัน จัดเป็น Hypertensive Urgency",
+            "incorrect": "ไม่ถูกต้อง สังเกตว่าผู้ป่วยไม่มีอาการและสัญญาณของ Target Organ Damage เฉียบพลัน"
+          }
+        },
+        "step_4_drps": {
+          "type": "mcq",
+          "question": "ปัญหาการใช้ยา (DRP) หลักของผู้ป่วยรายนี้คืออะไร?",
+          "point_value": 100,
+          "choices": [
+            { "id": "A", "text": "Adverse Drug Reaction", "is_fatal": false },
+            { "id": "B", "text": "Inappropriate drug selection", "is_fatal": false },
+            { "id": "C", "text": "Non-adherence", "is_fatal": false },
+            { "id": "D", "text": "Overdosage", "is_fatal": false }
+          ],
+          "correct_answer": "C",
+          "feedback": {
+            "correct": "ถูกต้อง! ผู้ป่วยขาดยาประจำมา 2 สัปดาห์เนื่องจากเดินทาง",
+            "incorrect": "ลองพิจารณาประวัติการรับประทานยาของผู้ป่วยใหม่อีกครั้ง"
+          }
+        }
+      }
+    },
+    "stage_3_assessment": {
+      "title": "ASSESSMENT (ประเมิน)",
+      "steps": {
+        "step_5_etiology": {
+          "type": "mcq",
+          "question": "สาเหตุหลัก (Etiology) ที่ทำให้ความดันสูงขึ้นในครั้งนี้คืออะไร?",
+          "point_value": 100,
+          "choices": [
+            { "id": "A", "text": "การขาดยาความดันโลหิตอย่างกะทันหัน (Medication Non-adherence)", "is_fatal": false },
+            { "id": "B", "text": "ภาวะไตวายเฉียบพลัน", "is_fatal": false },
+            { "id": "C", "text": "การรับประทานอาหารเค็มจัด", "is_fatal": false },
+            { "id": "D", "text": "ผลข้างเคียงจากยาลดไขมัน", "is_fatal": false }
+          ],
+          "correct_answer": "A",
+          "feedback": {
+            "correct": "ถูกต้อง การหยุดยาความดันกระทันหันทำให้เกิด Rebound Hypertension",
+            "incorrect": "พิจารณาประวัติความยื่นยินยอมในการรับประทานยา"
+          }
+        },
+        "step_6_risk_factor": {
+          "type": "mcq",
+          "question": "ปัจจัยเสี่ยงพฤติกรรมที่ส่งผลต่อการควบคุมความดันคืออะไร?",
+          "point_value": 100,
+          "choices": [
+            { "id": "A", "text": "การสูบบุหรี่", "is_fatal": false },
+            { "id": "B", "text": "การดื่มสุราและการทำงานเข้าเวรเดินทาง", "is_fatal": false },
+            { "id": "C", "text": "ภาวะเครียดจากการทำงานออฟฟิศ", "is_fatal": false },
+            { "id": "D", "text": "ไม่ออกกำลังกาย", "is_fatal": false }
+          ],
+          "correct_answer": "B",
+          "feedback": {
+            "correct": "ถูกต้อง ประวัติระบุการดื่มสุราและการเป็นขับรถบรรทุกต่างจังหวัดซึ่งกระทบต่อเวลาทานยา",
+            "incorrect": "ทบทวน Social History ของผู้ป่วย"
+          }
+        },
+        "step_7_severity": {
+          "type": "mcq",
+          "question": "ระดับความรุนแรงของภาวะ Hypertensive Urgency ในเคสนี้เป็นอย่างไร?",
+          "point_value": 100,
+          "choices": [
+            { "id": "A", "text": "วิกฤติต้องส่งเข้า ICU ทันที", "is_fatal": false },
+            { "id": "B", "text": "สูงมาก แต่สามารถบริหารจัดการในแผนกผู้ป่วยนอก/ห้องฉุกเฉินได้", "is_fatal": false },
+            { "id": "C", "text": "ไม่รุนแรง สามารถกลับบ้านได้ทันทีโดยไม่ต้องปรับยา", "is_fatal": false },
+            { "id": "D", "text": "เลวร้ายถึงชีวิตภายในไม่กี่นาที", "is_fatal": false }
+          ],
+          "correct_answer": "B",
+          "feedback": {
+            "correct": "ถูกต้อง Hypertensive Urgency สามารถลดความดันลงอย่างช้าๆ ในเวลา 24-48 ชม. ได้",
+            "incorrect": " Hypertensive Urgency ไม่จำเป็นต้อง admit ICU ทันทีเหมือน Emergency"
+          }
+        },
+        "step_8_assessment_current_therapy": {
+          "type": "mcq",
+          "question": "การประเมินยาเดิม Amlodipine 10 mg ทานวันละครั้ง เหมาะสมหรือไม่?",
+          "point_value": 100,
+          "choices": [
+            { "id": "A", "text": "เหมาะสม แต่ผู้ป่วยไม่ได้ทานยาตามสั่ง", "is_fatal": false },
+            { "id": "B", "text": "ไม่เหมาะสม ยาขนาดต่ำเกินไป", "is_fatal": false },
+            { "id": "C", "text": "เกิดพิษจากยา Amlodipine", "is_fatal": false },
+            { "id": "D", "text": "ควรเปลี่ยนเป็นยาฉีดทันที", "is_fatal": false }
+          ],
+          "correct_answer": "A",
+          "feedback": {
+            "correct": "ถูกต้อง ยาเดิมเป็นขนาดยาปรับสูงสุดแล้ว แต่ปัญหาหลักคือพฤติกรรมการไม่ทานยา",
+            "incorrect": "Amlodipine 10 mg เป็น max dose ของยาลดความดันกลุ่มนี้แล้ว"
+          }
+        },
+        "step_9_assessment_new_therapy": {
+          "type": "mcq",
+          "question": "แนวทางการจัดการความดันโลหิตเร่งด่วนในแผนกฉุกเฉิน/OPD ข้อใด **อันตรายถึงชีวิต (Fatal)**?",
+          "point_value": 100,
+          "choices": [
+            { "id": "A", "text": "เคี้ยวและอมใต้ลิ้น Sublingual Nifedipine ชนิดออกฤทธิ์เร็วทันที", "is_fatal": true },
+            { "id": "B", "text": "ให้นั่งพัก 30 นาที แล้ว Restart ยาเดิม Amlodipine 10 mg", "is_fatal": false },
+            { "id": "C", "text": "พิจารณาเพิ่มยาตัวที่สอง เช่น ACEi/ARB หากความดันยังคงสูงหลังรับประทานยาเดิม", "is_fatal": false },
+            { "id": "D", "text": "สังเกตอาการและวัดความดันซ้ำทุก 1 ชั่วโมง", "is_fatal": false }
+          ],
+          "correct_answer": "B",
+          "feedback": {
+            "correct": "ถูกต้อง! การ Restart ยาเดิมร่วมกับการพักผ่อน เป็นแนวทางที่ปลอดภัย",
+            "incorrect": "ลองทบทวนข้อห้ามใช้ยาลดความดันฉุกเฉิน",
+            "fatal_message": "GAME OVER: การใช้ Sublingual Nifedipine ออกฤทธิ์เร็ว ห้ามใช้เด็ดขาด! เพราะอาจทำให้ความดันโลหิตดิ่งลงรวดเร็ว เกิดภาวะสมองหรือหัวใจขาดเลือดเฉียบพลันเสียชีวิตได้!"
+          }
+        }
+      }
+    },
+    "stage_4_plan": {
+      "title": "PLAN (วางแผน)",
+      "steps": {
+        "step_10_goal": {
+          "type": "mcq",
+          "question": "เป้าหมายการลดความดันโลหิตระยะสั้น (ภายใน 24-48 ชั่วโมงแรก) คือข้อใด?",
+          "point_value": 100,
+          "choices": [
+            { "id": "A", "text": "ลด BP ลงสู่ระดับปกติ < 120/80 mmHg ทันทีภายใน 1 ชั่วโมง", "is_fatal": false },
+            { "id": "B", "text": "ลด MAP ลงไม่เกิน 25% หรือลด BP ลงมาอยู่ที่ประมาณ 160/100 mmHg", "is_fatal": false },
+            { "id": "C", "text": "ไม่ต้องลดความดัน ให้รอสังเกตอาการ 1 สัปดาห์", "is_fatal": false },
+            { "id": "D", "text": "ลด Systolic BP ลงมากกว่า 50% ทันที", "is_fatal": false }
+          ],
+          "correct_answer": "B",
+          "feedback": {
+            "correct": "ถูกต้อง การลดความดันใน Urgency ไม่ควรเกิน 25% ในช่วงแรกเพื่อป้องกัน Organ Hypoperfusion",
+            "incorrect": "การลดความดันเร็วเกินไปในผู้ป่วยความดันสูงเรื้อรังอันตรายมาก"
+          }
+        },
+        "step_11_therapeutic_plan": {
+          "type": "mcq",
+          "question": "แผนการรักษาจำหน่ายกลับบ้าน (Outpatient Plan) ที่เหมาะสมที่สุดคืออะไร?",
+          "point_value": 100,
+          "choices": [
+            { "id": "A", "text": "Restart Amlodipine (10) 1 tab po qd และเน้นย้ำความสำคัญของการรับประทานยาต่อเนื่อง", "is_fatal": false },
+            { "id": "B", "text": "หยุดยาความดันทั้งหมด แล้วเปลี่ยนเป็นยาสมุนไพร", "is_fatal": false },
+            { "id": "C", "text": "ให้ยาฉีดความดันกลับไปฉีดเองที่บ้าน", "is_fatal": false },
+            { "id": "D", "text": "เพิ่มยาลดความดันพร้อมกัน 3 กลุ่มในขนาดยาสูงสุด", "is_fatal": false }
+          ],
+          "correct_answer": "A",
+          "feedback": {
+            "correct": "ถูกต้อง ผู้ป่วยไม่ได้ล้มเหลวจากยาเดิม แต่ล้มเหลวจาก Adherence",
+            "incorrect": "ควรแก้ไขที่ต้นเหตุของ DRP ก่อนเพิ่มยาซับซ้อน"
+          }
+        },
+        "step_12_therapeutic_monitoring": {
+          "type": "mcq",
+          "question": "การติดตามผลการรักษาด้านประสิทธิผล (Efficacy Monitoring) คือข้อใด?",
+          "point_value": 100,
+          "choices": [
+            { "id": "A", "text": "ติดตามระดับ BP และอาการปวดศีรษะ", "is_fatal": false },
+            { "id": "B", "text": "ตรวจระดับไขมันในเลือดทุกวัน", "is_fatal": false },
+            { "id": "C", "text": "เจาะเลือดดูค่า Liver Function Tests ทุกสัปดาห์", "is_fatal": false },
+            { "id": "D", "text": "ทำ X-Ray ปอดทุกเดือน", "is_fatal": false }
+          ],
+          "correct_answer": "A",
+          "feedback": {
+            "correct": "ถูกต้อง ประสิทธิผลยาลดความดันดูจากระดับ BP และการหายของอาการปวดศีรษะ",
+            "incorrect": "พิจารณาปัญหาสุขภาพหลักของผู้ป่วย"
+          }
+        },
+        "step_13_adr_monitoring": {
+          "type": "mcq",
+          "question": "อาการไม่พึงประสงค์จากยา (ADR) หลักที่ต้องเฝ้าระวังจาก Amlodipine คืออะไร?",
+          "point_value": 100,
+          "choices": [
+            { "id": "A", "text": "ข้อเท้าบวม (Peripheral edema) และอาการหน้าแดงร้อนวูบวาบ", "is_fatal": false },
+            { "id": "B", "text": "ไอแห้ง (Dry cough)", "is_fatal": false },
+            { "id": "C", "text": "ไอเป็นเลือด", "is_fatal": false },
+            { "id": "D", "text": "ระดับโพแทสเซียมในเลือดสูงวิกฤต", "is_fatal": false }
+          ],
+          "correct_answer": "A",
+          "feedback": {
+            "correct": "ถูกต้อง Amlodipine เป็น DHP-CCB มีผลข้างเคียงที่พบบ่อยคือ Peripheral Edema",
+            "incorrect": "Dry cough เป็นผลข้างเคียงของกลุ่ม ACEi ไม่ใช่ CCB"
+          }
+        },
+        "step_14_patient_education": {
+          "type": "mcq",
+          "question": "คำแนะนำการปฏิบัติตนและการใช้ยาที่สำคัญที่สุดสำหรับอาชีพขับรถบรรทุกคืออะไร?",
+          "point_value": 100,
+          "choices": [
+            { "id": "A", "text": "จัดกล่องตลับยาพกพาติดรถ และตั้งนาฬิกาเตือนการทานยาให้เป็นเวลา", "is_fatal": false },
+            { "id": "B", "text": "ให้ทานยาเฉพาะวันที่เริ่มมีอาการปวดศีรษะ", "is_fatal": false },
+            { "id": "C", "text": "ให้หยุดทานยาหากต้องขับรถทางไกลเกิน 8 ชั่วโมง", "is_fatal": false },
+            { "id": "D", "text": "ให้เพิ่มขนาดยาเป็นสองเท่าถ้าลืมทานยาเมื่อวาน", "is_fatal": false }
+          ],
+          "correct_answer": "A",
+          "feedback": {
+            "correct": "ถูกต้อง การแก้ปัญหา Adherence ในอาชีพเดินทางต้องใช้อุปกรณ์ช่วยจัดยาและแจ้งเตือน",
+            "incorrect": "ยาลดความดันต้องรับประทานสม่ำเสมอ ห้ามทานเฉพาะตอนมีอาการ"
+          }
+        },
+        "step_15_future_plan": {
+          "type": "mcq",
+          "question": "การนัดหมายติดตามผล (Follow-up plan) ที่เหมาะสมควรนัดเมื่อใด?",
+          "point_value": 100,
+          "choices": [
+            { "id": "A", "text": "นัดติดตามระดับ BP และ Adherence ภายใน 1-2 สัปดาห์", "is_fatal": false },
+            { "id": "B", "text": "นัดอีกครั้งในอีก 1 ปีข้างหน้า", "is_fatal": false },
+            { "id": "C", "text": "ไม่ต้องนัดอีก ให้มาเมื่อยาหมดเท่านั้น", "is_fatal": false },
+            { "id": "D", "text": "นัดตรวจทุกวันเป็นเวลา 1 เดือน", "is_fatal": false }
+          ],
+          "correct_answer": "A",
+          "feedback": {
+            "correct": "ถูกต้อง หลังเกิด Hypertensive Urgency ควรนัดประเมินซ้ำอย่างใกล้ชิดใน 1-2 สัปดาห์",
+            "incorrect": "ระยะเวลา 1 ปีนานเกินไปสำหรับการประเมินความดันที่เพิ่งวิกฤต"
+          }
+        }
+      }
+    }
+  }
+}

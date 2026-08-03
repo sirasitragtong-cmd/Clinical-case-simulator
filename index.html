@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Clinical Case Simulator — Interactive medical case-based learning platform" />
+    <title>Clinical Case Simulator</title>
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'Noto Sans Thai', 'system-ui', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            50:  '#eef6ff',
+                            100: '#d9eaff',
+                            200: '#bcdbff',
+                            300: '#8ec5ff',
+                            400: '#59a4ff',
+                            500: '#3381ff',
+                            600: '#1a5ff5',
+                            700: '#1449e1',
+                            800: '#173cb6',
+                            900: '#19368f',
+                            950: '#142257',
+                        },
+                        surface: {
+                            900: '#0b0f1a',
+                            800: '#111827',
+                            700: '#1a2236',
+                            600: '#243049',
+                            500: '#2e3d5c',
+                        }
+                    },
+                    animation: {
+                        'fade-in': 'fadeIn 0.5s ease-out forwards',
+                        'slide-up': 'slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+                        'pulse-glow': 'pulseGlow 2.5s ease-in-out infinite',
+                        'float': 'float 6s ease-in-out infinite',
+                    },
+                    keyframes: {
+                        fadeIn: { '0%': { opacity: '0' }, '100%': { opacity: '1' } },
+                        slideUp: { '0%': { opacity: '0', transform: 'translateY(30px)' }, '100%': { opacity: '1', transform: 'translateY(0)' } },
+                        pulseGlow: { '0%, 100%': { boxShadow: '0 0 20px rgba(51, 129, 255, 0.15)' }, '50%': { boxShadow: '0 0 40px rgba(51, 129, 255, 0.35)' } },
+                        float: { '0%, 100%': { transform: 'translateY(0px)' }, '50%': { transform: 'translateY(-12px)' } },
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+    <!-- Firebase JS SDK (Compat v10.12.0) -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+
+    <style>
+        /* ─── Base Reset & Scrollbar ─────────────────────────── */
+        * { box-sizing: border-box; }
+        html { scroll-behavior: smooth; }
+        body { background: #0b0f1a; }
+
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #111827; }
+        ::-webkit-scrollbar-thumb { background: #3381ff44; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #3381ff88; }
+
+        /* ─── View System ────────────────────────────────────── */
+        .app-view { display: none; opacity: 0; transition: opacity 0.4s ease; }
+        .app-view.active-view { display: block; opacity: 1; }
+        .app-view.hidden-view { display: none; opacity: 0; }
+
+        /* ─── Glassmorphism Card ──────────────────────────────── */
+        .glass-card {
+            background: rgba(26, 34, 54, 0.65);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid rgba(51, 129, 255, 0.12);
+        }
+
+        /* ─── Ambient Background Orbs ────────────────────────── */
+        .orb {
+            position: fixed;
+            border-radius: 50%;
+            filter: blur(100px);
+            pointer-events: none;
+            z-index: 0;
+        }
+        .orb-1 { width: 500px; height: 500px; background: rgba(51, 129, 255, 0.08); top: -100px; left: -100px; }
+        .orb-2 { width: 400px; height: 400px; background: rgba(120, 80, 255, 0.06); bottom: -50px; right: -80px; }
+        .orb-3 { width: 300px; height: 300px; background: rgba(0, 200, 150, 0.05); top: 40%; left: 60%; }
+
+        /* ─── Google Login Button ─────────────────────────────── */
+        .google-btn {
+            background: #ffffff;
+            color: #3c4043;
+            transition: all 0.25s ease;
+        }
+        .google-btn:hover {
+            background: #f1f3f4;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.25);
+            transform: translateY(-2px);
+        }
+        .google-btn:active { transform: translateY(0); }
+
+        /* ─── Case Card ──────────────────────────────────────── */
+        .case-card {
+            transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .case-card:hover {
+            transform: translateY(-6px);
+            border-color: rgba(51, 129, 255, 0.4);
+            box-shadow: 0 20px 60px rgba(51, 129, 255, 0.12);
+        }
+
+        /* ─── Game Content Area Styles ───────────────────────── */
+        #game-content-area .info-step-container,
+        #game-content-area .mcq-step-container {
+            animation: slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        .clinical-text {
+            font-size: 1.05rem;
+            line-height: 1.85;
+            color: #d1d5db;
+            margin-bottom: 0.75rem;
+        }
+
+        .clinical-image-wrapper {
+            margin: 1.25rem 0;
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid rgba(51, 129, 255, 0.15);
+        }
+        .clinical-image-wrapper img {
+            width: 100%;
+            display: block;
+        }
+
+        .question-text {
+            font-size: 1.15rem;
+            font-weight: 600;
+            color: #f3f4f6;
+            margin-bottom: 1.25rem;
+            line-height: 1.7;
+        }
+
+        .points-badge {
+            display: inline-block;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #8ec5ff;
+            background: rgba(51, 129, 255, 0.12);
+            padding: 2px 10px;
+            border-radius: 20px;
+            vertical-align: middle;
+            margin-left: 6px;
+        }
+
+        /* ─── Choice Buttons ─────────────────────────────────── */
+        .choice-btn {
+            display: block;
+            width: 100%;
+            text-align: left;
+            padding: 14px 20px;
+            margin-bottom: 10px;
+            background: rgba(26, 34, 54, 0.7);
+            border: 1px solid rgba(51, 129, 255, 0.12);
+            border-radius: 12px;
+            color: #d1d5db;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .choice-btn:hover:not(:disabled) {
+            background: rgba(51, 129, 255, 0.1);
+            border-color: rgba(51, 129, 255, 0.35);
+            color: #ffffff;
+            transform: translateX(4px);
+        }
+        .choice-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .choice-label {
+            font-weight: 700;
+            color: #59a4ff;
+            margin-right: 4px;
+        }
+
+        /* ─── Primary Button ─────────────────────────────────── */
+        .primary-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 12px 28px;
+            background: linear-gradient(135deg, #3381ff, #1a5ff5);
+            color: #ffffff;
+            font-weight: 600;
+            font-size: 0.95rem;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            box-shadow: 0 4px 20px rgba(51, 129, 255, 0.25);
+        }
+        .primary-btn:hover {
+            background: linear-gradient(135deg, #59a4ff, #3381ff);
+            box-shadow: 0 6px 30px rgba(51, 129, 255, 0.4);
+            transform: translateY(-2px);
+        }
+        .primary-btn:active { transform: translateY(0); }
+
+        /* ─── Feedback Cards ─────────────────────────────────── */
+        .feedback-card {
+            padding: 20px 24px;
+            border-radius: 14px;
+            animation: slideUp 0.35s ease forwards;
+        }
+        .feedback-card h4 { font-size: 1.1rem; font-weight: 700; margin-bottom: 6px; }
+        .feedback-card p  { font-size: 0.95rem; line-height: 1.7; opacity: 0.9; }
+
+        .feedback-success {
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            color: #6ee7b7;
+        }
+        .feedback-success h4 { color: #34d399; }
+
+        .feedback-error {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.25);
+            color: #fca5a5;
+        }
+        .feedback-error h4 { color: #f87171; }
+
+        /* ─── Progress Bar ───────────────────────────────────── */
+        .progress-track {
+            height: 4px;
+            background: rgba(255,255,255,0.06);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #3381ff, #59a4ff);
+            border-radius: 4px;
+            transition: width 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        /* ─── Responsive ─────────────────────────────────────── */
+        @media (max-width: 640px) {
+            .question-text { font-size: 1rem; }
+            .clinical-text { font-size: 0.95rem; }
+            .choice-btn { padding: 12px 16px; font-size: 0.92rem; }
+        }
+    </style>
+</head>
+
+<body class="font-sans text-gray-100 min-h-screen relative overflow-x-hidden">
+
+    <!-- Ambient Background Orbs -->
+    <div class="orb orb-1 animate-float"></div>
+    <div class="orb orb-2 animate-float" style="animation-delay: -2s;"></div>
+    <div class="orb orb-3 animate-float" style="animation-delay: -4s;"></div>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         VIEW 1: LOGIN
+         ═══════════════════════════════════════════════════════════ -->
+    <div id="login-view" class="app-view active-view relative z-10">
+        <div class="min-h-screen flex items-center justify-center px-4">
+            <div class="glass-card rounded-3xl p-10 sm:p-14 max-w-md w-full text-center animate-slide-up">
+                
+                <!-- Logo / Icon -->
+                <div class="mb-8">
+                    <div class="w-20 h-20 mx-auto rounded-2xl bg-gradient-to-br from-brand-500 to-brand-700 flex items-center justify-center shadow-lg shadow-brand-500/20 animate-pulse-glow">
+                        <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9.75 3.104v5.714a2.25 2.25 0 0 1-.659 1.591L5 14.5M9.75 3.104c-.251.023-.501.05-.75.082m.75-.082a24.301 24.301 0 0 1 4.5 0m0 0v5.714a2.25 2.25 0 0 0 .659 1.591L19 14.5M14.25 3.104c.251.023.501.05.75.082M19 14.5l-2.47 2.47a2.25 2.25 0 0 1-1.59.659H9.06a2.25 2.25 0 0 1-1.591-.659L5 14.5m14 0V17a2.25 2.25 0 0 1-2.25 2.25H7.25A2.25 2.25 0 0 1 5 17v-2.5" />
+                        </svg>
+                    </div>
+                </div>
+
+                <h1 class="text-3xl sm:text-4xl font-extrabold bg-gradient-to-r from-white to-brand-300 bg-clip-text text-transparent mb-3">
+                    Clinical Case Simulator
+                </h1>
+                <p class="text-gray-400 text-sm sm:text-base mb-10 leading-relaxed">
+                    ระบบจำลองเคสทางคลินิกเชิงโต้ตอบ<br />
+                    เพื่อการเรียนรู้อย่างมีประสิทธิภาพ
+                </p>
+
+                <!-- Mock Google Login Button -->
+                <button id="btn-google-login" class="google-btn w-full flex items-center justify-center gap-3 px-6 py-3.5 rounded-xl font-semibold text-base shadow-md">
+                    <svg class="w-5 h-5" viewBox="0 0 24 24">
+                        <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/>
+                        <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+                        <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
+                        <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+                    </svg>
+                    เข้าสู่ระบบด้วย Google
+                </button>
+
+                <p class="text-gray-600 text-xs mt-6">Prototype v1.0 — Mock Authentication</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         VIEW 2: DASHBOARD
+         ═══════════════════════════════════════════════════════════ -->
+    <div id="dashboard-view" class="app-view hidden-view relative z-10">
+        <div class="min-h-screen px-4 py-10 sm:py-16">
+            <div class="max-w-4xl mx-auto">
+                
+                <!-- Dashboard Header -->
+                <div class="mb-10 animate-fade-in">
+                    <div class="flex items-center justify-between flex-wrap gap-4">
+                        <div>
+                            <h2 class="text-2xl sm:text-3xl font-bold text-white mb-1">Dashboard</h2>
+                            <p class="text-gray-400 text-sm">เลือกเคสเพื่อเริ่มต้นการเรียนรู้</p>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <div id="user-avatar-badge" class="w-9 h-9 rounded-full bg-gradient-to-br from-brand-500 to-brand-700 flex items-center justify-center text-white text-sm font-bold shadow-md overflow-hidden">
+                                <span id="user-avatar-initial">U</span>
+                            </div>
+                            <button id="btn-logout" class="text-gray-500 hover:text-gray-300 text-sm transition-colors">
+                                ออกจากระบบ
+                            </button>
+                        </div>
+                    </div>
+                    <div class="mt-4 h-px bg-gradient-to-r from-brand-500/30 via-brand-500/10 to-transparent"></div>
+                </div>
+
+                <!-- Section: Available Cases -->
+                <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-5">Available Cases</h3>
+
+                <!-- Case 001 Card -->
+                <div class="case-card glass-card rounded-2xl p-6 sm:p-8 cursor-pointer animate-slide-up" id="card-case-001">
+                    <div class="flex items-start gap-5">
+                        <!-- Case Icon -->
+                        <div class="flex-shrink-0 w-14 h-14 rounded-xl bg-gradient-to-br from-emerald-500/20 to-emerald-700/10 border border-emerald-500/20 flex items-center justify-center">
+                            <svg class="w-7 h-7 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25" />
+                            </svg>
+                        </div>
+
+                        <!-- Case Info -->
+                        <div class="flex-1 min-w-0">
+                            <div class="flex items-center gap-2 mb-1">
+                                <span class="text-[10px] font-bold uppercase tracking-widest text-emerald-400 bg-emerald-400/10 px-2.5 py-0.5 rounded-full">Case 001</span>
+                                <span class="text-[10px] font-medium text-gray-500 bg-gray-500/10 px-2 py-0.5 rounded-full">4 Stages · 15 Steps</span>
+                            </div>
+                            <h4 class="text-lg sm:text-xl font-bold text-white mb-2 leading-snug">
+                                Clinical Case: Patient Assessment & Diagnosis
+                            </h4>
+                            <p class="text-gray-400 text-sm leading-relaxed mb-4">
+                                ฝึกฝนกระบวนการซักประวัติ ตรวจร่างกาย วิเคราะห์ผลตรวจ และวินิจฉัยโรคอย่างเป็นระบบ
+                            </p>
+                            <div class="flex items-center gap-4 flex-wrap">
+                                <button id="btn-start-case-001" class="primary-btn text-sm">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.347a1.125 1.125 0 0 1 0 1.972l-11.54 6.347a1.125 1.125 0 0 1-1.667-.986V5.653Z" />
+                                    </svg>
+                                    Start Case 001
+                                </button>
+                                <span class="text-xs text-gray-500 flex items-center gap-1.5">
+                                    <svg class="w-3.5 h-3.5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                                    </svg>
+                                    ~15 นาที
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         VIEW 3: GAME
+         ═══════════════════════════════════════════════════════════ -->
+    <div id="game-view" class="app-view hidden-view relative z-10">
+        <div class="min-h-screen px-4 py-6 sm:py-10">
+            <div class="max-w-3xl mx-auto">
+
+                <!-- Game Header Bar -->
+                <div class="glass-card rounded-2xl px-5 sm:px-6 py-4 mb-6 animate-fade-in">
+                    <div class="flex items-center justify-between flex-wrap gap-3">
+                        <!-- Left: Back + Stage Title -->
+                        <div class="flex items-center gap-3">
+                            <button id="btn-back-dashboard" class="w-9 h-9 rounded-xl bg-white/5 hover:bg-white/10 flex items-center justify-center transition-colors" title="กลับไป Dashboard">
+                                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" />
+                                </svg>
+                            </button>
+                            <div>
+                                <p id="stage-title" class="text-sm font-semibold text-white leading-tight">Case 001</p>
+                                <p id="step-indicator" class="text-[11px] text-gray-500 mt-0.5">กำลังโหลด...</p>
+                            </div>
+                        </div>
+
+                        <!-- Right: Score Badge -->
+                        <div id="score-display" class="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-brand-500/10 to-brand-600/5 border border-brand-500/15">
+                            <svg class="w-4 h-4 text-brand-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M11.48 3.499a.562.562 0 0 1 1.04 0l2.125 5.111a.563.563 0 0 0 .475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 0 0-.182.557l1.285 5.385a.562.562 0 0 1-.84.61l-4.725-2.885a.562.562 0 0 0-.586 0L6.982 20.54a.562.562 0 0 1-.84-.61l1.285-5.386a.562.562 0 0 0-.182-.557l-4.204-3.602a.562.562 0 0 1 .321-.988l5.518-.442a.563.563 0 0 0 .475-.345L11.48 3.5Z" />
+                            </svg>
+                            <span class="text-sm font-bold text-brand-300"><span id="current-score">0</span> <span class="text-gray-500 font-normal">/ <span id="max-score">0</span></span></span>
+                        </div>
+                    </div>
+
+                    <!-- Progress Bar -->
+                    <div class="progress-track mt-3">
+                        <div id="progress-bar" class="progress-fill" style="width: 0%"></div>
+                    </div>
+                </div>
+
+                <!-- Game Content Area (Injected by UIController) -->
+                <div id="game-content-area" class="glass-card rounded-2xl p-6 sm:p-8 min-h-[300px]">
+                    <div class="flex items-center justify-center h-48">
+                        <div class="text-center">
+                            <div class="w-10 h-10 border-2 border-brand-500/30 border-t-brand-400 rounded-full animate-spin mx-auto mb-4"></div>
+                            <p class="text-gray-500 text-sm">กำลังโหลดข้อมูลเคส...</p>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         TOAST NOTIFICATION
+         ═══════════════════════════════════════════════════════════ -->
+    <div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 hidden">
+        <div class="glass-card rounded-xl px-5 py-3 text-sm font-medium text-white shadow-2xl border-red-500/20">
+            <span id="toast-message"></span>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         SCRIPTS
+         ═══════════════════════════════════════════════════════════ -->
+    <script src="./js/firebase-service.js"></script>
+    <script src="./js/ui-controller.js"></script>
+    <script src="./js/game-engine.js"></script>
+
+    <!-- Launch Script: Wiring & Integration -->
+    <script>
+    (function() {
+        'use strict';
+
+        // ─── DOM References ────────────────────────────────────
+        const btnLogin      = document.getElementById('btn-google-login');
+        const btnLogout      = document.getElementById('btn-logout');
+        const btnStartCase   = document.getElementById('btn-start-case-001');
+        const btnBack        = document.getElementById('btn-back-dashboard');
+        const stageTitle     = document.getElementById('stage-title');
+        const stepIndicator  = document.getElementById('step-indicator');
+        const currentScoreEl = document.getElementById('current-score');
+        const maxScoreEl     = document.getElementById('max-score');
+        const progressBar    = document.getElementById('progress-bar');
+        const toastEl        = document.getElementById('toast');
+        const toastMsg       = document.getElementById('toast-message');
+
+        // ─── Toast Utility ─────────────────────────────────────
+        function showToast(message, durationMs = 3000) {
+            toastMsg.textContent = message;
+            toastEl.classList.remove('hidden');
+            toastEl.style.animation = 'slideUp 0.3s ease forwards';
+            setTimeout(() => {
+                toastEl.classList.add('hidden');
+            }, durationMs);
+        }
+
+        // ─── Login Flow ────────────────────────────────────────
+        btnLogin.addEventListener('click', async function() {
+            try {
+                if (window.AuthService) {
+                    await window.AuthService.loginWithGoogle();
+                } else {
+                    console.log('[Auth] Mock Google login fallback.');
+                }
+                if (typeof UIController !== 'undefined' && typeof UIController.showDashboard === 'function') {
+                    UIController.showDashboard();
+                } else if (typeof UIController !== 'undefined' && typeof UIController.navigateTo === 'function') {
+                    UIController.navigateTo('dashboard');
+                } else if (window.UIController) {
+                    window.UIController.navigateTo('dashboard');
+                }
+            } catch (err) {
+                console.error('[Auth Login Error]', err);
+                showToast(`❌ เข้าสู่ระบบไม่สำเร็จ: ${err.message || 'เกิดข้อผิดพลาด'}`);
+            }
+        });
+
+        btnLogout.addEventListener('click', async function() {
+            try {
+                if (window.AuthService) {
+                    await window.AuthService.logout();
+                }
+            } catch (err) {
+                console.error('[Auth Logout Error]', err);
+            }
+            UIController.navigateTo('login');
+        });
+
+        // Sync User Avatar/Initial on Auth State Change
+        if (window.AuthService) {
+            window.AuthService.onAuthStateChanged(function(user) {
+                const initialEl = document.getElementById('user-avatar-initial');
+                const badgeEl   = document.getElementById('user-avatar-badge');
+                if (user) {
+                    const name = user.displayName || user.email || 'User';
+                    if (user.photoURL && badgeEl) {
+                        badgeEl.innerHTML = `<img src="${user.photoURL}" alt="${name}" class="w-full h-full object-cover" />`;
+                    } else if (initialEl) {
+                        initialEl.textContent = name.charAt(0).toUpperCase();
+                    }
+                } else if (initialEl) {
+                    initialEl.textContent = 'U';
+                }
+            });
+        }
+
+        // ─── Back to Dashboard ─────────────────────────────────
+        btnBack.addEventListener('click', function() {
+            if (confirm('ออกจากเคสนี้? ความก้าวหน้าจะถูกบันทึก')) {
+                UIController.navigateTo('dashboard');
+            }
+        });
+
+        // ─── Start Case 001 ────────────────────────────────────
+        btnStartCase.addEventListener('click', async function() {
+            btnStartCase.disabled = true;
+            btnStartCase.innerHTML = `
+                <div class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                กำลังโหลด...
+            `;
+
+            try {
+                const response = await fetch('./data/case_001.json');
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const caseData = await response.json();
+                console.log('[Launcher] case_001.json loaded successfully.', caseData);
+
+                // Switch to game view
+                UIController.navigateTo('game');
+
+                // Initialize the Game Engine with loaded case data
+                const success = GameEngine.initGame(caseData);
+
+                if (success) {
+                    // Update header with case metadata
+                    stageTitle.textContent = caseData.title || `Case ${caseData.case_id}`;
+                    const engineState = GameEngine.getState();
+                    maxScoreEl.textContent = engineState.maxPossibleScore;
+                    updateHUD();
+                    console.log('[Launcher] Game started successfully.');
+                } else {
+                    showToast('❌ ไม่สามารถเริ่มเคสได้ — ข้อมูล JSON ไม่ถูกต้อง');
+                    UIController.navigateTo('dashboard');
+                }
+
+            } catch (error) {
+                console.error('[Launcher Error]', error);
+                showToast(`❌ โหลดข้อมูลเคสล้มเหลว: ${error.message}`);
+                UIController.navigateTo('dashboard');
+            } finally {
+                // Restore button state
+                btnStartCase.disabled = false;
+                btnStartCase.innerHTML = `
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.347a1.125 1.125 0 0 1 0 1.972l-11.54 6.347a1.125 1.125 0 0 1-1.667-.986V5.653Z" />
+                    </svg>
+                    Start Case 001
+                `;
+            }
+        });
+
+        // ─── HUD Update Loop ───────────────────────────────────
+        // Polls GameEngine state to keep Score, Progress, and Step Indicator in sync.
+        // Uses MutationObserver on #game-content-area as the trigger for efficient updates.
+        function updateHUD() {
+            const engineState = GameEngine.getState();
+            if (!engineState) return;
+
+            // Score
+            currentScoreEl.textContent = engineState.currentScore;
+            maxScoreEl.textContent = engineState.maxPossibleScore;
+
+            // Step indicator
+            if (engineState.totalSteps > 0) {
+                stepIndicator.textContent = `ข้อ ${engineState.currentStepIndex + 1} / ${engineState.totalSteps}`;
+            }
+
+            // Progress bar
+            if (engineState.totalSteps > 0) {
+                const pct = ((engineState.currentStepIndex + 1) / engineState.totalSteps) * 100;
+                progressBar.style.width = `${pct}%`;
+            }
+        }
+
+        // Observe DOM changes in game-content-area to auto-update HUD
+        const gameArea = document.getElementById('game-content-area');
+        if (gameArea) {
+            const observer = new MutationObserver(function() {
+                updateHUD();
+            });
+            observer.observe(gameArea, { childList: true, subtree: true });
+        }
+
+        console.log('[Launcher] System wiring complete. Ready for case_001.json.');
+    })();
+    </script>
+
+</body>
+</html>
