@@ -1,0 +1,55 @@
+rules_version = '2';
+
+// Clinical Case Simulator — Firestore Security Rules
+// Paste into: Firebase Console → Firestore Database → Rules → Publish
+//
+// Design goals:
+//   1. A signed-in user may create ONLY their own attempt record.
+//   2. Records are an immutable audit trail — no edits, no deletes.
+//   3. Any signed-in user may read attempts, which is what makes the
+//      Leaderboard and My Stats panels work.
+//   4. Anonymous (guest) sessions may read but NOT write, matching the
+//      "Progress will NOT be saved in Anonymous Mode" notice in the UI.
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    match /user_attempts/{attemptId} {
+
+      // ── READ ──────────────────────────────────────────────
+      // Needed by DBService.getMyAttempts() and getLeaderboard().
+      allow read: if request.auth != null;
+
+      // ── CREATE ────────────────────────────────────────────
+      allow create: if request.auth != null
+        // Guests cannot write. Drop this line to let anonymous users save.
+        && request.auth.token.firebase.sign_in_provider != 'anonymous'
+
+        // The record must belong to the caller — no writing as someone else.
+        && request.resource.data.uid == request.auth.uid
+
+        // Shape and sanity checks on the score fields.
+        && request.resource.data.caseId is string
+        && request.resource.data.finalScore is number
+        && request.resource.data.maxScore is number
+        && request.resource.data.finalScore >= 0
+        && request.resource.data.maxScore >= 0
+        && request.resource.data.finalScore <= request.resource.data.maxScore
+        && request.resource.data.completedSteps is number
+        && request.resource.data.totalSteps is number
+        && request.resource.data.isFatal is bool
+
+        // Server timestamp only — clients cannot backdate a result.
+        && request.resource.data.completedAt == request.time;
+
+      // ── UPDATE / DELETE ───────────────────────────────────
+      // Immutable score audit: once written, a result is final.
+      allow update, delete: if false;
+    }
+
+    // Everything else stays closed.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
