@@ -106,6 +106,9 @@ const GameEngine = (function() {
             case 'mcq':
                 UIController.renderMCQ(stepData);
                 break;
+            case 'mcq_multi':
+                UIController.renderMCQMulti(stepData);
+                break;
             default:
                 console.warn(`[Render Warning] Unknown step type "${stepData.type}" at index ${state.currentStepIndex}. Rendering as info.`);
                 UIController.renderInfo(stepData);
@@ -132,7 +135,7 @@ const GameEngine = (function() {
         let maxScore = 0;
         sequence.forEach(ref => {
             const step = caseJson.stages[ref.stageId].steps[ref.stepId];
-            if (step && step.type === 'mcq' && step.point_value) {
+            if (step && (step.type === 'mcq' || step.type === 'mcq_multi') && step.point_value) {
                 maxScore += step.point_value;
             }
         });
@@ -204,6 +207,78 @@ const GameEngine = (function() {
         // Enter Two-Phase lock: wait for user to acknowledge feedback
         state.isWaitingForNext = true;
         UIController.showFeedback(isCorrect, feedbackMsg);
+    }
+
+    // ─── Answer Evaluation (Multi-select, partial credit) ──────
+    // selectedIds: array of choice ids the learner submitted.
+    // Scoring: point_per_correct for each correct id selected.
+    // The UI caps selections at select_count, so "select everything"
+    // cannot farm full marks.
+    function evaluateMultiAnswer(selectedIds) {
+        if (state.isGameOver || state.isWaitingForNext) return;
+
+        if (!state.caseData || !state.currentStageId || !state.currentStepId) {
+            console.error('[Engine Schema Error] Missing navigation state context.');
+            return;
+        }
+
+        const stepData = state.caseData.stages[state.currentStageId].steps[state.currentStepId];
+        if (!stepData || !Array.isArray(stepData.choices)) {
+            console.error(`[Engine Schema Error] Step data invalid for step: ${state.currentStepId}`);
+            return;
+        }
+
+        const selected = Array.isArray(selectedIds) ? selectedIds : [];
+        if (selected.length === 0) return;
+
+        // Fatal guard: any selected fatal choice ends the case immediately.
+        const fatalPick = stepData.choices.find(c => c.is_fatal && selected.indexOf(c.id) !== -1);
+        if (fatalPick) {
+            state.isGameOver = true;
+            handleGameOver(stepData.feedback ? stepData.feedback.fatal_message : 'Fatal Error Committed.');
+            return;
+        }
+
+        const answerKey = Array.isArray(stepData.correct_answers)
+            ? stepData.correct_answers
+            : stepData.choices.filter(c => c.is_correct).map(c => c.id);
+
+        const hits   = selected.filter(id => answerKey.indexOf(id) !== -1);
+        const misses = selected.filter(id => answerKey.indexOf(id) === -1);
+
+        const perCorrect = stepData.point_per_correct
+            || Math.round((stepData.point_value || 0) / Math.max(answerKey.length, 1));
+        const earned = hits.length * perCorrect;
+
+        state.currentScore += earned;
+
+        const allCorrect = hits.length === answerKey.length && misses.length === 0;
+        const noneCorrect = hits.length === 0;
+
+        if (!allCorrect) {
+            if (!state.mistakeHistory[state.currentStepId]) {
+                state.mistakeHistory[state.currentStepId] = [];
+            }
+            misses.forEach(id => state.mistakeHistory[state.currentStepId].push(id));
+        }
+
+        console.log(`[Score Update] ${hits.length}/${answerKey.length} correct → +${earned} → Total: ${state.currentScore}/${state.maxPossibleScore}`);
+
+        const fb = stepData.feedback || {};
+        const message = allCorrect ? fb.correct
+                      : noneCorrect ? fb.incorrect
+                      : (fb.partial || fb.incorrect);
+
+        state.isWaitingForNext = true;
+        UIController.showMultiFeedback({
+            allCorrect,
+            earned,
+            possible: answerKey.length * perCorrect,
+            hits,
+            misses,
+            answerKey,
+            message
+        });
     }
 
     // ─── Step Transition (Sequencer Core) ──────────────────────
@@ -284,6 +359,7 @@ const GameEngine = (function() {
     return {
         initGame,
         evaluateAnswer,
+        evaluateMultiAnswer,
         proceedToNextStep,
 
         // Utility: Manual step override (for debugging / admin tools)

@@ -32,6 +32,11 @@ const UIController = (function() {
     let soapTab    = 'subjective';
     let paused     = false;
 
+    // Multi-select working state for the current step
+    let multiSelection = new Set();
+    let multiLimit     = 1;
+    let multiPerPoint  = 0;
+
     // ─── Helpers ───────────────────────────────────────────────
     function esc(str) {
         return String(str == null ? '' : str)
@@ -48,12 +53,26 @@ const UIController = (function() {
 
     // ─── Event Delegation (both possible hosts) ────────────────
     function handleClick(event) {
+        // Multi-select toggle (must be tested before .choice-btn)
+        const multiBtn = event.target.closest('.choice-multi');
+        if (multiBtn && !multiBtn.disabled) {
+            toggleMultiChoice(multiBtn);
+            return;
+        }
+
+        const submitBtn = event.target.closest('.submit-decision-btn');
+        if (submitBtn && !submitBtn.disabled) {
+            GameEngine.evaluateMultiAnswer(Array.from(multiSelection));
+            return;
+        }
+
         const choiceBtn = event.target.closest('.choice-btn');
         if (choiceBtn && !choiceBtn.disabled) {
             const id = choiceBtn.dataset.choiceId;
             if (id) GameEngine.evaluateAnswer(id);
             return;
         }
+
         const nextBtn = event.target.closest('.next-step-btn');
         if (nextBtn) {
             GameEngine.proceedToNextStep();
@@ -136,6 +155,49 @@ const UIController = (function() {
         }).join('');
     }
 
+    // ─── CPG / Differential Diagnosis block ────────────────────
+    // Column 0 is the case's own condition and is highlighted.
+    function renderCPGBlock(cpg) {
+        if (!cpg || !Array.isArray(cpg.rows) || cpg.rows.length === 0) {
+            return `
+                <div class="pt-2 border-t border-navy-700/50">
+                    <p class="text-[.68rem] text-slate-500 leading-relaxed">
+                        แนวทางเวชปฏิบัติเฉพาะเคสยังไม่ได้บรรจุในไฟล์ข้อมูล — เพิ่มฟิลด์
+                        <code class="text-teal-400">cpg</code> ใน case JSON เพื่อแสดงที่นี่
+                    </p>
+                </div>`;
+        }
+
+        const cols = cpg.columns || [];
+
+        const blocks = cpg.rows.map(row => {
+            const cells = (row.values || []).map((v, i) => `
+                <div class="rounded-lg p-2 ${i === 0
+                    ? 'bg-teal-400/[.07] border border-teal-400/25'
+                    : 'bg-navy-800/60 border border-navy-700/50'}">
+                    <p class="text-[.58rem] font-bold uppercase tracking-wide mb-.5 ${i === 0 ? 'text-teal-400' : 'text-slate-500'}">
+                        ${esc(cols[i] || '—')}
+                    </p>
+                    <p class="text-[.68rem] leading-relaxed ${i === 0 ? 'text-slate-200' : 'text-slate-400'}">${esc(v)}</p>
+                </div>`).join('');
+
+            return `
+                <div>
+                    <p class="text-[.6rem] font-bold tracking-widest text-slate-500 uppercase mb-1.5">${esc(row.label)}</p>
+                    <div class="flex flex-col gap-1.5">${cells}</div>
+                </div>`;
+        }).join('');
+
+        return `
+            <div class="pt-3 border-t border-navy-700/50 space-y-3">
+                <div>
+                    <p class="text-xs font-extrabold text-white">${esc(cpg.title || 'CPG')}</p>
+                    ${cpg.note ? `<p class="text-[.62rem] text-slate-500 mt-.5 leading-relaxed">${esc(cpg.note)}</p>` : ''}
+                </div>
+                ${blocks}
+            </div>`;
+    }
+
     // ─── Patient Chart (left SOAP panel) ───────────────────────
     function renderPatientChart(caseData) {
         if (!soapContent) return;
@@ -185,12 +247,7 @@ const UIController = (function() {
                         <p class="text-[.6rem] font-bold tracking-widest text-slate-500 uppercase mb-1.5">Topics</p>
                         <div class="flex flex-wrap gap-1.5">${tags || '<span class="text-slate-500 text-[.72rem]">—</span>'}</div>
                     </div>
-                    <div class="pt-2 border-t border-navy-700/50">
-                        <p class="text-[.68rem] text-slate-500 leading-relaxed">
-                            แนวทางเวชปฏิบัติเฉพาะเคสยังไม่ได้บรรจุในไฟล์ข้อมูล — เพิ่มฟิลด์
-                            <code class="text-teal-400">cpg</code> ใน case JSON เพื่อแสดงที่นี่
-                        </p>
-                    </div>
+                    ${renderCPGBlock(data.cpg)}
                 </div>`;
         }
     }
@@ -314,6 +371,151 @@ const UIController = (function() {
                     <p class="text-[.7rem] text-slate-500">เลือกคำตอบที่แผง Clinical Decision Engine ด้านขวา →</p>
                 </div>`;
         }
+    }
+
+    // ─── Render: Multi-select MCQ ──────────────────────────────
+    function renderMCQMulti(stepData) {
+        const host  = decisionHost();
+        const limit = stepData.select_count || 1;
+        const per   = stepData.point_per_correct
+            || Math.round((stepData.point_value || 0) / Math.max(limit, 1));
+
+        multiSelection = new Set();
+        multiLimit     = limit;
+        multiPerPoint  = per;
+
+        const choices = (stepData.choices || []).map(c => `
+            <button class="choice-btn choice-multi" data-choice-id="${esc(c.id)}" aria-pressed="false">
+                <span class="choice-box" aria-hidden="true"></span>
+                <span class="choice-key">${esc(c.id)}</span>
+                <span class="flex-1">${esc(c.text)}</span>
+                <span class="text-[.62rem] font-bold text-gold-400 flex-shrink-0 mt-.5">+${per}</span>
+            </button>`).join('');
+
+        host.innerHTML = `
+            <div class="animate-fade-in flex flex-col gap-3">
+                <div>
+                    <p class="text-[.6rem] font-bold tracking-widest text-teal-400 uppercase mb-1.5">Clinical Decision</p>
+                    <h3 class="text-sm font-bold text-white leading-relaxed">${esc(stepData.question)}</h3>
+                    <p class="text-[.68rem] text-teal-400/90 mt-1.5">
+                        ⓘ เลือก <strong>${limit}</strong> ข้อ — Partial Credit Enabled
+                    </p>
+                </div>
+
+                <div class="flex flex-col gap-2">${choices}</div>
+
+                <div class="sticky bottom-0 pt-2 -mx-.5 bg-gradient-to-t from-navy-800 via-navy-800/95 to-transparent">
+                    <div class="flex items-center justify-between text-[.7rem] mb-2">
+                        <span class="text-slate-400">
+                            <strong id="multi-count" class="text-white">0</strong> / ${limit} selected
+                        </span>
+                        <span class="text-slate-400">Est. <strong id="multi-est" class="text-gold-400">+0</strong> pts</span>
+                    </div>
+                    <button class="submit-decision-btn primary-btn w-full" disabled>
+                        Submit Clinical Decision ✕
+                    </button>
+                </div>
+
+                <div id="feedback-area"></div>
+            </div>`;
+
+        // Mirror context into the centre column when the panel owns the question
+        if (host === decisionBody && gameArea) {
+            gameArea.innerHTML = `
+                <div class="h-full flex flex-col items-center justify-center text-center gap-2.5 py-6 animate-fade-in">
+                    <span class="tag-pill !bg-gold-400/12 !text-gold-400 !border-gold-400/35">⚡ ${stepData.point_value || 0} pts</span>
+                    <p class="text-sm font-bold text-white max-w-md leading-relaxed">${esc(stepData.question)}</p>
+                    <p class="text-[.7rem] text-teal-400/90">เลือก ${limit} ข้อ — Partial Credit</p>
+                    <p class="text-[.7rem] text-slate-500">ตอบที่แผง Clinical Decision Engine ด้านขวา →</p>
+                </div>`;
+        }
+    }
+
+    // Toggle one option, enforcing the select_count cap.
+    function toggleMultiChoice(btn) {
+        const id = btn.dataset.choiceId;
+        if (!id) return;
+
+        if (multiSelection.has(id)) {
+            multiSelection.delete(id);
+            btn.classList.remove('is-selected');
+            btn.setAttribute('aria-pressed', 'false');
+        } else {
+            if (multiSelection.size >= multiLimit) {
+                // At the cap — flash the counter instead of silently ignoring
+                const counter = document.getElementById('multi-count');
+                if (counter) {
+                    counter.classList.add('text-acuity-500');
+                    setTimeout(() => counter.classList.remove('text-acuity-500'), 450);
+                }
+                return;
+            }
+            multiSelection.add(id);
+            btn.classList.add('is-selected');
+            btn.setAttribute('aria-pressed', 'true');
+        }
+
+        const host    = decisionHost();
+        const count   = document.getElementById('multi-count');
+        const est     = document.getElementById('multi-est');
+        const submit  = host.querySelector('.submit-decision-btn');
+
+        if (count) count.textContent = multiSelection.size;
+        if (est)   est.textContent = '+' + (multiSelection.size * multiPerPoint);
+        if (submit) {
+            const ready = multiSelection.size === multiLimit;
+            submit.disabled = multiSelection.size === 0;
+            submit.innerHTML = ready
+                ? 'Submit Clinical Decision ✓'
+                : `Submit Clinical Decision <span class="opacity-70">(${multiSelection.size}/${multiLimit})</span>`;
+        }
+    }
+
+    // ─── Render: Multi-select Feedback ─────────────────────────
+    function showMultiFeedback(result) {
+        const host = decisionHost();
+
+        // Mark every option, then lock the whole set
+        host.querySelectorAll('.choice-multi').forEach(btn => {
+            const id = btn.dataset.choiceId;
+            const inKey      = result.answerKey.indexOf(id) !== -1;
+            const wasPicked  = result.hits.indexOf(id) !== -1 || result.misses.indexOf(id) !== -1;
+
+            if (inKey) btn.classList.add('is-correct');
+            else if (wasPicked) btn.classList.add('is-wrong');
+            btn.disabled = true;
+        });
+
+        const submit = host.querySelector('.submit-decision-btn');
+        if (submit) submit.remove();
+
+        const feedbackArea = host.querySelector('#feedback-area');
+        if (!feedbackArea) return;
+
+        const tone = result.allCorrect
+            ? { cls: 'border-teal-400/50 bg-teal-400/10', text: 'text-teal-400', icon: '✓', title: 'ถูกต้องทั้งหมด!' }
+            : result.earned > 0
+                ? { cls: 'border-gold-400/50 bg-gold-400/10', text: 'text-gold-400', icon: '◐', title: 'ถูกบางส่วน' }
+                : { cls: 'border-acuity-500/50 bg-acuity-500/10', text: 'text-acuity-500', icon: '✕', title: 'ยังไม่ถูกต้อง' };
+
+        feedbackArea.innerHTML = `
+            <div class="rounded-xl border ${tone.cls} p-3.5 mt-1 animate-slide-up">
+                <div class="flex items-center gap-2 mb-1.5">
+                    <span class="w-5 h-5 rounded-full grid place-items-center text-[.7rem] font-bold ${tone.text} border border-current">${tone.icon}</span>
+                    <h4 class="text-xs font-extrabold ${tone.text}">${tone.title}</h4>
+                    <span class="ml-auto text-[.7rem] font-mono font-bold ${tone.text}">
+                        +${result.earned}<span class="text-slate-500">/${result.possible}</span>
+                    </span>
+                </div>
+                <p class="text-[.7rem] text-slate-400 mb-1.5">
+                    ตอบถูก ${result.hits.length} จาก ${result.answerKey.length} ข้อ
+                    · เฉลย: <strong class="text-teal-400">${result.answerKey.join(', ')}</strong>
+                </p>
+                <p class="text-[.72rem] text-slate-300 leading-relaxed">${esc(result.message || '')}</p>
+                <button class="next-step-btn primary-btn w-full mt-3">ขั้นตอนถัดไป →</button>
+            </div>`;
+
+        feedbackArea.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
 
     // ─── Render: Feedback ──────────────────────────────────────
@@ -536,7 +738,9 @@ const UIController = (function() {
         showDashboard: function() { switchView('dashboard'); },
         renderInfo: renderInfoStep,
         renderMCQ: renderMCQStep,
+        renderMCQMulti,
         showFeedback: renderFeedback,
+        showMultiFeedback,
 
         // Simulation chrome
         renderCaseHeader,

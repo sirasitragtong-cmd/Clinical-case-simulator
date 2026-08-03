@@ -170,6 +170,37 @@
         }
         .choice-btn:hover:not(:disabled) .choice-key { background: rgba(72,229,194,.22); color: #48E5C2; }
 
+        /* ─── Multi-select checkbox cards ────────────────────── */
+        .choice-box {
+            flex-shrink: 0;
+            width: 1.1rem; height: 1.1rem;
+            margin-top: .22rem;
+            border-radius: .3rem;
+            border: 1.5px solid rgba(100,116,139,.75);
+            background: rgba(11,19,43,.6);
+            display: grid; place-items: center;
+            transition: all .15s ease;
+        }
+        .choice-multi.is-selected {
+            border-color: rgba(72,229,194,.75);
+            background: rgba(72,229,194,.10);
+        }
+        .choice-multi.is-selected .choice-box {
+            border-color: #48E5C2;
+            background: #48E5C2;
+        }
+        .choice-multi.is-selected .choice-box::after {
+            content: '✓';
+            font-size: .68rem; font-weight: 900; line-height: 1;
+            color: #06231D;
+        }
+        .choice-multi.is-selected .choice-key { background: rgba(72,229,194,.22); color: #48E5C2; }
+        /* Post-submit marking wins over the selected state */
+        .choice-multi.is-correct .choice-box { border-color: #48E5C2; background: #48E5C2; }
+        .choice-multi.is-correct .choice-box::after { content: '✓'; font-size: .68rem; font-weight: 900; color: #06231D; }
+        .choice-multi.is-wrong .choice-box { border-color: #E63946; background: #E63946; }
+        .choice-multi.is-wrong .choice-box::after { content: '✕'; font-size: .62rem; font-weight: 900; color: #fff; }
+
         /* ─── Buttons ────────────────────────────────────────── */
         .primary-btn {
             display: inline-flex; align-items: center; justify-content: center; gap: .5rem;
@@ -707,9 +738,9 @@
 <!-- ═══════════════════════════════════════════════════════════════
      SCRIPTS
      ═══════════════════════════════════════════════════════════════ -->
-<script src="./js/firebase-service.js?v=20260803d"></script>
-<script src="./js/ui-controller.js?v=20260803d"></script>
-<script src="./js/game-engine.js?v=20260803d"></script>
+<script src="./js/firebase-service.js?v=20260803f"></script>
+<script src="./js/ui-controller.js?v=20260803f"></script>
+<script src="./js/game-engine.js?v=20260803f"></script>
 
 <!-- Launch Script: Wiring & Integration -->
 <script>
@@ -892,7 +923,7 @@
     // ─── Preload case metadata for the quest map ───────────
     async function preloadCase() {
         try {
-            const res = await fetch('./data/case_001.json?v=20260803d');
+            const res = await fetch('./data/case_001.json?v=20260803f');
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
             caseCache = await res.json();
             console.log('[Launcher] Case metadata preloaded.', caseCache.case_id);
@@ -911,7 +942,7 @@
 
         try {
             const caseData = caseCache || await (async () => {
-                const r = await fetch('./data/case_001.json?v=20260803d');
+                const r = await fetch('./data/case_001.json?v=20260803f');
                 if (!r.ok) throw new Error(`HTTP ${r.status}: ${r.statusText}`);
                 return r.json();
             })();
@@ -964,10 +995,14 @@
         }
     }
 
-    const gameArea = document.getElementById('game-content-area');
-    if (gameArea) {
-        new MutationObserver(updateHUD).observe(gameArea, { childList: true, subtree: true });
-    }
+    // Watch BOTH render hosts: on wide screens the decision panel owns the
+    // question, so answering never mutates the centre column and the HUD
+    // would otherwise never refresh.
+    const hudObserver = new MutationObserver(updateHUD);
+    ['game-content-area', 'decision-content'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) hudObserver.observe(el, { childList: true, subtree: true });
+    });
 
     console.log('[Launcher] System wiring complete. Medical RPG theme active.');
 })();
