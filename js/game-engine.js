@@ -54,6 +54,20 @@ const GameEngine = (function() {
         return sequence;
     }
 
+    // ─── Read-only state snapshot (shared by getState + end screens) ───
+    function getStateSnapshot() {
+        return {
+            currentStepIndex: state.currentStepIndex,
+            totalSteps: state.stepSequence.length,
+            currentScore: state.currentScore,
+            maxPossibleScore: state.maxPossibleScore,
+            isGameOver: state.isGameOver,
+            isWaitingForNext: state.isWaitingForNext,
+            currentStageId: state.currentStageId,
+            currentStepId: state.currentStepId
+        };
+    }
+
     // ─── Render Pipeline ───────────────────────────────────────
     // Reads the current step reference and dispatches to the correct UI renderer.
     function renderCurrentStep() {
@@ -221,7 +235,10 @@ const GameEngine = (function() {
 
         saveProgressToFirestore();
 
-        // TODO: UIController.renderSummary(state) — Summary screen after case completion
+        state.isGameOver = true;
+        if (window.UIController && typeof UIController.renderSummary === 'function') {
+            UIController.renderSummary(getStateSnapshot());
+        }
     }
 
     // ─── Game Over (Fatal) ─────────────────────────────────────
@@ -229,7 +246,9 @@ const GameEngine = (function() {
         console.warn(`[Engine Alert] GAME OVER: ${fatalMessage}`);
         saveProgressToFirestore();
 
-        // TODO: UIController.renderGameOver(fatalMessage) — Fatal error screen
+        if (window.UIController && typeof UIController.renderGameOver === 'function') {
+            UIController.renderGameOver(fatalMessage, getStateSnapshot());
+        }
     }
 
     // ─── Firestore Persistence ─────────────────────────────────
@@ -282,16 +301,7 @@ const GameEngine = (function() {
         },
 
         // Utility: Read-only state snapshot (for UI bindings / debug)
-        getState: () => ({
-            currentStepIndex: state.currentStepIndex,
-            totalSteps: state.stepSequence.length,
-            currentScore: state.currentScore,
-            maxPossibleScore: state.maxPossibleScore,
-            isGameOver: state.isGameOver,
-            isWaitingForNext: state.isWaitingForNext,
-            currentStageId: state.currentStageId,
-            currentStepId: state.currentStepId
-        })
+        getState: getStateSnapshot
     };
 })();
 

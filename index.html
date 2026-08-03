@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="Clinical Case Simulator — Interactive medical case-based learning platform" />
-    <title>Clinical Case Simulator</title>
+    <meta name="description" content="Clinical Case Simulator — Medical RPG case-based learning platform" />
+    <title>Clinical Case Simulator — Medical RPG</title>
 
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -14,40 +14,50 @@
                 extend: {
                     fontFamily: {
                         sans: ['Inter', 'Noto Sans Thai', 'system-ui', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'ui-monospace', 'monospace'],
                     },
                     colors: {
-                        brand: {
-                            50:  '#eef6ff',
-                            100: '#d9eaff',
-                            200: '#bcdbff',
-                            300: '#8ec5ff',
-                            400: '#59a4ff',
-                            500: '#3381ff',
-                            600: '#1a5ff5',
-                            700: '#1449e1',
-                            800: '#173cb6',
-                            900: '#19368f',
-                            950: '#142257',
+                        // Medical RPG Design System
+                        navy: {
+                            950: '#070B16',
+                            900: '#0A0F1D',
+                            850: '#0B132B',
+                            800: '#131B2E',
+                            700: '#1C2541',
+                            600: '#26314F',
+                            500: '#33415F',
                         },
-                        surface: {
-                            900: '#0b0f1a',
-                            800: '#111827',
-                            700: '#1a2236',
-                            600: '#243049',
-                            500: '#2e3d5c',
-                        }
+                        teal: {
+                            DEFAULT: '#48E5C2',
+                            400: '#48E5C2',
+                            500: '#2BC9A6',
+                            600: '#17A98A',
+                        },
+                        gold: {
+                            DEFAULT: '#FFB703',
+                            400: '#FFB703',
+                            500: '#E5A200',
+                        },
+                        acuity: {
+                            DEFAULT: '#E63946',
+                            500: '#E63946',
+                            600: '#C42B37',
+                        },
                     },
                     animation: {
-                        'fade-in': 'fadeIn 0.5s ease-out forwards',
-                        'slide-up': 'slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards',
-                        'pulse-glow': 'pulseGlow 2.5s ease-in-out infinite',
-                        'float': 'float 6s ease-in-out infinite',
+                        'fade-in': 'fadeIn 0.4s ease-out forwards',
+                        'slide-up': 'slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+                        'quest-glow': 'questGlow 2.4s ease-in-out infinite',
+                        'vital-pulse': 'vitalPulse 1.8s ease-in-out infinite',
                     },
                     keyframes: {
                         fadeIn: { '0%': { opacity: '0' }, '100%': { opacity: '1' } },
-                        slideUp: { '0%': { opacity: '0', transform: 'translateY(30px)' }, '100%': { opacity: '1', transform: 'translateY(0)' } },
-                        pulseGlow: { '0%, 100%': { boxShadow: '0 0 20px rgba(51, 129, 255, 0.15)' }, '50%': { boxShadow: '0 0 40px rgba(51, 129, 255, 0.35)' } },
-                        float: { '0%, 100%': { transform: 'translateY(0px)' }, '50%': { transform: 'translateY(-12px)' } },
+                        slideUp: { '0%': { opacity: '0', transform: 'translateY(16px)' }, '100%': { opacity: '1', transform: 'translateY(0)' } },
+                        questGlow: {
+                            '0%, 100%': { boxShadow: '0 0 0 1px rgba(72,229,194,.45), 0 0 22px rgba(72,229,194,.20)' },
+                            '50%':      { boxShadow: '0 0 0 1px rgba(72,229,194,.85), 0 0 40px rgba(72,229,194,.42)' },
+                        },
+                        vitalPulse: { '0%,100%': { opacity: '1' }, '50%': { opacity: '.45' } },
                     }
                 }
             }
@@ -57,7 +67,7 @@
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+Thai:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet" />
 
     <!-- Firebase JS SDK (Compat v10.12.0) -->
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
@@ -65,568 +75,900 @@
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 
     <style>
-        /* ─── Base Reset & Scrollbar ─────────────────────────── */
+        /* ─── Base ───────────────────────────────────────────── */
         * { box-sizing: border-box; }
         html { scroll-behavior: smooth; }
-        body { background: #0b0f1a; }
+        body {
+            margin: 0;
+            background-color: #0A0F1D;
+            color: #E2E8F0;
+            font-family: 'Inter', 'Noto Sans Thai', system-ui, sans-serif;
+            -webkit-font-smoothing: antialiased;
+            min-height: 100vh;
+        }
 
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: #111827; }
-        ::-webkit-scrollbar-thumb { background: #3381ff44; border-radius: 3px; }
-        ::-webkit-scrollbar-thumb:hover { background: #3381ff88; }
+        /* ─── Dark Grid Backdrop (Login) ─────────────────────── */
+        .rpg-grid-bg {
+            background-color: #0A0F1D;
+            background-image:
+                linear-gradient(rgba(72,229,194,.045) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(72,229,194,.045) 1px, transparent 1px),
+                radial-gradient(ellipse 80% 60% at 50% 0%, rgba(28,37,65,.85), transparent 70%);
+            background-size: 44px 44px, 44px 44px, 100% 100%;
+        }
 
-        /* ─── View System ────────────────────────────────────── */
-        .app-view { display: none; opacity: 0; transition: opacity 0.4s ease; }
-        .app-view.active-view { display: block; opacity: 1; }
-        .app-view.hidden-view { display: none; opacity: 0; }
-
-        /* ─── Glassmorphism Card ──────────────────────────────── */
+        /* ─── Glassmorphism Surfaces ─────────────────────────── */
         .glass-card {
-            background: rgba(26, 34, 54, 0.65);
-            backdrop-filter: blur(24px);
-            -webkit-backdrop-filter: blur(24px);
-            border: 1px solid rgba(51, 129, 255, 0.12);
+            background: linear-gradient(160deg, rgba(28,37,65,.78), rgba(19,27,46,.88));
+            backdrop-filter: blur(18px);
+            -webkit-backdrop-filter: blur(18px);
+            border: 1px solid rgba(51,65,95,.55);
+        }
+        .panel {
+            background: rgba(19,27,46,.72);
+            border: 1px solid rgba(51,65,95,.5);
         }
 
-        /* ─── Ambient Background Orbs ────────────────────────── */
-        .orb {
-            position: fixed;
-            border-radius: 50%;
-            filter: blur(100px);
-            pointer-events: none;
-            z-index: 0;
-        }
-        .orb-1 { width: 500px; height: 500px; background: rgba(51, 129, 255, 0.08); top: -100px; left: -100px; }
-        .orb-2 { width: 400px; height: 400px; background: rgba(120, 80, 255, 0.06); bottom: -50px; right: -80px; }
-        .orb-3 { width: 300px; height: 300px; background: rgba(0, 200, 150, 0.05); top: 40%; left: 60%; }
+        /* ─── Scrollbar ──────────────────────────────────────── */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #0A0F1D; }
+        ::-webkit-scrollbar-thumb { background: #26314F; border-radius: 8px; }
+        ::-webkit-scrollbar-thumb:hover { background: #33415F; }
 
-        /* ─── Google Login Button ─────────────────────────────── */
-        .google-btn {
-            background: #ffffff;
-            color: #3c4043;
-            transition: all 0.25s ease;
-        }
-        .google-btn:hover {
-            background: #f1f3f4;
-            box-shadow: 0 4px 24px rgba(0,0,0,0.25);
-            transform: translateY(-2px);
-        }
-        .google-btn:active { transform: translateY(0); }
+        /* ─── View Switching (contract with ui-controller) ───── */
+        .hidden-view { display: none !important; }
+        .active-view { display: block; }
 
-        /* ─── Case Card ──────────────────────────────────────── */
-        .case-card {
-            transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-        .case-card:hover {
-            transform: translateY(-6px);
-            border-color: rgba(51, 129, 255, 0.4);
-            box-shadow: 0 20px 60px rgba(51, 129, 255, 0.12);
-        }
-
-        /* ─── Game Content Area Styles ───────────────────────── */
-        #game-content-area .info-step-container,
-        #game-content-area .mcq-step-container {
-            animation: slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-        }
-
+        /* ─── Clinical text (rendered by UIController) ───────── */
         .clinical-text {
-            font-size: 1.05rem;
+            color: #CBD5E1;
             line-height: 1.85;
-            color: #d1d5db;
-            margin-bottom: 0.75rem;
+            font-size: .925rem;
+            padding: .5rem 0;
+            border-bottom: 1px solid rgba(51,65,95,.35);
         }
+        .clinical-text:last-child { border-bottom: 0; }
+        .clinical-text strong { color: #48E5C2; font-weight: 600; }
 
-        .clinical-image-wrapper {
-            margin: 1.25rem 0;
-            border-radius: 12px;
-            overflow: hidden;
-            border: 1px solid rgba(51, 129, 255, 0.15);
-        }
-        .clinical-image-wrapper img {
-            width: 100%;
-            display: block;
-        }
-
-        .question-text {
-            font-size: 1.15rem;
-            font-weight: 600;
-            color: #f3f4f6;
-            margin-bottom: 1.25rem;
-            line-height: 1.7;
-        }
-
-        .points-badge {
-            display: inline-block;
-            font-size: 0.75rem;
-            font-weight: 600;
-            color: #8ec5ff;
-            background: rgba(51, 129, 255, 0.12);
-            padding: 2px 10px;
-            border-radius: 20px;
-            vertical-align: middle;
-            margin-left: 6px;
-        }
-
-        /* ─── Choice Buttons ─────────────────────────────────── */
+        /* ─── Decision option cards ──────────────────────────── */
         .choice-btn {
-            display: block;
-            width: 100%;
-            text-align: left;
-            padding: 14px 20px;
-            margin-bottom: 10px;
-            background: rgba(26, 34, 54, 0.7);
-            border: 1px solid rgba(51, 129, 255, 0.12);
-            border-radius: 12px;
-            color: #d1d5db;
-            font-size: 1rem;
+            display: flex; align-items: flex-start; gap: .75rem;
+            width: 100%; text-align: left;
+            padding: .85rem .95rem;
+            border-radius: .75rem;
+            background: rgba(28,37,65,.55);
+            border: 1px solid rgba(51,65,95,.6);
+            color: #E2E8F0;
+            font-size: .875rem; line-height: 1.6;
             cursor: pointer;
-            transition: all 0.2s ease;
+            transition: all .18s ease;
         }
         .choice-btn:hover:not(:disabled) {
-            background: rgba(51, 129, 255, 0.1);
-            border-color: rgba(51, 129, 255, 0.35);
-            color: #ffffff;
-            transform: translateX(4px);
+            border-color: rgba(72,229,194,.6);
+            background: rgba(72,229,194,.07);
+            transform: translateX(2px);
         }
-        .choice-btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
+        .choice-btn:disabled { cursor: not-allowed; opacity: .55; }
+        .choice-btn.is-correct {
+            border-color: rgba(72,229,194,.9);
+            background: rgba(72,229,194,.13);
+            opacity: 1;
         }
-        .choice-label {
-            font-weight: 700;
-            color: #59a4ff;
-            margin-right: 4px;
+        .choice-btn.is-wrong {
+            border-color: rgba(230,57,70,.85);
+            background: rgba(230,57,70,.12);
+            opacity: 1;
         }
+        .choice-key {
+            flex-shrink: 0;
+            width: 1.6rem; height: 1.6rem;
+            display: grid; place-items: center;
+            border-radius: .45rem;
+            background: rgba(51,65,95,.7);
+            color: #94A3B8;
+            font-size: .7rem; font-weight: 700;
+        }
+        .choice-btn:hover:not(:disabled) .choice-key { background: rgba(72,229,194,.22); color: #48E5C2; }
 
-        /* ─── Primary Button ─────────────────────────────────── */
+        /* ─── Buttons ────────────────────────────────────────── */
         .primary-btn {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            padding: 12px 28px;
-            background: linear-gradient(135deg, #3381ff, #1a5ff5);
-            color: #ffffff;
-            font-weight: 600;
-            font-size: 0.95rem;
-            border: none;
-            border-radius: 12px;
-            cursor: pointer;
-            transition: all 0.25s ease;
-            box-shadow: 0 4px 20px rgba(51, 129, 255, 0.25);
+            display: inline-flex; align-items: center; justify-content: center; gap: .5rem;
+            padding: .7rem 1.1rem;
+            border-radius: .7rem;
+            background: linear-gradient(135deg, #48E5C2, #17A98A);
+            color: #06231D;
+            font-weight: 700; font-size: .875rem;
+            border: 0; cursor: pointer;
+            transition: all .18s ease;
+            box-shadow: 0 6px 20px rgba(72,229,194,.22);
         }
-        .primary-btn:hover {
-            background: linear-gradient(135deg, #59a4ff, #3381ff);
-            box-shadow: 0 6px 30px rgba(51, 129, 255, 0.4);
-            transform: translateY(-2px);
-        }
-        .primary-btn:active { transform: translateY(0); }
+        .primary-btn:hover { filter: brightness(1.08); transform: translateY(-1px); }
+        .primary-btn:disabled { opacity: .6; cursor: not-allowed; transform: none; }
 
-        /* ─── Feedback Cards ─────────────────────────────────── */
-        .feedback-card {
-            padding: 20px 24px;
-            border-radius: 14px;
-            animation: slideUp 0.35s ease forwards;
+        /* ─── Step progress dots ─────────────────────────────── */
+        .step-dot {
+            width: .5rem; height: .5rem; border-radius: 9999px;
+            background: rgba(51,65,95,.9);
+            transition: all .25s ease;
         }
-        .feedback-card h4 { font-size: 1.1rem; font-weight: 700; margin-bottom: 6px; }
-        .feedback-card p  { font-size: 0.95rem; line-height: 1.7; opacity: 0.9; }
+        .step-dot.done { background: #48E5C2; }
+        .step-dot.current { background: #48E5C2; transform: scale(1.7); box-shadow: 0 0 10px rgba(72,229,194,.8); }
 
-        .feedback-success {
-            background: rgba(16, 185, 129, 0.1);
-            border: 1px solid rgba(16, 185, 129, 0.3);
-            color: #6ee7b7;
-        }
-        .feedback-success h4 { color: #34d399; }
+        /* ─── Quest node states ──────────────────────────────── */
+        .quest-node { transition: all .2s ease; }
+        .quest-node.locked { opacity: .42; filter: grayscale(.6); }
 
-        .feedback-error {
-            background: rgba(239, 68, 68, 0.1);
-            border: 1px solid rgba(239, 68, 68, 0.25);
-            color: #fca5a5;
+        /* ─── Utility ────────────────────────────────────────── */
+        .text-glow-teal { text-shadow: 0 0 18px rgba(72,229,194,.45); }
+        .divider-v { width: 1px; background: rgba(51,65,95,.5); }
+        .tag-pill {
+            display: inline-flex; align-items: center; gap: .3rem;
+            padding: .2rem .55rem; border-radius: 9999px;
+            font-size: .68rem; font-weight: 600;
+            background: rgba(51,65,95,.55); color: #94A3B8;
+            border: 1px solid rgba(51,65,95,.7);
         }
-        .feedback-error h4 { color: #f87171; }
-
-        /* ─── Progress Bar ───────────────────────────────────── */
-        .progress-track {
-            height: 4px;
-            background: rgba(255,255,255,0.06);
-            border-radius: 4px;
-            overflow: hidden;
-        }
-        .progress-fill {
-            height: 100%;
-            background: linear-gradient(90deg, #3381ff, #59a4ff);
-            border-radius: 4px;
-            transition: width 0.5s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-
-        /* ─── Responsive ─────────────────────────────────────── */
-        @media (max-width: 640px) {
-            .question-text { font-size: 1rem; }
-            .clinical-text { font-size: 0.95rem; }
-            .choice-btn { padding: 12px 16px; font-size: 0.92rem; }
-        }
+        /* Marks values that are UI placeholders, not real user data */
+        .is-placeholder { position: relative; }
     </style>
 </head>
+<body>
 
-<body class="font-sans text-gray-100 min-h-screen relative overflow-x-hidden">
+<!-- ═══════════════════════════════════════════════════════════════
+     VIEW 1 — LOGIN
+     ═══════════════════════════════════════════════════════════════ -->
+<div id="login-view" class="active-view">
+  <div class="rpg-grid-bg min-h-screen flex flex-col items-center justify-center px-4 py-10 relative overflow-hidden">
 
-    <!-- Ambient Background Orbs -->
-    <div class="orb orb-1 animate-float"></div>
-    <div class="orb orb-2 animate-float" style="animation-delay: -2s;"></div>
-    <div class="orb orb-3 animate-float" style="animation-delay: -4s;"></div>
+    <!-- Ambient glow -->
+    <div class="pointer-events-none absolute -top-40 left-1/2 -translate-x-1/2 w-[38rem] h-[38rem] rounded-full"
+         style="background: radial-gradient(circle, rgba(72,229,194,.10), transparent 65%);"></div>
 
-    <!-- ═══════════════════════════════════════════════════════════
-         VIEW 1: LOGIN
-         ═══════════════════════════════════════════════════════════ -->
-    <div id="login-view" class="app-view active-view relative z-10">
-        <div class="min-h-screen flex items-center justify-center px-4">
-            <div class="glass-card rounded-3xl p-10 sm:p-14 max-w-md w-full text-center animate-slide-up">
-                
-                <!-- Logo / Icon -->
-                <div class="mb-8">
-                    <div class="w-20 h-20 mx-auto rounded-2xl bg-gradient-to-br from-brand-500 to-brand-700 flex items-center justify-center shadow-lg shadow-brand-500/20 animate-pulse-glow">
-                        <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M9.75 3.104v5.714a2.25 2.25 0 0 1-.659 1.591L5 14.5M9.75 3.104c-.251.023-.501.05-.75.082m.75-.082a24.301 24.301 0 0 1 4.5 0m0 0v5.714a2.25 2.25 0 0 0 .659 1.591L19 14.5M14.25 3.104c.251.023.501.05.75.082M19 14.5l-2.47 2.47a2.25 2.25 0 0 1-1.59.659H9.06a2.25 2.25 0 0 1-1.591-.659L5 14.5m14 0V17a2.25 2.25 0 0 1-2.25 2.25H7.25A2.25 2.25 0 0 1 5 17v-2.5" />
-                        </svg>
-                    </div>
-                </div>
+    <!-- Eyebrow -->
+    <div class="relative flex flex-col items-center mb-7 animate-fade-in">
+      <svg class="w-11 h-6 text-teal-400 mb-2" viewBox="0 0 80 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M2 12h12l4-8 6 16 5-12 4 6h12l4-4 5 8 4-6h18" />
+      </svg>
+      <p class="text-[.7rem] font-bold tracking-[.32em] text-slate-400 uppercase">Medical RPG Simulator</p>
+    </div>
 
-                <h1 class="text-3xl sm:text-4xl font-extrabold bg-gradient-to-r from-white to-brand-300 bg-clip-text text-transparent mb-3">
-                    Clinical Case Simulator
-                </h1>
-                <p class="text-gray-400 text-sm sm:text-base mb-10 leading-relaxed">
-                    ระบบจำลองเคสทางคลินิกเชิงโต้ตอบ<br />
-                    เพื่อการเรียนรู้อย่างมีประสิทธิภาพ
-                </p>
+    <!-- Floating glass card -->
+    <div class="relative w-full max-w-md glass-card rounded-2xl p-7 sm:p-8 shadow-2xl animate-slide-up">
 
-                <!-- Mock Google Login Button -->
-                <button id="btn-google-login" class="google-btn w-full flex items-center justify-center gap-3 px-6 py-3.5 rounded-xl font-semibold text-base shadow-md">
-                    <svg class="w-5 h-5" viewBox="0 0 24 24">
-                        <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/>
-                        <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
-                        <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
-                        <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
-                    </svg>
-                    เข้าสู่ระบบด้วย Google
-                </button>
+      <!-- Emblem + level badge -->
+      <div class="flex justify-center mb-4">
+        <div class="relative">
+          <div class="w-16 h-16 rounded-2xl grid place-items-center border border-teal-400/30"
+               style="background: linear-gradient(145deg, rgba(72,229,194,.16), rgba(28,37,65,.9));">
+            <svg class="w-8 h-8 text-teal-400" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 3v6a5 5 0 0 0 10 0V3M9.5 14v2.5a4.5 4.5 0 0 0 9 0V13" />
+              <circle cx="18.5" cy="11" r="2.2" />
+            </svg>
+          </div>
+          <span id="login-level-badge"
+                class="absolute -bottom-1.5 -right-1.5 w-6 h-6 rounded-full grid place-items-center text-[.65rem] font-extrabold text-navy-900 bg-gold-400 border-2 border-navy-900">4</span>
+        </div>
+      </div>
 
-                <p class="text-gray-600 text-xs mt-6">Prototype v1.0 — Mock Authentication</p>
+      <!-- Title -->
+      <h1 class="text-center text-2xl font-extrabold text-white tracking-tight">Clinical Case Simulator</h1>
+      <p class="text-center text-sm text-slate-400 mt-1">Train. Diagnose. Level Up.</p>
+
+      <!-- Rank + XP -->
+      <div class="mt-5">
+        <div class="flex items-center justify-between text-xs mb-1.5">
+          <span class="inline-flex items-center gap-1.5 font-semibold text-teal-400">
+            <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2 4 5v6c0 5 3.4 9.7 8 11 4.6-1.3 8-6 8-11V5l-8-3Z"/></svg>
+            <span id="login-rank-title">Lv.4 Clinical Resident</span>
+          </span>
+          <span class="font-mono text-slate-400"><span id="login-xp-current">2,450</span> / <span id="login-xp-target">3,000</span> XP</span>
+        </div>
+        <div class="h-1.5 w-full rounded-full bg-navy-700 overflow-hidden">
+          <div id="login-xp-bar" class="h-full rounded-full transition-all duration-700"
+               style="width:0%; background: linear-gradient(90deg,#48E5C2,#17A98A);"></div>
+        </div>
+      </div>
+
+      <!-- Divider -->
+      <p class="text-center text-[.65rem] font-bold tracking-[.22em] text-slate-500 uppercase mt-6 mb-3">Select Sign-In Method</p>
+
+      <!-- Google -->
+      <button id="btn-google-login"
+              class="w-full flex items-center justify-between gap-3 px-4 py-3 rounded-xl font-semibold text-sm text-white
+                     bg-navy-700/70 border border-blue-400/40 hover:border-blue-400/90 hover:bg-navy-600/70
+                     transition-all duration-200 shadow-[0_0_22px_rgba(59,130,246,.16)] hover:shadow-[0_0_30px_rgba(59,130,246,.34)]">
+        <span class="flex items-center gap-3">
+          <span class="w-6 h-6 rounded-md bg-white grid place-items-center flex-shrink-0">
+            <svg class="w-4 h-4" viewBox="0 0 24 24">
+              <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.76h3.57c2.08-1.92 3.28-4.74 3.28-8.09Z"/>
+              <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.76c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84A11 11 0 0 0 12 23Z"/>
+              <path fill="#FBBC05" d="M5.84 14.11a6.6 6.6 0 0 1 0-4.22V7.05H2.18a11 11 0 0 0 0 9.9l3.66-2.84Z"/>
+              <path fill="#EA4335" d="M12 4.75c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 1.46 14.97.5 12 .5a11 11 0 0 0-9.82 6.05l3.66 2.84c.87-2.6 3.3-4.64 6.16-4.64Z"/>
+            </svg>
+          </span>
+          Continue with Google
+        </span>
+        <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12l-7.5 7.5M21 12H3" />
+        </svg>
+      </button>
+
+      <!-- or -->
+      <div class="flex items-center gap-3 my-3">
+        <div class="h-px flex-1 bg-navy-600/70"></div>
+        <span class="text-[.7rem] text-slate-500">or</span>
+        <div class="h-px flex-1 bg-navy-600/70"></div>
+      </div>
+
+      <!-- Guest -->
+      <button id="btn-guest-login"
+              class="w-full flex items-center justify-center gap-2.5 px-4 py-3 rounded-xl font-semibold text-sm text-slate-300
+                     bg-navy-700/50 border border-navy-600 hover:border-slate-500 hover:text-white transition-all duration-200">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.5 20.1a7.5 7.5 0 0 1 15 0v.4h-15v-.4Z" />
+        </svg>
+        Enter as Guest / Anonymous
+      </button>
+
+      <!-- Notice -->
+      <div class="mt-4 flex gap-2.5 p-3 rounded-xl border border-gold-400/25 bg-gold-400/[.07]">
+        <svg class="w-4 h-4 text-gold-400 flex-shrink-0 mt-.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v4m0 4h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z" />
+        </svg>
+        <p class="text-[.72rem] leading-relaxed text-slate-300">
+          <span class="font-bold text-gold-400">Notice</span><br />
+          Progress &amp; Test Scores will <strong class="text-white font-bold">NOT</strong> be saved in Anonymous Mode.
+        </p>
+      </div>
+    </div>
+
+    <!-- Footer stat counters -->
+    <div class="relative mt-7 flex flex-wrap items-center justify-center gap-2.5 animate-fade-in">
+      <div class="panel rounded-lg px-3 py-1.5 flex items-center gap-1.5 text-xs">
+        <span class="text-gold-400">★</span>
+        <span class="font-bold text-white" id="stat-stars">28/45</span>
+        <span class="text-slate-500">Stars</span>
+      </div>
+      <div class="panel rounded-lg px-3 py-1.5 flex items-center gap-1.5 text-xs">
+        <span class="text-gold-400">🏆</span>
+        <span class="font-bold text-white" id="stat-rank">#14</span>
+        <span class="text-slate-500">Rank</span>
+      </div>
+      <div class="panel rounded-lg px-3 py-1.5 flex items-center gap-1.5 text-xs">
+        <span class="font-bold text-white" id="stat-cases-won">12</span>
+        <span class="text-slate-500">Cases Won</span>
+      </div>
+      <div class="panel rounded-lg px-3 py-1.5 flex items-center gap-1.5 text-xs">
+        <span class="text-teal-400">👥</span>
+        <span class="font-bold text-white" id="stat-players">12,400+</span>
+        <span class="text-slate-500">Players</span>
+      </div>
+    </div>
+
+    <p class="relative mt-4 text-[.65rem] text-slate-600">
+      Demo stats · ตัวเลขข้างต้นเป็นค่าตัวอย่างของ UI ยังไม่ผูกกับ Firestore
+    </p>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════════
+     VIEW 2 — DASHBOARD / CAMPAIGN QUEST MAP
+     ═══════════════════════════════════════════════════════════════ -->
+<div id="dashboard-view" class="hidden-view">
+  <div class="min-h-screen flex flex-col bg-navy-900">
+
+    <!-- ── Top Navigation Bar ── -->
+    <header class="flex-shrink-0 border-b border-navy-700/60 bg-navy-850/80 backdrop-blur-xl">
+      <div class="flex items-center gap-4 px-4 sm:px-5 py-2.5">
+
+        <!-- Logo -->
+        <div class="flex items-center gap-2.5 flex-shrink-0">
+          <div class="w-9 h-9 rounded-xl grid place-items-center border border-teal-400/30"
+               style="background: linear-gradient(145deg, rgba(72,229,194,.16), rgba(28,37,65,.9));">
+            <svg class="w-5 h-5 text-teal-400" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 3v6a5 5 0 0 0 10 0V3M9.5 14v2.5a4.5 4.5 0 0 0 9 0V13" />
+              <circle cx="18.5" cy="11" r="2.2" />
+            </svg>
+          </div>
+          <div class="hidden sm:block leading-tight">
+            <p class="text-sm font-extrabold text-white">ClinicalCS</p>
+            <p class="text-[.62rem] text-slate-500 font-medium">RPG Simulator</p>
+          </div>
+        </div>
+
+        <div class="divider-v h-8 hidden md:block"></div>
+
+        <!-- User profile -->
+        <div class="flex items-center gap-2.5 flex-shrink-0">
+          <div class="relative">
+            <div id="user-avatar-badge"
+                 class="w-9 h-9 rounded-full overflow-hidden grid place-items-center bg-navy-700 border border-navy-600">
+              <span id="user-avatar-initial" class="text-sm font-bold text-teal-400">U</span>
             </div>
-        </div>
-    </div>
-
-    <!-- ═══════════════════════════════════════════════════════════
-         VIEW 2: DASHBOARD
-         ═══════════════════════════════════════════════════════════ -->
-    <div id="dashboard-view" class="app-view hidden-view relative z-10">
-        <div class="min-h-screen px-4 py-10 sm:py-16">
-            <div class="max-w-4xl mx-auto">
-                
-                <!-- Dashboard Header -->
-                <div class="mb-10 animate-fade-in">
-                    <div class="flex items-center justify-between flex-wrap gap-4">
-                        <div>
-                            <h2 class="text-2xl sm:text-3xl font-bold text-white mb-1">Dashboard</h2>
-                            <p class="text-gray-400 text-sm">เลือกเคสเพื่อเริ่มต้นการเรียนรู้</p>
-                        </div>
-                        <div class="flex items-center gap-3">
-                            <div id="user-avatar-badge" class="w-9 h-9 rounded-full bg-gradient-to-br from-brand-500 to-brand-700 flex items-center justify-center text-white text-sm font-bold shadow-md overflow-hidden">
-                                <span id="user-avatar-initial">U</span>
-                            </div>
-                            <button id="btn-logout" class="text-gray-500 hover:text-gray-300 text-sm transition-colors">
-                                ออกจากระบบ
-                            </button>
-                        </div>
-                    </div>
-                    <div class="mt-4 h-px bg-gradient-to-r from-brand-500/30 via-brand-500/10 to-transparent"></div>
-                </div>
-
-                <!-- Section: Available Cases -->
-                <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-5">Available Cases</h3>
-
-                <!-- Case 001 Card -->
-                <div class="case-card glass-card rounded-2xl p-6 sm:p-8 cursor-pointer animate-slide-up" id="card-case-001">
-                    <div class="flex items-start gap-5">
-                        <!-- Case Icon -->
-                        <div class="flex-shrink-0 w-14 h-14 rounded-xl bg-gradient-to-br from-emerald-500/20 to-emerald-700/10 border border-emerald-500/20 flex items-center justify-center">
-                            <svg class="w-7 h-7 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25" />
-                            </svg>
-                        </div>
-
-                        <!-- Case Info -->
-                        <div class="flex-1 min-w-0">
-                            <div class="flex items-center gap-2 mb-1">
-                                <span class="text-[10px] font-bold uppercase tracking-widest text-emerald-400 bg-emerald-400/10 px-2.5 py-0.5 rounded-full">Case 001</span>
-                                <span class="text-[10px] font-medium text-gray-500 bg-gray-500/10 px-2 py-0.5 rounded-full">4 Stages · 15 Steps</span>
-                            </div>
-                            <h4 class="text-lg sm:text-xl font-bold text-white mb-2 leading-snug">
-                                Clinical Case: Patient Assessment & Diagnosis
-                            </h4>
-                            <p class="text-gray-400 text-sm leading-relaxed mb-4">
-                                ฝึกฝนกระบวนการซักประวัติ ตรวจร่างกาย วิเคราะห์ผลตรวจ และวินิจฉัยโรคอย่างเป็นระบบ
-                            </p>
-                            <div class="flex items-center gap-4 flex-wrap">
-                                <button id="btn-start-case-001" class="primary-btn text-sm">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.347a1.125 1.125 0 0 1 0 1.972l-11.54 6.347a1.125 1.125 0 0 1-1.667-.986V5.653Z" />
-                                    </svg>
-                                    Start Case 001
-                                </button>
-                                <span class="text-xs text-gray-500 flex items-center gap-1.5">
-                                    <svg class="w-3.5 h-3.5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
-                                    </svg>
-                                    ~15 นาที
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
+            <span class="absolute -bottom-1 -right-1 w-4 h-4 rounded-full grid place-items-center text-[.55rem] font-extrabold text-navy-900 bg-gold-400 border-2 border-navy-850">4</span>
+          </div>
+          <div class="hidden lg:block leading-tight min-w-[9rem]">
+            <div class="flex items-center gap-1.5">
+              <p id="user-display-name" class="text-xs font-bold text-white truncate max-w-[7rem]">Dr. Intern</p>
+              <span class="tag-pill !text-[.58rem] !text-gold-400 !border-gold-400/35 !bg-gold-400/10">Clinical Resident</span>
             </div>
-        </div>
-    </div>
-
-    <!-- ═══════════════════════════════════════════════════════════
-         VIEW 3: GAME
-         ═══════════════════════════════════════════════════════════ -->
-    <div id="game-view" class="app-view hidden-view relative z-10">
-        <div class="min-h-screen px-4 py-6 sm:py-10">
-            <div class="max-w-3xl mx-auto">
-
-                <!-- Game Header Bar -->
-                <div class="glass-card rounded-2xl px-5 sm:px-6 py-4 mb-6 animate-fade-in">
-                    <div class="flex items-center justify-between flex-wrap gap-3">
-                        <!-- Left: Back + Stage Title -->
-                        <div class="flex items-center gap-3">
-                            <button id="btn-back-dashboard" class="w-9 h-9 rounded-xl bg-white/5 hover:bg-white/10 flex items-center justify-center transition-colors" title="กลับไป Dashboard">
-                                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" />
-                                </svg>
-                            </button>
-                            <div>
-                                <p id="stage-title" class="text-sm font-semibold text-white leading-tight">Case 001</p>
-                                <p id="step-indicator" class="text-[11px] text-gray-500 mt-0.5">กำลังโหลด...</p>
-                            </div>
-                        </div>
-
-                        <!-- Right: Score Badge -->
-                        <div id="score-display" class="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-brand-500/10 to-brand-600/5 border border-brand-500/15">
-                            <svg class="w-4 h-4 text-brand-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M11.48 3.499a.562.562 0 0 1 1.04 0l2.125 5.111a.563.563 0 0 0 .475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 0 0-.182.557l1.285 5.385a.562.562 0 0 1-.84.61l-4.725-2.885a.562.562 0 0 0-.586 0L6.982 20.54a.562.562 0 0 1-.84-.61l1.285-5.386a.562.562 0 0 0-.182-.557l-4.204-3.602a.562.562 0 0 1 .321-.988l5.518-.442a.563.563 0 0 0 .475-.345L11.48 3.5Z" />
-                            </svg>
-                            <span class="text-sm font-bold text-brand-300"><span id="current-score">0</span> <span class="text-gray-500 font-normal">/ <span id="max-score">0</span></span></span>
-                        </div>
-                    </div>
-
-                    <!-- Progress Bar -->
-                    <div class="progress-track mt-3">
-                        <div id="progress-bar" class="progress-fill" style="width: 0%"></div>
-                    </div>
-                </div>
-
-                <!-- Game Content Area (Injected by UIController) -->
-                <div id="game-content-area" class="glass-card rounded-2xl p-6 sm:p-8 min-h-[300px]">
-                    <div class="flex items-center justify-center h-48">
-                        <div class="text-center">
-                            <div class="w-10 h-10 border-2 border-brand-500/30 border-t-brand-400 rounded-full animate-spin mx-auto mb-4"></div>
-                            <p class="text-gray-500 text-sm">กำลังโหลดข้อมูลเคส...</p>
-                        </div>
-                    </div>
-                </div>
-
+            <div class="flex items-center gap-1.5 mt-1">
+              <div class="h-1 w-20 rounded-full bg-navy-700 overflow-hidden">
+                <div id="dash-xp-bar" class="h-full rounded-full" style="width:0%; background:linear-gradient(90deg,#48E5C2,#17A98A);"></div>
+              </div>
+              <span class="text-[.6rem] font-mono text-slate-500">2,450 / 3,000 XP</span>
             </div>
+          </div>
         </div>
-    </div>
 
-    <!-- ═══════════════════════════════════════════════════════════
-         TOAST NOTIFICATION
-         ═══════════════════════════════════════════════════════════ -->
-    <div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 hidden">
-        <div class="glass-card rounded-xl px-5 py-3 text-sm font-medium text-white shadow-2xl border-red-500/20">
-            <span id="toast-message"></span>
+        <!-- Campaign header -->
+        <div class="flex-1 text-center hidden md:block">
+          <p class="text-[.68rem] font-bold tracking-[.2em] text-slate-500 uppercase">Campaign Quest Map</p>
+          <p class="text-xs font-semibold text-white mt-.5">
+            Ward 1: Emergency Room <span class="text-slate-500 font-normal">— 4 Stages</span>
+          </p>
         </div>
+
+        <!-- Global stats + actions -->
+        <div class="flex items-center gap-2 flex-shrink-0 ml-auto">
+          <div class="panel rounded-lg px-2.5 py-1.5 hidden sm:flex items-center gap-1.5 text-xs">
+            <span class="text-gold-400">★</span><span class="font-bold text-white">28</span><span class="text-slate-500 text-[.68rem]">/45</span>
+          </div>
+          <div class="panel rounded-lg px-2.5 py-1.5 hidden sm:flex items-center gap-1.5 text-xs">
+            <span class="text-gold-400">🏆</span><span class="font-bold text-white">#14</span>
+          </div>
+          <span id="guest-warning-chip"
+                class="hidden items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[.68rem] font-semibold text-gold-400 bg-gold-400/10 border border-gold-400/30">
+            ⚠ Sign In to Save
+          </span>
+          <button class="px-3 py-1.5 rounded-lg text-xs font-semibold text-navy-900 bg-teal-400 hover:brightness-110 transition">🗺 Map</button>
+          <button class="px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-300 bg-navy-700/70 border border-navy-600 hover:text-white transition hidden sm:block">▦ Library</button>
+          <button id="btn-logout" title="ออกจากระบบ"
+                  class="w-8 h-8 grid place-items-center rounded-lg text-slate-400 bg-navy-700/70 border border-navy-600 hover:text-acuity-500 hover:border-acuity-500/50 transition">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15M12 9l-3 3m0 0 3 3m-3-3h12.75" />
+            </svg>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- ── Body: Sidebar + Main ── -->
+    <div class="flex-1 flex overflow-hidden">
+
+      <!-- Left Sidebar -->
+      <aside class="hidden lg:flex flex-col w-56 flex-shrink-0 border-r border-navy-700/60 bg-navy-850/50 p-3 gap-1">
+        <a class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-semibold text-navy-900 bg-teal-400 cursor-pointer">🗺 Campaign Map</a>
+        <a class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium text-slate-400 hover:text-white hover:bg-navy-700/60 transition cursor-pointer">📖 Free-Play Library</a>
+        <a class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium text-slate-400 hover:text-white hover:bg-navy-700/60 transition cursor-pointer">📊 My Stats</a>
+        <a class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium text-slate-400 hover:text-white hover:bg-navy-700/60 transition cursor-pointer">🏅 Leaderboard</a>
+        <a class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium text-slate-400 hover:text-white hover:bg-navy-700/60 transition cursor-pointer">🎖 Achievements</a>
+
+        <p class="text-[.6rem] font-bold tracking-[.2em] text-slate-600 uppercase mt-5 mb-1 px-3">Campaign</p>
+        <a class="flex items-center justify-between px-3 py-2 rounded-lg text-xs font-semibold text-white bg-navy-700/70 border border-teal-400/25 cursor-pointer">
+          <span>🏥 Ward 1: ER</span>
+        </a>
+        <a class="flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium text-slate-500 cursor-not-allowed">
+          <span>🛏 Ward 2: ICU</span><span>🔒</span>
+        </a>
+        <a class="flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium text-slate-500 cursor-not-allowed">
+          <span>💊 Ward 3: Med</span><span>🔒</span>
+        </a>
+
+        <div class="mt-auto panel rounded-xl p-3">
+          <div class="flex items-center gap-2">
+            <div id="sidebar-avatar" class="w-7 h-7 rounded-full bg-navy-700 grid place-items-center text-[.65rem] font-bold text-teal-400">U</div>
+            <div class="leading-tight">
+              <p id="sidebar-user-name" class="text-[.7rem] font-bold text-white">Guest User</p>
+              <p id="sidebar-user-mode" class="text-[.6rem] text-slate-500">Anonymous Mode</p>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      <!-- Main Area -->
+      <main class="flex-1 overflow-y-auto p-4 sm:p-5">
+
+        <!-- Quest Track -->
+        <section class="panel rounded-2xl p-4 sm:p-5">
+          <div class="flex items-center justify-between mb-4">
+            <p class="text-[.66rem] font-bold tracking-[.22em] text-slate-500 uppercase">Emergency Room — Ward 1</p>
+            <span class="tag-pill">4 Stages</span>
+          </div>
+
+          <!-- Node-based horizontal path — rendered by UIController.renderQuestMap() -->
+          <div id="quest-track" class="flex items-stretch gap-3 overflow-x-auto pb-2"></div>
+        </section>
+
+        <!-- Active Quest Detail + Ward Progress -->
+        <section class="grid grid-cols-1 xl:grid-cols-3 gap-4 mt-4">
+
+          <!-- Active quest -->
+          <div class="xl:col-span-2 panel rounded-2xl p-4 sm:p-5">
+            <div class="flex flex-wrap items-center gap-2 mb-3">
+              <span class="tag-pill !bg-teal-400/12 !text-teal-400 !border-teal-400/35">⚡ ACTIVE QUEST</span>
+              <span id="quest-acuity-tag" class="tag-pill !bg-acuity-500/12 !text-acuity-500 !border-acuity-500/35">HIGH ACUITY</span>
+              <span id="quest-vital-flag" class="text-[.68rem] text-slate-400 font-mono">BP 180/110 Critical</span>
+            </div>
+
+            <h2 id="quest-title" class="text-lg font-extrabold text-white leading-snug">
+              Stage 001: Hypertensive Urgency
+            </h2>
+
+            <p id="quest-summary" class="text-xs text-slate-400 leading-relaxed mt-2">
+              กำลังโหลดข้อมูลเคส...
+            </p>
+
+            <div class="flex flex-wrap items-center gap-4 mt-4 text-[.7rem]">
+              <span class="flex items-center gap-1.5 text-slate-400">☰ <strong id="quest-steps" class="text-white font-bold">15</strong> Steps</span>
+              <span class="flex items-center gap-1.5 text-slate-400">⏱ <strong class="text-white font-bold">~40</strong> min</span>
+              <span class="flex items-center gap-1.5 text-slate-400">★ <strong id="quest-max-points" class="text-gold-400 font-bold">1,300</strong> pts max</span>
+              <span class="flex items-center gap-1.5 text-slate-400">🏆 <strong class="text-white font-bold">3</strong> Stars</span>
+            </div>
+
+            <button id="btn-start-case-001" class="primary-btn w-full sm:w-auto mt-5 !px-8">
+              <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M6 4.5v15l13-7.5-13-7.5Z"/></svg>
+              START
+            </button>
+          </div>
+
+          <!-- Ward progress -->
+          <div class="panel rounded-2xl p-4 sm:p-5">
+            <p class="text-[.66rem] font-bold tracking-[.22em] text-slate-500 uppercase mb-4">Ward 1 Progress</p>
+
+            <div class="space-y-3.5">
+              <div>
+                <div class="flex justify-between text-xs mb-1.5">
+                  <span class="text-slate-400">Stages Cleared</span>
+                  <span class="font-bold text-white"><span id="ward-cleared">0</span> / 4</span>
+                </div>
+                <div class="h-1.5 rounded-full bg-navy-700 overflow-hidden">
+                  <div id="ward-progress-bar" class="h-full rounded-full transition-all duration-500" style="width:0%; background:linear-gradient(90deg,#48E5C2,#17A98A);"></div>
+                </div>
+              </div>
+
+              <div class="flex justify-between text-xs">
+                <span class="text-slate-400">Stars Earned</span>
+                <span class="font-bold text-gold-400">★ <span id="ward-stars">0</span> / 12</span>
+              </div>
+              <div class="flex justify-between text-xs">
+                <span class="text-slate-400">Ward Score</span>
+                <span class="font-bold text-white font-mono"><span id="ward-score">0</span> pts</span>
+              </div>
+              <div class="flex justify-between text-xs">
+                <span class="text-slate-400">Best Accuracy</span>
+                <span class="font-bold text-teal-400"><span id="ward-accuracy">—</span></span>
+              </div>
+            </div>
+
+            <p class="text-[.62rem] text-slate-600 mt-4 pt-3 border-t border-navy-700/60">
+              Complete all stages to unlock <span class="text-slate-400 font-semibold">Ward 2: ICU</span>
+            </p>
+          </div>
+        </section>
+      </main>
     </div>
+  </div>
+</div>
 
-    <!-- ═══════════════════════════════════════════════════════════
-         SCRIPTS
-         ═══════════════════════════════════════════════════════════ -->
-    <script src="./js/firebase-service.js?v=20260803"></script>
-    <script src="./js/ui-controller.js?v=20260803"></script>
-    <script src="./js/game-engine.js?v=20260803"></script>
 
-    <!-- Launch Script: Wiring & Integration -->
-    <script>
-    (function() {
-        'use strict';
+<!-- ═══════════════════════════════════════════════════════════════
+     VIEW 3 — SIMULATION WORKSPACE
+     ═══════════════════════════════════════════════════════════════ -->
+<div id="simulation-view" class="hidden-view">
+  <div class="min-h-screen flex flex-col bg-navy-900">
 
-        // ─── DOM References ────────────────────────────────────
-        const btnLogin      = document.getElementById('btn-google-login');
-        const btnLogout      = document.getElementById('btn-logout');
-        const btnStartCase   = document.getElementById('btn-start-case-001');
-        const btnBack        = document.getElementById('btn-back-dashboard');
-        const stageTitle     = document.getElementById('stage-title');
-        const stepIndicator  = document.getElementById('step-indicator');
-        const currentScoreEl = document.getElementById('current-score');
-        const maxScoreEl     = document.getElementById('max-score');
-        const progressBar    = document.getElementById('progress-bar');
-        const toastEl        = document.getElementById('toast');
-        const toastMsg       = document.getElementById('toast-message');
+    <!-- ── Top Header Bar ── -->
+    <header class="flex-shrink-0 border-b border-navy-700/60 bg-navy-850/80 backdrop-blur-xl">
+      <div class="flex items-center gap-3 px-4 py-2.5">
 
-        // ─── Toast Utility ─────────────────────────────────────
-        function showToast(message, durationMs = 3000) {
-            toastMsg.textContent = message;
-            toastEl.classList.remove('hidden');
-            toastEl.style.animation = 'slideUp 0.3s ease forwards';
-            setTimeout(() => {
-                toastEl.classList.add('hidden');
-            }, durationMs);
+        <button id="btn-back-dashboard" title="ออกจากเคส"
+                class="w-8 h-8 grid place-items-center rounded-lg text-slate-400 bg-navy-700/70 border border-navy-600 hover:text-white transition flex-shrink-0">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" />
+          </svg>
+        </button>
+
+        <div class="leading-tight min-w-0">
+          <div class="flex items-center gap-2">
+            <span id="case-id-badge" class="tag-pill !bg-navy-700 !text-slate-300">CASE 001</span>
+            <span id="case-acuity-badge" class="tag-pill !bg-acuity-500/12 !text-acuity-500 !border-acuity-500/35">⚠ HIGH ACUITY</span>
+          </div>
+          <h1 id="stage-title" class="text-sm font-extrabold text-white truncate mt-1">Loading case…</h1>
+        </div>
+
+        <!-- Vitals HUD -->
+        <div id="vitals-hud" class="hidden xl:flex items-stretch flex-1 justify-center gap-0 mx-4 panel rounded-xl overflow-hidden"></div>
+
+        <!-- Right cluster -->
+        <div class="flex items-center gap-2 ml-auto flex-shrink-0">
+          <div class="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-navy-700/70 border border-navy-600">
+            <span class="text-gold-400 text-xs">⏱</span>
+            <span id="case-timer" class="text-xs font-mono font-bold text-white">00:00</span>
+          </div>
+          <button id="btn-pause"
+                  class="px-2.5 py-1.5 rounded-lg text-xs font-semibold text-slate-300 bg-navy-700/70 border border-navy-600 hover:text-white transition">
+            ⏸ <span class="hidden sm:inline">Pause</span>
+          </button>
+          <button id="btn-exit-case"
+                  class="px-2.5 py-1.5 rounded-lg text-xs font-semibold text-acuity-500 bg-acuity-500/10 border border-acuity-500/30 hover:bg-acuity-500/20 transition">
+            ✕ <span class="hidden sm:inline">Exit</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Global progress bar -->
+      <div class="h-0.5 w-full bg-navy-800">
+        <div id="progress-bar" class="h-full transition-all duration-500" style="width:0%; background:linear-gradient(90deg,#48E5C2,#17A98A);"></div>
+      </div>
+    </header>
+
+    <!-- ── 3-Column Layout ── -->
+    <div class="flex-1 grid grid-cols-1 lg:grid-cols-[19rem_1fr] xl:grid-cols-[19rem_1fr_23rem] gap-3 p-3 overflow-hidden">
+
+      <!-- LEFT — Patient SOAP Data -->
+      <aside class="panel rounded-2xl flex flex-col overflow-hidden min-h-0">
+        <!-- Patient identity -->
+        <div class="flex items-center gap-3 p-3.5 border-b border-navy-700/60">
+          <div class="w-10 h-10 rounded-xl bg-navy-700 grid place-items-center text-lg flex-shrink-0">🧑🏻</div>
+          <div class="leading-tight min-w-0">
+            <p id="patient-name" class="text-xs font-extrabold text-white truncate">—</p>
+            <p id="patient-cc" class="text-[.65rem] text-slate-400 truncate">—</p>
+            <p id="patient-meta" class="text-[.6rem] text-slate-600 font-mono mt-.5">—</p>
+          </div>
+          <span id="patient-acuity-pill" class="ml-auto tag-pill !bg-acuity-500/12 !text-acuity-500 !border-acuity-500/35 flex-shrink-0">URGENCY</span>
+        </div>
+
+        <!-- SOAP tabs -->
+        <div class="flex gap-1 p-2 border-b border-navy-700/60">
+          <button class="soap-tab flex-1 px-2 py-1.5 rounded-lg text-[.68rem] font-bold text-navy-900 bg-teal-400 transition" data-soap="subjective">💬 Subjective</button>
+          <button class="soap-tab flex-1 px-2 py-1.5 rounded-lg text-[.68rem] font-semibold text-slate-400 hover:text-white hover:bg-navy-700/60 transition" data-soap="objective">🔬 Objective</button>
+          <button class="soap-tab flex-1 px-2 py-1.5 rounded-lg text-[.68rem] font-semibold text-slate-400 hover:text-white hover:bg-navy-700/60 transition" data-soap="cpg">📋 CPG</button>
+        </div>
+
+        <!-- SOAP content — populated by UIController.renderPatientChart() -->
+        <div id="soap-content" class="flex-1 overflow-y-auto p-3.5 text-xs"></div>
+      </aside>
+
+      <!-- CENTER — Bedside + Step Tracker -->
+      <section class="flex flex-col gap-3 min-h-0 overflow-hidden">
+
+        <!-- Bedside graphic -->
+        <div class="panel rounded-2xl p-4 flex flex-col items-center justify-center relative overflow-hidden flex-shrink-0"
+             style="background-image: radial-gradient(ellipse 70% 90% at 50% 40%, rgba(28,37,65,.75), rgba(19,27,46,.6));">
+          <div id="bedside-status-badge"
+               class="absolute top-3 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full text-[.65rem] font-bold text-acuity-500 bg-acuity-500/12 border border-acuity-500/35 animate-vital-pulse">
+            ● HEADACHE / UNCONTROLLED BP
+          </div>
+
+          <!-- Bed illustration -->
+          <svg class="w-56 h-28 mt-6" viewBox="0 0 220 110" fill="none" stroke="#33415F" stroke-width="2.5" stroke-linecap="round">
+            <rect x="20" y="55" width="180" height="26" rx="6" fill="rgba(51,65,95,.28)"/>
+            <path d="M20 81v18M200 81v18" />
+            <rect x="30" y="38" width="52" height="20" rx="8" fill="rgba(72,229,194,.10)" stroke="rgba(72,229,194,.35)"/>
+            <circle cx="96" cy="46" r="13" fill="rgba(72,229,194,.12)" stroke="rgba(72,229,194,.45)"/>
+            <path d="M110 55h72" stroke="rgba(72,229,194,.22)"/>
+          </svg>
+
+          <!-- Intervention chips -->
+          <div class="flex flex-wrap items-center justify-center gap-2 mt-3">
+            <span class="tag-pill">💉 IV Access</span>
+            <span class="tag-pill">🩺 BP Monitoring</span>
+            <span class="tag-pill !text-gold-400 !border-gold-400/30 !bg-gold-400/10">⚠ Non-adherence</span>
+          </div>
+        </div>
+
+        <!-- Step tracker + rendered step content -->
+        <div class="panel rounded-2xl flex-1 flex flex-col min-h-0 overflow-hidden">
+          <!-- Step progress dots -->
+          <div class="flex items-center gap-3 px-4 py-2.5 border-b border-navy-700/60 flex-shrink-0">
+            <div id="step-dots" class="flex items-center gap-1.5 flex-1 overflow-x-auto"></div>
+            <span id="step-indicator" class="text-[.68rem] font-mono font-bold text-slate-400 flex-shrink-0">Step 0 / 0</span>
+            <div class="divider-v h-4"></div>
+            <span class="text-[.68rem] font-mono font-bold text-gold-400 flex-shrink-0">
+              <span id="current-score">0</span><span class="text-slate-600">/</span><span id="max-score">0</span> pts
+            </span>
+          </div>
+
+          <!-- Injected by UIController -->
+          <div id="game-content-area" class="flex-1 overflow-y-auto p-4"></div>
+        </div>
+      </section>
+
+      <!-- RIGHT — Clinical Decision Engine (mirror panel for wide screens) -->
+      <aside id="decision-panel" class="hidden xl:flex panel rounded-2xl flex-col overflow-hidden min-h-0">
+        <div class="flex items-center gap-2 p-3.5 border-b border-navy-700/60">
+          <span id="decision-step-chip" class="tag-pill !bg-teal-400/12 !text-teal-400 !border-teal-400/35">Step 0/0</span>
+          <span id="decision-stage-chip" class="tag-pill">—</span>
+          <span id="decision-points-chip" class="ml-auto tag-pill !bg-gold-400/12 !text-gold-400 !border-gold-400/35">⚡ 0 pts</span>
+        </div>
+        <div id="decision-content" class="flex-1 overflow-y-auto p-3.5">
+          <p class="text-xs text-slate-500 leading-relaxed">
+            Clinical Decision Engine พร้อมทำงาน — เริ่มเคสเพื่อแสดงคำถามและตัวเลือก
+          </p>
+        </div>
+      </aside>
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════════
+     TOAST
+     ═══════════════════════════════════════════════════════════════ -->
+<div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 hidden">
+  <div class="glass-card rounded-xl px-5 py-3 text-sm font-medium text-white shadow-2xl">
+    <span id="toast-message"></span>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════════
+     SCRIPTS
+     ═══════════════════════════════════════════════════════════════ -->
+<script src="./js/firebase-service.js?v=20260803c"></script>
+<script src="./js/ui-controller.js?v=20260803c"></script>
+<script src="./js/game-engine.js?v=20260803c"></script>
+
+<!-- Launch Script: Wiring & Integration -->
+<script>
+(function() {
+    'use strict';
+
+    /**
+     * RPG_CONFIG — Gamification display values.
+     * These are UI placeholders. No Firestore collection backs them yet.
+     * Wire each field to real aggregate queries when the progression
+     * schema exists; the UI reads only from here.
+     */
+    const RPG_CONFIG = {
+        level: 4,
+        rankTitle: 'Lv.4 Clinical Resident',
+        xpCurrent: 2450,
+        xpTarget: 3000,
+        estimatedMinutes: 40
+    };
+
+    // ─── DOM References ────────────────────────────────────
+    const btnLogin       = document.getElementById('btn-google-login');
+    const btnGuest       = document.getElementById('btn-guest-login');
+    const btnLogout      = document.getElementById('btn-logout');
+    const btnStartCase   = document.getElementById('btn-start-case-001');
+    const btnBack        = document.getElementById('btn-back-dashboard');
+    const btnExit        = document.getElementById('btn-exit-case');
+    const btnPause       = document.getElementById('btn-pause');
+    const stageTitle     = document.getElementById('stage-title');
+    const stepIndicator  = document.getElementById('step-indicator');
+    const currentScoreEl = document.getElementById('current-score');
+    const maxScoreEl     = document.getElementById('max-score');
+    const progressBar    = document.getElementById('progress-bar');
+    const timerEl        = document.getElementById('case-timer');
+    const toastEl        = document.getElementById('toast');
+    const toastMsg       = document.getElementById('toast-message');
+
+    let caseCache = null;
+    let timerHandle = null;
+    let elapsedSeconds = 0;
+    let isPaused = false;
+
+    // ─── Toast ─────────────────────────────────────────────
+    function showToast(message, durationMs = 3200) {
+        toastMsg.textContent = message;
+        toastEl.classList.remove('hidden');
+        toastEl.style.animation = 'slideUp .3s ease forwards';
+        setTimeout(() => toastEl.classList.add('hidden'), durationMs);
+    }
+
+    // ─── XP bars (placeholder values from RPG_CONFIG) ──────
+    function paintXPBars() {
+        const pct = Math.min(100, (RPG_CONFIG.xpCurrent / RPG_CONFIG.xpTarget) * 100);
+        const fmt = n => n.toLocaleString('en-US');
+        ['login-xp-bar', 'dash-xp-bar'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.style.width = pct + '%';
+        });
+        const set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+        set('login-xp-current', fmt(RPG_CONFIG.xpCurrent));
+        set('login-xp-target', fmt(RPG_CONFIG.xpTarget));
+        set('login-rank-title', RPG_CONFIG.rankTitle);
+        set('login-level-badge', RPG_CONFIG.level);
+    }
+    // Delay one frame so the bar animates in
+    requestAnimationFrame(paintXPBars);
+
+    // ─── Case Timer ────────────────────────────────────────
+    function startTimer() {
+        stopTimer();
+        elapsedSeconds = 0;
+        isPaused = false;
+        timerHandle = setInterval(() => {
+            if (isPaused) return;
+            elapsedSeconds++;
+            const m = String(Math.floor(elapsedSeconds / 60)).padStart(2, '0');
+            const s = String(elapsedSeconds % 60).padStart(2, '0');
+            timerEl.textContent = `${m}:${s}`;
+        }, 1000);
+    }
+    function stopTimer() {
+        if (timerHandle) clearInterval(timerHandle);
+        timerHandle = null;
+    }
+
+    if (btnPause) {
+        btnPause.addEventListener('click', function() {
+            isPaused = !isPaused;
+            btnPause.innerHTML = isPaused
+                ? '▶ <span class="hidden sm:inline">Resume</span>'
+                : '⏸ <span class="hidden sm:inline">Pause</span>';
+            UIController.setPaused(isPaused);
+        });
+    }
+
+    // ─── Auth: post-login handoff ──────────────────────────
+    function enterDashboard(user, isGuest) {
+        const chip = document.getElementById('guest-warning-chip');
+        if (chip) chip.classList.toggle('hidden', !isGuest);
+        if (chip && isGuest) chip.classList.add('flex');
+
+        const nameEl    = document.getElementById('user-display-name');
+        const sbName    = document.getElementById('sidebar-user-name');
+        const sbMode    = document.getElementById('sidebar-user-mode');
+        const sbAvatar  = document.getElementById('sidebar-avatar');
+        const label = isGuest ? 'Guest User' : ((user && (user.displayName || user.email)) || 'Dr. Intern');
+
+        if (nameEl) nameEl.textContent = label;
+        if (sbName) sbName.textContent = label;
+        if (sbMode) sbMode.textContent = isGuest ? 'Anonymous Mode' : 'Signed In · Progress Saved';
+        if (sbAvatar) sbAvatar.textContent = label.charAt(0).toUpperCase();
+
+        UIController.navigateTo('dashboard');
+        UIController.renderQuestMap(caseCache);
+        paintXPBars();
+    }
+
+    btnLogin.addEventListener('click', async function() {
+        try {
+            let user = null;
+            if (window.AuthService) user = await window.AuthService.loginWithGoogle();
+            enterDashboard(user, false);
+        } catch (err) {
+            console.error('[Auth Login Error]', err);
+            showToast(`❌ เข้าสู่ระบบไม่สำเร็จ: ${err.message || 'เกิดข้อผิดพลาด'}`);
         }
+    });
 
-        // ─── Login Flow ────────────────────────────────────────
-        btnLogin.addEventListener('click', async function() {
+    if (btnGuest) {
+        btnGuest.addEventListener('click', async function() {
             try {
-                if (window.AuthService) {
-                    await window.AuthService.loginWithGoogle();
-                } else {
-                    console.log('[Auth] Mock Google login fallback.');
-                }
-                if (typeof UIController !== 'undefined' && typeof UIController.showDashboard === 'function') {
-                    UIController.showDashboard();
-                } else if (typeof UIController !== 'undefined' && typeof UIController.navigateTo === 'function') {
-                    UIController.navigateTo('dashboard');
-                } else if (window.UIController) {
-                    window.UIController.navigateTo('dashboard');
-                }
+                let user = null;
+                if (window.AuthService) user = await window.AuthService.loginAnonymously();
+                enterDashboard(user, true);
+                showToast('⚠ โหมด Anonymous — คะแนนจะไม่ถูกบันทึก');
             } catch (err) {
-                console.error('[Auth Login Error]', err);
-                showToast(`❌ เข้าสู่ระบบไม่สำเร็จ: ${err.message || 'เกิดข้อผิดพลาด'}`);
+                console.error('[Auth Guest Error]', err);
+                showToast(`❌ เข้าสู่โหมด Guest ไม่สำเร็จ: ${err.message || 'เกิดข้อผิดพลาด'}`);
             }
         });
+    }
 
-        btnLogout.addEventListener('click', async function() {
-            try {
-                if (window.AuthService) {
-                    await window.AuthService.logout();
-                }
-            } catch (err) {
-                console.error('[Auth Logout Error]', err);
-            }
-            UIController.navigateTo('login');
-        });
+    btnLogout.addEventListener('click', async function() {
+        try { if (window.AuthService) await window.AuthService.logout(); }
+        catch (err) { console.error('[Auth Logout Error]', err); }
+        stopTimer();
+        UIController.navigateTo('login');
+    });
 
-        // Sync User Avatar/Initial on Auth State Change
-        if (window.AuthService) {
-            window.AuthService.onAuthStateChanged(function(user) {
-                const initialEl = document.getElementById('user-avatar-initial');
-                const badgeEl   = document.getElementById('user-avatar-badge');
-                if (user) {
-                    const name = user.displayName || user.email || 'User';
-                    if (user.photoURL && badgeEl) {
-                        badgeEl.innerHTML = `<img src="${user.photoURL}" alt="${name}" class="w-full h-full object-cover" />`;
-                    } else if (initialEl) {
-                        initialEl.textContent = name.charAt(0).toUpperCase();
-                    }
+    // Sync avatar on auth state change
+    if (window.AuthService) {
+        window.AuthService.onAuthStateChanged(function(user) {
+            const initialEl = document.getElementById('user-avatar-initial');
+            const badgeEl   = document.getElementById('user-avatar-badge');
+            if (user) {
+                const name = user.displayName || user.email || 'User';
+                if (user.photoURL && badgeEl) {
+                    badgeEl.innerHTML = `<img src="${user.photoURL}" alt="${name}" class="w-full h-full object-cover" />`;
                 } else if (initialEl) {
-                    initialEl.textContent = 'U';
+                    initialEl.textContent = name.charAt(0).toUpperCase();
                 }
-            });
-        }
-
-        // ─── Back to Dashboard ─────────────────────────────────
-        btnBack.addEventListener('click', function() {
-            if (confirm('ออกจากเคสนี้? ความก้าวหน้าจะถูกบันทึก')) {
-                UIController.navigateTo('dashboard');
+            } else if (initialEl) {
+                initialEl.textContent = 'U';
             }
         });
+    }
 
-        // ─── Start Case 001 ────────────────────────────────────
-        btnStartCase.addEventListener('click', async function() {
-            btnStartCase.disabled = true;
-            btnStartCase.innerHTML = `
-                <div class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                กำลังโหลด...
-            `;
-
-            try {
-                const response = await fetch('./data/case_001.json?v=20260803');
-
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-                }
-
-                const caseData = await response.json();
-                console.log('[Launcher] case_001.json loaded successfully.', caseData);
-
-                // Switch to game view
-                UIController.navigateTo('game');
-
-                // Initialize the Game Engine with loaded case data
-                const success = GameEngine.initGame(caseData);
-
-                if (success) {
-                    // Update header with case metadata
-                    stageTitle.textContent = caseData.title || `Case ${caseData.case_id}`;
-                    const engineState = GameEngine.getState();
-                    maxScoreEl.textContent = engineState.maxPossibleScore;
-                    updateHUD();
-                    console.log('[Launcher] Game started successfully.');
-                } else {
-                    showToast('❌ ไม่สามารถเริ่มเคสได้ — ข้อมูล JSON ไม่ถูกต้อง');
-                    UIController.navigateTo('dashboard');
-                }
-
-            } catch (error) {
-                console.error('[Launcher Error]', error);
-                showToast(`❌ โหลดข้อมูลเคสล้มเหลว: ${error.message}`);
-                UIController.navigateTo('dashboard');
-            } finally {
-                // Restore button state
-                btnStartCase.disabled = false;
-                btnStartCase.innerHTML = `
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.347a1.125 1.125 0 0 1 0 1.972l-11.54 6.347a1.125 1.125 0 0 1-1.667-.986V5.653Z" />
-                    </svg>
-                    Start Case 001
-                `;
-            }
-        });
-
-        // ─── HUD Update Loop ───────────────────────────────────
-        // Polls GameEngine state to keep Score, Progress, and Step Indicator in sync.
-        // Uses MutationObserver on #game-content-area as the trigger for efficient updates.
-        function updateHUD() {
-            const engineState = GameEngine.getState();
-            if (!engineState) return;
-
-            // Score
-            currentScoreEl.textContent = engineState.currentScore;
-            maxScoreEl.textContent = engineState.maxPossibleScore;
-
-            // Step indicator
-            if (engineState.totalSteps > 0) {
-                stepIndicator.textContent = `ข้อ ${engineState.currentStepIndex + 1} / ${engineState.totalSteps}`;
-            }
-
-            // Progress bar
-            if (engineState.totalSteps > 0) {
-                const pct = ((engineState.currentStepIndex + 1) / engineState.totalSteps) * 100;
-                progressBar.style.width = `${pct}%`;
-            }
+    // ─── Exit case ─────────────────────────────────────────
+    function exitCase() {
+        if (confirm('ออกจากเคสนี้? ความก้าวหน้าจะถูกบันทึก')) {
+            stopTimer();
+            UIController.navigateTo('dashboard');
         }
+    }
+    btnBack.addEventListener('click', exitCase);
+    if (btnExit) btnExit.addEventListener('click', exitCase);
 
-        // Observe DOM changes in game-content-area to auto-update HUD
-        const gameArea = document.getElementById('game-content-area');
-        if (gameArea) {
-            const observer = new MutationObserver(function() {
+    // ─── Preload case metadata for the quest map ───────────
+    async function preloadCase() {
+        try {
+            const res = await fetch('./data/case_001.json?v=20260803c');
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            caseCache = await res.json();
+            console.log('[Launcher] Case metadata preloaded.', caseCache.case_id);
+            UIController.renderQuestMap(caseCache);
+            UIController.renderQuestDetail(caseCache, RPG_CONFIG);
+        } catch (err) {
+            console.warn('[Launcher] Case preload failed (non-fatal):', err.message);
+        }
+    }
+    preloadCase();
+
+    // ─── Start Case ────────────────────────────────────────
+    btnStartCase.addEventListener('click', async function() {
+        btnStartCase.disabled = true;
+        btnStartCase.innerHTML = `<div class="w-4 h-4 border-2 border-navy-900/30 border-t-navy-900 rounded-full animate-spin"></div> กำลังโหลด...`;
+
+        try {
+            const caseData = caseCache || await (async () => {
+                const r = await fetch('./data/case_001.json?v=20260803c');
+                if (!r.ok) throw new Error(`HTTP ${r.status}: ${r.statusText}`);
+                return r.json();
+            })();
+            caseCache = caseData;
+            console.log('[Launcher] case_001.json loaded successfully.', caseData);
+
+            UIController.navigateTo('game');
+            UIController.renderPatientChart(caseData);
+            UIController.renderVitals(caseData);
+            UIController.renderCaseHeader(caseData);
+
+            const success = GameEngine.initGame(caseData);
+
+            if (success) {
+                stageTitle.textContent = caseData.case_title || `Case ${caseData.case_id}`;
+                const st = GameEngine.getState();
+                maxScoreEl.textContent = st.maxPossibleScore;
+                UIController.buildStepDots(st.totalSteps);
                 updateHUD();
-            });
-            observer.observe(gameArea, { childList: true, subtree: true });
+                startTimer();
+                console.log('[Launcher] Game started successfully.');
+            } else {
+                showToast('❌ ไม่สามารถเริ่มเคสได้ — ข้อมูล JSON ไม่ถูกต้อง');
+                UIController.navigateTo('dashboard');
+            }
+        } catch (error) {
+            console.error('[Launcher Error]', error);
+            showToast(`❌ โหลดข้อมูลเคสล้มเหลว: ${error.message}`);
+            UIController.navigateTo('dashboard');
+        } finally {
+            btnStartCase.disabled = false;
+            btnStartCase.innerHTML = `<svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M6 4.5v15l13-7.5-13-7.5Z"/></svg> START`;
         }
+    });
 
-        console.log('[Launcher] System wiring complete. Ready for case_001.json.');
-    })();
-    </script>
+    // ─── HUD Sync ──────────────────────────────────────────
+    function updateHUD() {
+        const st = GameEngine.getState();
+        if (!st) return;
 
+        currentScoreEl.textContent = st.currentScore;
+        maxScoreEl.textContent = st.maxPossibleScore;
+
+        if (st.totalSteps > 0) {
+            stepIndicator.textContent = `Step ${st.currentStepIndex + 1} / ${st.totalSteps}`;
+            const pct = ((st.currentStepIndex + 1) / st.totalSteps) * 100;
+            progressBar.style.width = `${pct}%`;
+            UIController.syncStepDots(st.currentStepIndex, st.totalSteps);
+            UIController.syncDecisionHeader(st, caseCache);
+        }
+    }
+
+    const gameArea = document.getElementById('game-content-area');
+    if (gameArea) {
+        new MutationObserver(updateHUD).observe(gameArea, { childList: true, subtree: true });
+    }
+
+    console.log('[Launcher] System wiring complete. Medical RPG theme active.');
+})();
+</script>
 </body>
 </html>

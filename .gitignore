@@ -22,3 +22,6 @@ yarn-error.log*
 
 # Test / Scratch scripts (optional local dev files)
 integration-test.cjs
+
+# Local dev helpers (not part of the production bundle)
+.claude/
