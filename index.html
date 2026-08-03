@@ -707,9 +707,9 @@
 <!-- ═══════════════════════════════════════════════════════════════
      SCRIPTS
      ═══════════════════════════════════════════════════════════════ -->
-<script src="./js/firebase-service.js?v=20260803c"></script>
-<script src="./js/ui-controller.js?v=20260803c"></script>
-<script src="./js/game-engine.js?v=20260803c"></script>
+<script src="./js/firebase-service.js?v=20260803d"></script>
+<script src="./js/ui-controller.js?v=20260803d"></script>
+<script src="./js/game-engine.js?v=20260803d"></script>
 
 <!-- Launch Script: Wiring & Integration -->
 <script>
@@ -774,8 +774,10 @@
         set('login-rank-title', RPG_CONFIG.rankTitle);
         set('login-level-badge', RPG_CONFIG.level);
     }
-    // Delay one frame so the bar animates in
-    requestAnimationFrame(paintXPBars);
+    // Paint immediately, then repeat once after layout settles.
+    // (rAF alone is throttled to never in background tabs, leaving the bar at 0%.)
+    paintXPBars();
+    setTimeout(paintXPBars, 60);
 
     // ─── Case Timer ────────────────────────────────────────
     function startTimer() {
@@ -890,7 +892,7 @@
     // ─── Preload case metadata for the quest map ───────────
     async function preloadCase() {
         try {
-            const res = await fetch('./data/case_001.json?v=20260803c');
+            const res = await fetch('./data/case_001.json?v=20260803d');
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
             caseCache = await res.json();
             console.log('[Launcher] Case metadata preloaded.', caseCache.case_id);
@@ -909,7 +911,7 @@
 
         try {
             const caseData = caseCache || await (async () => {
-                const r = await fetch('./data/case_001.json?v=20260803c');
+                const r = await fetch('./data/case_001.json?v=20260803d');
                 if (!r.ok) throw new Error(`HTTP ${r.status}: ${r.statusText}`);
                 return r.json();
             })();
