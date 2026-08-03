@@ -27,36 +27,31 @@
       "label": "BP",
       "value": "180/110",
       "unit": "mmHg",
-      "flag": "High",
-      "severity": "critical"
+      "ref": "90/60–140/90"
     },
     {
       "label": "HR",
       "value": "82",
       "unit": "bpm",
-      "flag": "Normal",
-      "severity": "normal"
+      "ref": "60–100"
     },
     {
       "label": "RR",
       "value": "18",
       "unit": "br/min",
-      "flag": "Normal",
-      "severity": "normal"
+      "ref": "12–20"
     },
     {
       "label": "BT",
       "value": "36.8",
       "unit": "°C",
-      "flag": "Afebrile",
-      "severity": "normal"
+      "ref": "36.5–37.5"
     },
     {
       "label": "eGFR",
       "value": "85",
       "unit": "mL/min",
-      "flag": "Preserved",
-      "severity": "normal"
+      "ref": "≥ 90"
     }
   ],
   "stages": {

@@ -239,7 +239,11 @@ const GameEngine = (function() {
         const fatalPick = stepData.choices.find(c => c.is_fatal && selected.indexOf(c.id) !== -1);
         if (fatalPick) {
             state.isGameOver = true;
-            handleGameOver(stepData.feedback ? stepData.feedback.fatal_message : 'Fatal Error Committed.');
+            handleGameOver(
+                fatalPick.fatal_message
+                || (stepData.feedback && stepData.feedback.fatal_message)
+                || 'Fatal Error Committed.'
+            );
             return;
         }
 
@@ -252,7 +256,16 @@ const GameEngine = (function() {
 
         const perCorrect = stepData.point_per_correct
             || Math.round((stepData.point_value || 0) / Math.max(answerKey.length, 1));
-        const earned = hits.length * perCorrect;
+
+        // Negative marking. The UI no longer tells the learner how many answers
+        // are correct, so nothing stops them ticking all seven options — the
+        // penalty is what makes that strategy lose points instead of winning
+        // them. A step can never drop below zero, so a single bad step cannot
+        // wipe out earlier work.
+        const penalty = stepData.point_penalty || 0;
+        const gross = hits.length * perCorrect;
+        const lost = misses.length * penalty;
+        const earned = Math.max(0, gross - lost);
 
         state.currentScore += earned;
 
@@ -266,7 +279,7 @@ const GameEngine = (function() {
             misses.forEach(id => state.mistakeHistory[state.currentStepId].push(id));
         }
 
-        console.log(`[Score Update] ${hits.length}/${answerKey.length} correct → +${earned} → Total: ${state.currentScore}/${state.maxPossibleScore}`);
+        console.log(`[Score Update] ${hits.length}/${answerKey.length} correct, ${misses.length} wrong (+${gross} −${lost}) → +${earned} → Total: ${state.currentScore}/${state.maxPossibleScore}`);
 
         const fb = stepData.feedback || {};
         const message = allCorrect ? fb.correct
@@ -281,7 +294,10 @@ const GameEngine = (function() {
             hits,
             misses,
             answerKey,
-            message
+            message,
+            gross,
+            lost,
+            rationale: stepData.clinical_rationale || ''
         });
     }
 

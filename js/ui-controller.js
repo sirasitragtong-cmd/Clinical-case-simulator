@@ -46,6 +46,11 @@ const UIController = (function() {
     let dtpRequired    = false;  // true only on the case's designated DTP step
     let dtpLastTag     = null;   // survives the step, for the Firestore payload
 
+    // The Monitoring tab holds the efficacy/safety care plan, which is also the
+    // answer key to the monitoring step. It stays locked until that step has
+    // been answered, so it reinforces the plan instead of revealing it.
+    let monitoringUnlocked = false;
+
     /**
      * The seven standard Drug Therapy Problem categories from the
      * Pharmaceutical Care Practice framework (Cipolle, Strand & Morley).
@@ -303,17 +308,21 @@ const UIController = (function() {
             return;
         }
 
-        const html = vitals.map(v => {
-            const isCrit = v.severity === 'critical';
-            const isWarn = v.severity === 'warning';
-            const color  = isCrit ? 'text-acuity-500' : isWarn ? 'text-gold-400' : 'text-teal-400';
-            return `
+        // Measurement + reference range only.
+        //
+        // Earlier revisions coloured each vital by an authored `severity` and
+        // printed an interpretive `flag` ("Hypotension", "Severe anemia",
+        // "High Risk"). Those labels are the answers to the problem-list and
+        // severity steps this case then asks, so the interface was grading the
+        // data for the learner. The numbers are all still here — reading them
+        // against the reference range is the exercise.
+        const html = vitals.map(v => `
                 <div class="bg-navy-850 px-1.5 py-1.5 text-center">
                     <p class="text-[.52rem] font-bold tracking-wider text-slate-500 uppercase truncate">${esc(v.label)}</p>
                     <p class="text-[.82rem] font-mono font-bold text-white leading-tight truncate">${esc(v.value)}</p>
-                    <p class="text-[.5rem] font-semibold ${color} truncate">${isCrit ? '▲' : ''}${esc(v.flag)}</p>
-                </div>`;
-        }).join('');
+                    <p class="text-[.5rem] text-slate-500 truncate">${esc(v.unit || '')}</p>
+                    <p class="text-[.48rem] text-slate-600 truncate" title="reference range">${v.ref ? esc(v.ref) : ''}</p>
+                </div>`).join('');
 
         vitalHosts.forEach(h => { h.innerHTML = html; });
     }
@@ -415,6 +424,13 @@ const UIController = (function() {
         const crcl = calcCockcroftGault(data.patient, r);
         const egfr = Number(r.egfr_ml_min_1_73);
 
+        // BUN/Cr ratio is shown as a number only. Its interpretation — that a
+        // ratio above 20:1 points to an upper GI source — belongs in the CPG
+        // reference, not stamped onto the patient's chart as a conclusion.
+        const ratio = (r.bun_mg_dl && r.scr_mg_dl)
+            ? Math.round((r.bun_mg_dl / r.scr_mg_dl) * 10) / 10
+            : null;
+
         // The lower of the two drives the warning — the conservative read.
         const impaired = (crcl != null && crcl < 60) || (egfr && egfr < 60);
 
@@ -438,7 +454,9 @@ const UIController = (function() {
                 <div class="grid grid-cols-2 gap-1.5">
                     ${cell('Scr', r.scr_mg_dl != null ? r.scr_mg_dl : '—', 'mg/dL')}
                     ${cell('BUN', r.bun_mg_dl != null ? r.bun_mg_dl : '—', 'mg/dL')}
-                    ${cell('eGFR', egfr || '—', 'mL/min/1.73m²')}
+                    ${egfr
+                        ? cell('eGFR', egfr, 'mL/min/1.73m²')
+                        : cell('BUN/Cr', ratio != null ? ratio + ':1' : '—', 'ratio')}
                     ${cell('CrCl (C-G)', crcl != null ? crcl : '—', 'mL/min', crclTone)}
                 </div>
 
@@ -455,11 +473,7 @@ const UIController = (function() {
                             ตรวจสอบขนาดยาทุกตัวที่ขับออกทางไตก่อนสั่งจ่าย
                         </p>
                     </div>
-                </div>` : `
-                <div class="mt-2 flex items-center gap-1.5 rounded-lg border border-teal-400/30 bg-teal-400/[.07] px-2 py-1.5">
-                    <span class="text-teal-400 text-[.7rem] leading-none">✓</span>
-                    <p class="text-[.64rem] font-semibold text-teal-400">การทำงานของไตอยู่ในเกณฑ์ปกติ</p>
-                </div>`}
+                </div>` : ''}
             </div>`;
     }
 
@@ -471,6 +485,16 @@ const UIController = (function() {
     function renderMonitoringBlock(caseData) {
         const data = caseData || activeCase;
         const m = data && data.monitoring;
+
+        if (!monitoringUnlocked) {
+            return `<div class="rounded-xl border border-navy-600/70 bg-navy-850/70 p-4 text-center">
+                        <p class="text-xl mb-1.5">🔒</p>
+                        <p class="text-[.72rem] font-bold text-slate-300 mb-1">ยังไม่เปิดใช้งาน</p>
+                        <p class="text-[.66rem] text-slate-500 leading-relaxed">
+                            กรอบการติดตามผลจะเปิดให้ดูหลังจากท่านวางแผนการติดตามด้วยตนเองแล้ว
+                        </p>
+                    </div>`;
+        }
 
         if (!m) {
             return `<p class="text-slate-500 text-[.72rem] leading-relaxed">
@@ -652,10 +676,9 @@ const UIController = (function() {
             const s = (caseData.stages || {})[state.currentStageId];
             setText('decision-stage-chip', (s && s.title) ? s.title : state.currentStageId);
 
-            if (state.currentStepId) {
-                const st = (s || { steps: {} }).steps[state.currentStepId];
-                setText('decision-points-chip', `⚡ ${(st && st.point_value) || 0}`);
-            }
+            // The step's point_value is deliberately not surfaced anywhere:
+            // points are awarded per correct option, so displaying "400" told
+            // the learner there were exactly four correct answers of seven.
         }
     }
 
@@ -726,33 +749,27 @@ const UIController = (function() {
 
     // ─── Render: Multi-select MCQ ──────────────────────────────
     function renderMCQMulti(stepData) {
-        const limit = stepData.select_count || 1;
-        const per   = stepData.point_per_correct
-            || Math.round((stepData.point_value || 0) / Math.max(limit, 1));
-
         multiSelection = new Set();
-        multiLimit     = limit;
-        multiPerPoint  = per;
+        multiPerPoint  = stepData.point_per_correct || 0;
+        // No cap. select_count is authoring metadata only — surfacing it, or
+        // enforcing it, tells the learner exactly how many options are correct,
+        // which is the single largest hint the interface could give.
+        multiLimit     = 0;
 
         // DTP tagging is required only on the step the case designates.
         dtpSelection = null;
         dtpRequired  = isDTPStep();
 
-        // Monitoring steps read against the efficacy/safety framework, so
-        // open the patient file on that tab rather than making the student
-        // hunt for it.
-        if (String(state_currentStepId()).indexOf('monitoring') !== -1 && activeCase && activeCase.monitoring) {
-            soapTab = 'monitoring';
-            syncSoapTabs();
-            renderPatientChart(activeCase);
-        }
+        // The patient's condition follows the authored clinical state, not the
+        // learner's score, so a deteriorating avatar never signals a wrong answer
+        // before the answer is submitted.
+        if (stepData.patient_state) setPatientReaction(stepData.patient_state);
 
         const choices = (stepData.choices || []).map(c => `
             <button class="choice-btn choice-multi" data-choice-id="${esc(c.id)}" aria-pressed="false">
                 <span class="choice-box" aria-hidden="true"></span>
                 <span class="choice-key">${esc(c.id)}</span>
                 <span class="flex-1">${esc(c.text)}</span>
-                <span class="text-[.62rem] font-bold text-gold-400 flex-shrink-0 mt-0.5">+${per}</span>
             </button>`).join('');
 
         gameArea.innerHTML = `
@@ -760,8 +777,8 @@ const UIController = (function() {
                 <div>
                     <p class="text-[.6rem] font-bold tracking-widest text-teal-400 uppercase mb-1.5">Clinical Decision</p>
                     <h3 class="text-sm font-bold text-white leading-relaxed">${esc(stepData.question)}</h3>
-                    <p class="text-[.68rem] text-teal-400/90 mt-1.5">
-                        ⓘ เลือก <strong>${limit}</strong> ข้อ — Partial Credit Enabled
+                    <p class="text-[.68rem] text-slate-500 mt-1.5">
+                        ⓘ เลือกได้มากกว่าหนึ่งข้อ — ตอบผิดมีการหักคะแนน
                     </p>
                 </div>
 
@@ -771,10 +788,9 @@ const UIController = (function() {
                 <div id="feedback-area"></div>
 
                 <div class="submit-dock">
-                    <div class="flex items-center justify-between text-[.7rem] mb-2">
-                        <span class="text-slate-400"><strong id="multi-count" class="text-white">0</strong> / ${limit} selected</span>
-                        <span class="text-slate-400">Est. <strong id="multi-est" class="text-gold-400">+0</strong> pts</span>
-                    </div>
+                    <p class="text-[.7rem] text-slate-400 mb-2">
+                        เลือกแล้ว <strong id="multi-count" class="text-white">0</strong> ข้อ
+                    </p>
                     <button class="submit-decision-btn primary-btn w-full" disabled>Submit Clinical Decision</button>
                 </div>
             </div>`;
@@ -789,14 +805,6 @@ const UIController = (function() {
             btn.classList.remove('is-selected');
             btn.setAttribute('aria-pressed', 'false');
         } else {
-            if (multiSelection.size >= multiLimit) {
-                const counter = byId('multi-count');
-                if (counter) {
-                    counter.classList.add('text-acuity-500');
-                    setTimeout(() => counter.classList.remove('text-acuity-500'), 450);
-                }
-                return;
-            }
             multiSelection.add(id);
             btn.classList.add('is-selected');
             btn.setAttribute('aria-pressed', 'true');
@@ -812,7 +820,6 @@ const UIController = (function() {
      */
     function syncSubmitState() {
         setText('multi-count', multiSelection.size);
-        setText('multi-est', '+' + (multiSelection.size * multiPerPoint));
 
         const submit = document.querySelector('.submit-decision-btn');
         if (!submit) return;
@@ -820,11 +827,11 @@ const UIController = (function() {
         const needsTag = dtpRequired && dtpSelection == null;
         submit.disabled = multiSelection.size === 0 || needsTag;
 
+        // The label must not vary with how close the selection is to the
+        // answer key — a "✓" that appears at the right count would be a tell.
         submit.textContent = needsTag
             ? '🏷 เลือกประเภท DTP ก่อน'
-            : (multiSelection.size === multiLimit
-                ? 'Submit Clinical Decision ✓'
-                : `Submit Clinical Decision (${multiSelection.size}/${multiLimit})`);
+            : 'Submit Clinical Decision';
     }
 
     // ─── Render: Feedback (single answer) ──────────────────────
@@ -869,6 +876,14 @@ const UIController = (function() {
 
         if (dtpRequired) renderDTPVerdict();
 
+        // The learner has now committed to a monitoring plan, so the reference
+        // framework is reinforcement rather than a hint.
+        if (String(state_currentStepId()).indexOf('monitoring') !== -1) {
+            monitoringUnlocked = true;
+            syncSoapTabs();
+            if (soapTab === 'monitoring') renderPatientChart(activeCase);
+        }
+
         // Condition tracks how well the plan was executed.
         if (result.allCorrect)      adjustPatientHealth(10, 'improving');
         else if (result.earned > 0) adjustPatientHealth(2,  'pain');
@@ -895,8 +910,16 @@ const UIController = (function() {
                 <p class="text-[.7rem] text-slate-400 mb-1.5">
                     ตอบถูก ${result.hits.length} จาก ${result.answerKey.length} ข้อ
                     · เฉลย: <strong class="text-teal-400">${result.answerKey.join(', ')}</strong>
+                    ${result.misses && result.misses.length
+                        ? `· ตอบผิด <strong class="text-acuity-500">${result.misses.length}</strong> ข้อ (−${result.lost || 0})`
+                        : ''}
                 </p>
                 <p class="text-[.72rem] text-slate-300 leading-relaxed">${esc(result.message || '')}</p>
+                ${result.rationale ? `
+                <div class="mt-2 pt-2 border-t border-navy-600/60">
+                    <p class="text-[.56rem] font-bold tracking-widest text-slate-500 uppercase mb-1">Clinical Rationale</p>
+                    <p class="text-[.68rem] text-slate-400 leading-relaxed">${esc(result.rationale)}</p>
+                </div>` : ''}
                 <button class="next-step-btn primary-btn w-full mt-3">ขั้นตอนถัดไป →</button>
             </div>`;
         feedbackArea.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
@@ -1810,7 +1833,14 @@ const UIController = (function() {
         DTP_CATEGORIES,
         // The DTP the student tagged this run, for the Firestore payload.
         getDTPTag: () => dtpLastTag,
-        resetDTPTag: function() { dtpLastTag = null; dtpSelection = null; dtpRequired = false; },
+        resetDTPTag: function() {
+            dtpLastTag = null; dtpSelection = null; dtpRequired = false;
+            // A replay must re-lock the monitoring framework, otherwise the
+            // second run starts with the answer key already open.
+            monitoringUnlocked = false;
+            soapTab = 'subjective';
+            syncSoapTabs();
+        },
         renderInstructorPanel
     };
 })();

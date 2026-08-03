@@ -8,7 +8,7 @@
     <title>Clinical Case Simulator — Medical RPG</title>
 
     <!-- PWA — installable on iPad for clinical rotations -->
-    <link rel="manifest" href="./manifest.json?v=202608040033" />
+    <link rel="manifest" href="./manifest.json?v=202608040054" />
     <link rel="apple-touch-icon" href="./icons/icon-192.png" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
@@ -26,7 +26,7 @@
 
     <!-- Compiled production stylesheet (node build.js). Replaces the
          cdn.tailwindcss.com in-browser compiler and its production warning. -->
-    <link rel="stylesheet" href="./css/style.min.css?v=202608040033" />
+    <link rel="stylesheet" href="./css/style.min.css?v=202608040054" />
 </head>
 <body>
 
@@ -425,7 +425,9 @@
           <div class="flex items-center gap-2 p-3 border-b border-navy-700/60 flex-shrink-0">
             <span id="decision-step-chip" class="tag-pill !bg-teal-400/12 !text-teal-400 !border-teal-400/35">Step 0/0</span>
             <span id="decision-stage-chip" class="tag-pill truncate max-w-[8rem]">—</span>
-            <span id="decision-points-chip" class="ml-auto tag-pill !bg-gold-400/12 !text-gold-400 !border-gold-400/35">⚡ 0</span>
+            <!-- The per-step point total used to sit here. It was removed:
+                 points are awarded per correct option, so "⚡ 400" told the
+                 learner there were exactly four correct answers of seven. -->
             <span class="hidden sm:inline text-[.66rem] font-mono font-bold text-gold-400">
               <span id="current-score">0</span><span class="text-slate-600">/</span><span id="max-score">0</span>
             </span>
@@ -478,9 +480,9 @@
 <!-- ═══════════════════════════════════════════════════════════════
      SCRIPTS
      ═══════════════════════════════════════════════════════════════ -->
-<script src="./js/firebase-service.js?v=202608040033"></script>
-<script src="./js/ui-controller.js?v=202608040033"></script>
-<script src="./js/game-engine.js?v=202608040033"></script>
+<script src="./js/firebase-service.js?v=202608040054"></script>
+<script src="./js/ui-controller.js?v=202608040054"></script>
+<script src="./js/game-engine.js?v=202608040054"></script>
 
 <script>
 (function() {
@@ -488,8 +490,8 @@
 
     // Case registry — every playable case, all unlocked.
     const CASE_FILES = [
-        './data/case_001.json?v=202608040033',
-        './data/case_002.json?v=202608040033'
+        './data/case_001.json?v=202608040054',
+        './data/case_002.json?v=202608040054'
     ];
 
     const btnLogin       = document.getElementById('btn-google-login');
