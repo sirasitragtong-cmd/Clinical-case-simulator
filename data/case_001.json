@@ -2,7 +2,11 @@
   "case_id": "case_001",
   "case_title": "Upper GI Bleed — NSAID-induced Peptic Ulcer Disease",
   "difficulty": "Advanced",
-  "tags": ["Gastroenterology", "Emergency Medicine", "Pharmacotherapy"],
+  "tags": [
+    "Gastroenterology",
+    "Emergency Medicine",
+    "Pharmacotherapy"
+  ],
   "patient": {
     "name": "ผู้ป่วยชายไทย",
     "age": 66,
@@ -10,21 +14,73 @@
     "occupation": "รับจ้างทั่วไป",
     "chief_complaint": "ถ่ายอุจจาระสีดำเหนียวคล้ายยางมะตอย (Melena) 2 ครั้งใหญ่ใน 6 ชั่วโมง ร่วมกับหน้ามืด ใจสั่น",
     "acuity": "HIGH ACUITY",
-    "status_tags": ["Melena", "Early Hypovolemic Shock", "NSAID use"]
+    "status_tags": [
+      "Melena",
+      "Early Hypovolemic Shock",
+      "NSAID use"
+    ]
   },
   "vitals": [
-    { "label": "BP",   "value": "92/58", "unit": "mmHg",   "flag": "Hypotension",   "severity": "critical" },
-    { "label": "HR",   "value": "118",   "unit": "bpm",    "flag": "Tachycardia",   "severity": "critical" },
-    { "label": "RR",   "value": "24",    "unit": "br/min", "flag": "Tachypnea",     "severity": "warning"  },
-    { "label": "Temp", "value": "37.2",  "unit": "°C",     "flag": "Afebrile",      "severity": "normal"   },
-    { "label": "SpO2", "value": "96%",   "unit": "",       "flag": "Normal",        "severity": "normal"   },
-    { "label": "Hb",   "value": "7.8",   "unit": "g/dL",   "flag": "Severe anemia", "severity": "critical" },
-    { "label": "GBS",  "value": "13",    "unit": "",       "flag": "High Risk",     "severity": "critical" }
+    {
+      "label": "BP",
+      "value": "92/58",
+      "unit": "mmHg",
+      "flag": "Hypotension",
+      "severity": "critical"
+    },
+    {
+      "label": "HR",
+      "value": "118",
+      "unit": "bpm",
+      "flag": "Tachycardia",
+      "severity": "critical"
+    },
+    {
+      "label": "RR",
+      "value": "24",
+      "unit": "br/min",
+      "flag": "Tachypnea",
+      "severity": "warning"
+    },
+    {
+      "label": "Temp",
+      "value": "37.2",
+      "unit": "°C",
+      "flag": "Afebrile",
+      "severity": "normal"
+    },
+    {
+      "label": "SpO2",
+      "value": "96%",
+      "unit": "",
+      "flag": "Normal",
+      "severity": "normal"
+    },
+    {
+      "label": "Hb",
+      "value": "7.8",
+      "unit": "g/dL",
+      "flag": "Severe anemia",
+      "severity": "critical"
+    },
+    {
+      "label": "GBS",
+      "value": "13",
+      "unit": "",
+      "flag": "High Risk",
+      "severity": "critical"
+    }
   ],
   "cpg": {
     "title": "การวินิจฉัยแยกโรค — Differential Diagnosis",
     "note": "อ้างอิงแนวทางเวชปฏิบัติ ACG 2024 (H. pylori) และ Portal Hypertension 2026",
-    "columns": ["PUD with UGIB", "Esophageal Variceal Bleeding", "Acute Coronary Syndrome", "GERD", "Acute Pancreatitis"],
+    "columns": [
+      "PUD with UGIB",
+      "Esophageal Variceal Bleeding",
+      "Acute Coronary Syndrome",
+      "GERD",
+      "Acute Pancreatitis"
+    ],
     "rows": [
       {
         "label": "Pathophysiology หลัก",
@@ -118,15 +174,47 @@
           "point_per_correct": 100,
           "point_value": 300,
           "choices": [
-            { "id": "A", "text": "Acute Upper GI Bleeding", "is_correct": true },
-            { "id": "B", "text": "NSAID-induced Peptic Ulcer Disease", "is_correct": true },
-            { "id": "C", "text": "Early Hypovolemic Shock", "is_correct": true },
-            { "id": "D", "text": "ST-Elevation Myocardial Infarction", "is_correct": false },
-            { "id": "E", "text": "Portal Hypertensive Gastropathy", "is_correct": false },
-            { "id": "F", "text": "Grade D Reflux Esophagitis", "is_correct": false },
-            { "id": "G", "text": "Severe Acute Pancreatitis", "is_correct": false }
+            {
+              "id": "A",
+              "text": "Acute Upper GI Bleeding",
+              "is_correct": true
+            },
+            {
+              "id": "B",
+              "text": "NSAID-induced Peptic Ulcer Disease",
+              "is_correct": true
+            },
+            {
+              "id": "C",
+              "text": "Early Hypovolemic Shock",
+              "is_correct": true
+            },
+            {
+              "id": "D",
+              "text": "ST-Elevation Myocardial Infarction",
+              "is_correct": false
+            },
+            {
+              "id": "E",
+              "text": "Portal Hypertensive Gastropathy",
+              "is_correct": false
+            },
+            {
+              "id": "F",
+              "text": "Grade D Reflux Esophagitis",
+              "is_correct": false
+            },
+            {
+              "id": "G",
+              "text": "Severe Acute Pancreatitis",
+              "is_correct": false
+            }
           ],
-          "correct_answers": ["A", "B", "C"],
+          "correct_answers": [
+            "A",
+            "B",
+            "C"
+          ],
           "feedback": {
             "correct": "ถูกต้องทั้งหมด! ผู้ป่วยมาด้วย Melena และ Hemodynamic ไม่คงที่ (UGIB/Shock) โดยมีประวัติใช้ Naproxen ซึ่งเป็นสาเหตุโดยตรงของ PUD",
             "partial": "ตอบถูกบางส่วน — ทบทวนว่าปัญหาเร่งด่วนคือ UGIB, PUD จาก NSAID และภาวะช็อกจากการเสียเลือด",
@@ -140,15 +228,46 @@
           "point_per_correct": 100,
           "point_value": 200,
           "choices": [
-            { "id": "A", "text": "Adverse Drug Reaction (GI Bleed จาก Naproxen)", "is_correct": true },
-            { "id": "B", "text": "Drug-Drug Interaction", "is_correct": false },
-            { "id": "C", "text": "Overdosage", "is_correct": false },
-            { "id": "D", "text": "Underdose", "is_correct": false },
-            { "id": "E", "text": "Untreated Indication (ต้องการ Gastroprotective agent ขณะใช้ NSAIDs)", "is_correct": true },
-            { "id": "F", "text": "Improper Drug Selection (ใช้ NSAID ในผู้สูงอายุโดยไม่มีข้อบ่งชี้)", "is_correct": false },
-            { "id": "G", "text": "Drug use without indication", "is_correct": false }
+            {
+              "id": "A",
+              "text": "Adverse Drug Reaction (GI Bleed จาก Naproxen)",
+              "is_correct": true
+            },
+            {
+              "id": "B",
+              "text": "Drug-Drug Interaction",
+              "is_correct": false
+            },
+            {
+              "id": "C",
+              "text": "Overdosage",
+              "is_correct": false
+            },
+            {
+              "id": "D",
+              "text": "Underdose",
+              "is_correct": false
+            },
+            {
+              "id": "E",
+              "text": "Untreated Indication (ต้องการ Gastroprotective agent ขณะใช้ NSAIDs)",
+              "is_correct": true
+            },
+            {
+              "id": "F",
+              "text": "Improper Drug Selection (ใช้ NSAID ในผู้สูงอายุโดยไม่มีข้อบ่งชี้)",
+              "is_correct": false
+            },
+            {
+              "id": "G",
+              "text": "Drug use without indication",
+              "is_correct": false
+            }
           ],
-          "correct_answers": ["A", "E"],
+          "correct_answers": [
+            "A",
+            "E"
+          ],
           "feedback": {
             "correct": "ถูกต้อง! Naproxen ก่อให้เกิดแผลในกระเพาะอาหาร (ADR) และผู้ป่วยเป็นกลุ่มเสี่ยงสูง (อายุ > 65 ปี) แต่ไม่ได้รับยา PPI เพื่อป้องกันแผล (Untreated Indication)",
             "partial": "ตอบถูกบางส่วน — พิจารณาทั้งผลข้างเคียงที่เกิดขึ้นแล้ว และข้อบ่งชี้ที่ยังไม่ได้รับการรักษา",
@@ -167,15 +286,46 @@
           "point_per_correct": 100,
           "point_value": 200,
           "choices": [
-            { "id": "A", "text": "H. pylori Infection", "is_correct": true },
-            { "id": "B", "text": "Non-steroidal anti-inflammatory drugs (NSAIDs)", "is_correct": true },
-            { "id": "C", "text": "Alcohol excess", "is_correct": false },
-            { "id": "D", "text": "Zollinger-Ellison syndrome", "is_correct": false },
-            { "id": "E", "text": "Mechanical obstruction", "is_correct": false },
-            { "id": "F", "text": "Gastrointestinal Lymphoma", "is_correct": false },
-            { "id": "G", "text": "Stress-induced ulcer", "is_correct": false }
+            {
+              "id": "A",
+              "text": "H. pylori Infection",
+              "is_correct": true
+            },
+            {
+              "id": "B",
+              "text": "Non-steroidal anti-inflammatory drugs (NSAIDs)",
+              "is_correct": true
+            },
+            {
+              "id": "C",
+              "text": "Alcohol excess",
+              "is_correct": false
+            },
+            {
+              "id": "D",
+              "text": "Zollinger-Ellison syndrome",
+              "is_correct": false
+            },
+            {
+              "id": "E",
+              "text": "Mechanical obstruction",
+              "is_correct": false
+            },
+            {
+              "id": "F",
+              "text": "Gastrointestinal Lymphoma",
+              "is_correct": false
+            },
+            {
+              "id": "G",
+              "text": "Stress-induced ulcer",
+              "is_correct": false
+            }
           ],
-          "correct_answers": ["A", "B"],
+          "correct_answers": [
+            "A",
+            "B"
+          ],
           "feedback": {
             "correct": "ถูกต้อง! แม้จะมีประวัติ NSAIDs ชัดเจน แต่ H. pylori เป็นสาเหตุหลักอันดับหนึ่งของ PUD (พบ 95% ในแผลลำไส้เล็กส่วนต้น) จึงต้องตรวจหาเสมอ",
             "partial": "ตอบถูกบางส่วน — อย่าลืมว่าต้องตรวจหา H. pylori เสมอ แม้จะมีประวัติ NSAIDs ชัดเจนแล้วก็ตาม",
@@ -189,15 +339,48 @@
           "point_per_correct": 100,
           "point_value": 400,
           "choices": [
-            { "id": "A", "text": "อายุ 66 ปี", "is_correct": true },
-            { "id": "B", "text": "ประวัติการสูบบุหรี่", "is_correct": true },
-            { "id": "C", "text": "การใช้ยา Naproxen", "is_correct": true },
-            { "id": "D", "text": "เพศชาย", "is_correct": true },
-            { "id": "E", "text": "ภาวะอ้วน (Obesity)", "is_correct": false },
-            { "id": "F", "text": "การดื่มกาแฟ", "is_correct": false },
-            { "id": "G", "text": "โรคเบาหวานเดิม", "is_correct": false }
+            {
+              "id": "A",
+              "text": "อายุ 66 ปี",
+              "is_correct": true
+            },
+            {
+              "id": "B",
+              "text": "ประวัติการสูบบุหรี่",
+              "is_correct": true
+            },
+            {
+              "id": "C",
+              "text": "การใช้ยา Naproxen",
+              "is_correct": true
+            },
+            {
+              "id": "D",
+              "text": "เพศชาย",
+              "is_correct": true
+            },
+            {
+              "id": "E",
+              "text": "ภาวะอ้วน (Obesity)",
+              "is_correct": false
+            },
+            {
+              "id": "F",
+              "text": "การดื่มกาแฟ",
+              "is_correct": false
+            },
+            {
+              "id": "G",
+              "text": "โรคเบาหวานเดิม",
+              "is_correct": false
+            }
           ],
-          "correct_answers": ["A", "B", "C", "D"],
+          "correct_answers": [
+            "A",
+            "B",
+            "C",
+            "D"
+          ],
           "feedback": {
             "correct": "ถูกต้องทั้งหมด! อายุ > 65, การสูบบุหรี่, การใช้ NSAIDs และเพศชาย เป็นปัจจัยเสี่ยงมาตรฐานที่ระบุในแนวทางเวชปฏิบัติ",
             "partial": "ตอบถูกบางส่วน — ทบทวนปัจจัยเสี่ยงมาตรฐาน 4 ข้อ: อายุ > 65, สูบบุหรี่, NSAIDs และเพศชาย",
@@ -211,15 +394,46 @@
           "point_per_correct": 100,
           "point_value": 200,
           "choices": [
-            { "id": "A", "text": "Glasgow-Blatchford Score (GBS) > 0 จัดเป็น High Risk", "is_correct": true },
-            { "id": "B", "text": "Rockall Score ใช้สำหรับประเมินโอกาสการเกิดเลือดออกซ้ำและอัตราตาย", "is_correct": true },
-            { "id": "C", "text": "BISAP Score ใช้ประเมินความรุนแรงของเลือดออก", "is_correct": false },
-            { "id": "D", "text": "Child-Pugh Score ใช้ระบุความลึกของแผล PUD", "is_correct": false },
-            { "id": "E", "text": "Alvarado Score ใช้ประเมินภาวะช็อก", "is_correct": false },
-            { "id": "F", "text": "Ranson Criteria ใช้ประเมินในระยะก่อนส่องกล้อง", "is_correct": false },
-            { "id": "G", "text": "GBS = 0 สามารถให้ผู้ป่วยกลับบ้านได้เลย", "is_correct": false }
+            {
+              "id": "A",
+              "text": "Glasgow-Blatchford Score (GBS) > 0 จัดเป็น High Risk",
+              "is_correct": true
+            },
+            {
+              "id": "B",
+              "text": "Rockall Score ใช้สำหรับประเมินโอกาสการเกิดเลือดออกซ้ำและอัตราตาย",
+              "is_correct": true
+            },
+            {
+              "id": "C",
+              "text": "BISAP Score ใช้ประเมินความรุนแรงของเลือดออก",
+              "is_correct": false
+            },
+            {
+              "id": "D",
+              "text": "Child-Pugh Score ใช้ระบุความลึกของแผล PUD",
+              "is_correct": false
+            },
+            {
+              "id": "E",
+              "text": "Alvarado Score ใช้ประเมินภาวะช็อก",
+              "is_correct": false
+            },
+            {
+              "id": "F",
+              "text": "Ranson Criteria ใช้ประเมินในระยะก่อนส่องกล้อง",
+              "is_correct": false
+            },
+            {
+              "id": "G",
+              "text": "GBS = 0 สามารถให้ผู้ป่วยกลับบ้านได้เลย",
+              "is_correct": false
+            }
           ],
-          "correct_answers": ["A", "B"],
+          "correct_answers": [
+            "A",
+            "B"
+          ],
           "feedback": {
             "correct": "ถูกต้อง! GBS และ Rockall Score เป็นมาตรฐานทองคำในการประเมิน UGIB โดย GBS = 0 คือความเสี่ยงต่ำมากที่สามารถรักษาแบบ OPD ได้",
             "partial": "ตอบถูกบางส่วน — GBS และ Rockall Score คือเครื่องมือมาตรฐานสำหรับ UGIB",
@@ -233,19 +447,53 @@
           "point_per_correct": 100,
           "point_value": 300,
           "choices": [
-            { "id": "A", "text": "ให้ออกซิเจนและติดตาม SpO2", "is_correct": true },
-            { "id": "B", "text": "เปิดเส้นเลือดเบอร์ใหญ่ (16-18G) และให้ NSS/Lactated Ringer bolus", "is_correct": true },
-            { "id": "C", "text": "งดน้ำและอาหาร (NPO)", "is_correct": true },
-            { "id": "D", "text": "ใส่สาย Sengstaken-Blakemore (SB) tube ทันที", "is_correct": false },
-            { "id": "E", "text": "ให้ยาต้านการแข็งตัวของเลือด (Enoxaparin)", "is_correct": false },
-            { "id": "F", "text": "เริ่มอาหารเหลวใส (Clear liquid diet)", "is_correct": false },
-            { "id": "G", "text": "ให้กินยาลดกรดชนิดน้ำ (Antacid) ทุก 2 ชั่วโมง", "is_correct": false }
+            {
+              "id": "A",
+              "text": "ให้ออกซิเจนและติดตาม SpO2",
+              "is_correct": true
+            },
+            {
+              "id": "B",
+              "text": "เปิดเส้นเลือดเบอร์ใหญ่ (16-18G) และให้ NSS/Lactated Ringer bolus",
+              "is_correct": true
+            },
+            {
+              "id": "C",
+              "text": "งดน้ำและอาหาร (NPO)",
+              "is_correct": true
+            },
+            {
+              "id": "D",
+              "text": "ใส่สาย Sengstaken-Blakemore (SB) tube ทันที",
+              "is_correct": false
+            },
+            {
+              "id": "E",
+              "text": "ให้ยาต้านการแข็งตัวของเลือด (Enoxaparin)",
+              "is_correct": false,
+              "is_fatal": true
+            },
+            {
+              "id": "F",
+              "text": "เริ่มอาหารเหลวใส (Clear liquid diet)",
+              "is_correct": false
+            },
+            {
+              "id": "G",
+              "text": "ให้กินยาลดกรดชนิดน้ำ (Antacid) ทุก 2 ชั่วโมง",
+              "is_correct": false
+            }
           ],
-          "correct_answers": ["A", "B", "C"],
+          "correct_answers": [
+            "A",
+            "B",
+            "C"
+          ],
           "feedback": {
             "correct": "ถูกต้องทั้งหมด! มาตรฐานการกู้ชีพ (ABCDE) เน้นการรักษาเสถียรภาพของระบบไหลเวียนโลหิตและการเตรียมผู้ป่วยส่องกล้อง",
             "partial": "ตอบถูกบางส่วน — ทบทวนหลัก ABCDE: ออกซิเจน, การเปิดเส้นให้สารน้ำ และการงดน้ำงดอาหารเพื่อเตรียมส่องกล้อง",
-            "incorrect": "ยังไม่ถูกต้อง มาตรฐานการกู้ชีพ (ABCDE) เน้นการรักษาเสถียรภาพของระบบไหลเวียนโลหิตและการเตรียมผู้ป่วยส่องกล้อง"
+            "incorrect": "ยังไม่ถูกต้อง มาตรฐานการกู้ชีพ (ABCDE) เน้นการรักษาเสถียรภาพของระบบไหลเวียนโลหิตและการเตรียมผู้ป่วยส่องกล้อง",
+            "fatal_message": "การให้ยาต้านการแข็งตัวของเลือด (Enoxaparin/LMWH) ในผู้ป่วยที่มีภาวะเลือดออกในทางเดินอาหารเฉียบพลันและอยู่ในภาวะช็อก ถือเป็นข้อห้ามเด็ดขาด (Absolute Contraindication) จะทำให้เลือดออกรุนแรงขึ้นจนควบคุมไม่ได้ ผู้ป่วยเสียเลือดจนเสียชีวิตได้ทันที — ต้องหยุดยาที่รบกวนการแข็งตัวของเลือดทุกชนิด และแก้ไขภาวะช็อกก่อนเป็นอันดับแรก"
           }
         },
         "step_9_assessment_new_therapy": {
@@ -255,15 +503,46 @@
           "point_per_correct": 100,
           "point_value": 200,
           "choices": [
-            { "id": "A", "text": "Omeprazole 80 mg IV bolus", "is_correct": true },
-            { "id": "B", "text": "Pantoprazole 80 mg IV bolus", "is_correct": true },
-            { "id": "C", "text": "Terlipressin 2 mg IV bolus", "is_correct": false },
-            { "id": "D", "text": "Somatostatin 250 mcg IV bolus", "is_correct": false },
-            { "id": "E", "text": "Tranexamic acid 1 g IV bolus", "is_correct": false },
-            { "id": "F", "text": "Vitamin K1 10 mg IV push", "is_correct": false },
-            { "id": "G", "text": "Ranitidine 50 mg IV bolus", "is_correct": false }
+            {
+              "id": "A",
+              "text": "Omeprazole 80 mg IV bolus",
+              "is_correct": true
+            },
+            {
+              "id": "B",
+              "text": "Pantoprazole 80 mg IV bolus",
+              "is_correct": true
+            },
+            {
+              "id": "C",
+              "text": "Terlipressin 2 mg IV bolus",
+              "is_correct": false
+            },
+            {
+              "id": "D",
+              "text": "Somatostatin 250 mcg IV bolus",
+              "is_correct": false
+            },
+            {
+              "id": "E",
+              "text": "Tranexamic acid 1 g IV bolus",
+              "is_correct": false
+            },
+            {
+              "id": "F",
+              "text": "Vitamin K1 10 mg IV push",
+              "is_correct": false
+            },
+            {
+              "id": "G",
+              "text": "Ranitidine 50 mg IV bolus",
+              "is_correct": false
+            }
           ],
-          "correct_answers": ["A", "B"],
+          "correct_answers": [
+            "A",
+            "B"
+          ],
           "feedback": {
             "correct": "ถูกต้อง! IV PPI ขนาดสูงคือมาตรฐานสำหรับ Non-variceal UGIB ส่วน Vasoactive drugs ใช้สำหรับ Variceal bleed เท่านั้น",
             "partial": "ตอบถูกบางส่วน — IV PPI ขนาดสูงคือมาตรฐานสำหรับ Non-variceal UGIB",
@@ -282,15 +561,47 @@
           "point_per_correct": 100,
           "point_value": 300,
           "choices": [
-            { "id": "A", "text": "คืนเสถียรภาพของสัญญาณชีพ (Hemodynamic Stability)", "is_correct": true },
-            { "id": "B", "text": "หยุดเลือด (Hemostasis) และป้องกันเลือดออกซ้ำ", "is_correct": true },
-            { "id": "C", "text": "ป้องกันภาวะแทรกซ้อน (เช่น แผลทะลุ หรือการเสียชีวิต)", "is_correct": true },
-            { "id": "D", "text": "กำจัดเชื้อ H. pylori ให้หมดภายใน 24 ชั่วโมง", "is_correct": false },
-            { "id": "E", "text": "เพิ่มระดับ Hemoglobin ให้มากกว่า 13 g/dL ภายในวันแรก", "is_correct": false },
-            { "id": "F", "text": "รักษาแผล Peptic ให้หายขาด (Complete healing) ภายใน 72 ชั่วโมง", "is_correct": false },
-            { "id": "G", "text": "ลดการใช้ NSAIDs ลง 50%", "is_correct": false }
+            {
+              "id": "A",
+              "text": "คืนเสถียรภาพของสัญญาณชีพ (Hemodynamic Stability)",
+              "is_correct": true
+            },
+            {
+              "id": "B",
+              "text": "หยุดเลือด (Hemostasis) และป้องกันเลือดออกซ้ำ",
+              "is_correct": true
+            },
+            {
+              "id": "C",
+              "text": "ป้องกันภาวะแทรกซ้อน (เช่น แผลทะลุ หรือการเสียชีวิต)",
+              "is_correct": true
+            },
+            {
+              "id": "D",
+              "text": "กำจัดเชื้อ H. pylori ให้หมดภายใน 24 ชั่วโมง",
+              "is_correct": false
+            },
+            {
+              "id": "E",
+              "text": "เพิ่มระดับ Hemoglobin ให้มากกว่า 13 g/dL ภายในวันแรก",
+              "is_correct": false
+            },
+            {
+              "id": "F",
+              "text": "รักษาแผล Peptic ให้หายขาด (Complete healing) ภายใน 72 ชั่วโมง",
+              "is_correct": false
+            },
+            {
+              "id": "G",
+              "text": "ลดการใช้ NSAIDs ลง 50%",
+              "is_correct": false
+            }
           ],
-          "correct_answers": ["A", "B", "C"],
+          "correct_answers": [
+            "A",
+            "B",
+            "C"
+          ],
           "feedback": {
             "correct": "ถูกต้องทั้งหมด! เป้าหมายระยะเฉียบพลันคือความปลอดภัยของชีวิตผู้ป่วยและการหยุดเลือด ส่วนการหายของแผลและการกำจัดเชื้อต้องใช้เวลานานกว่านั้น",
             "partial": "ตอบถูกบางส่วน — เป้าหมายเฉียบพลันมี 3 ข้อ: คงสัญญาณชีพ, หยุดเลือด และป้องกันภาวะแทรกซ้อน",
@@ -304,15 +615,46 @@
           "point_per_correct": 100,
           "point_value": 200,
           "choices": [
-            { "id": "A", "text": "IV PPI continuous infusion (8 mg/hr) นาน 72 ชั่วโมง", "is_correct": true },
-            { "id": "B", "text": "ทำ EGD ภายใน 24 ชั่วโมงหลังจาก Hemodynamic คงที่", "is_correct": true },
-            { "id": "C", "text": "เปลี่ยนเป็นยากิน PPI ขนาดสูงทันที", "is_correct": false },
-            { "id": "D", "text": "ส่องกล้อง EGD เมื่อนอนโรงพยาบาลครบ 5 วัน", "is_correct": false },
-            { "id": "E", "text": "ผ่าตัดตัดกระเพาะอาหาร (Gastrectomy)", "is_correct": false },
-            { "id": "F", "text": "ให้ยาปฏิชีวนะรักษารากฟันเพื่อลดเชื้อในทางเดินอาหาร", "is_correct": false },
-            { "id": "G", "text": "ใส่สาย NG tube ค้างไว้ตลอดการนอนโรงพยาบาล", "is_correct": false }
+            {
+              "id": "A",
+              "text": "IV PPI continuous infusion (8 mg/hr) นาน 72 ชั่วโมง",
+              "is_correct": true
+            },
+            {
+              "id": "B",
+              "text": "ทำ EGD ภายใน 24 ชั่วโมงหลังจาก Hemodynamic คงที่",
+              "is_correct": true
+            },
+            {
+              "id": "C",
+              "text": "เปลี่ยนเป็นยากิน PPI ขนาดสูงทันที",
+              "is_correct": false
+            },
+            {
+              "id": "D",
+              "text": "ส่องกล้อง EGD เมื่อนอนโรงพยาบาลครบ 5 วัน",
+              "is_correct": false
+            },
+            {
+              "id": "E",
+              "text": "ผ่าตัดตัดกระเพาะอาหาร (Gastrectomy)",
+              "is_correct": false
+            },
+            {
+              "id": "F",
+              "text": "ให้ยาปฏิชีวนะรักษารากฟันเพื่อลดเชื้อในทางเดินอาหาร",
+              "is_correct": false
+            },
+            {
+              "id": "G",
+              "text": "ใส่สาย NG tube ค้างไว้ตลอดการนอนโรงพยาบาล",
+              "is_correct": false
+            }
           ],
-          "correct_answers": ["A", "B"],
+          "correct_answers": [
+            "A",
+            "B"
+          ],
           "feedback": {
             "correct": "ถูกต้อง! การดริป PPI 72 ชม. ช่วยลดการเกิด rebleeding และการส่องกล้องใน 24 ชม. เป็นเกณฑ์มาตรฐาน",
             "partial": "ตอบถูกบางส่วน — จำหลัก 2 ข้อ: ดริป PPI 72 ชม. และส่องกล้องภายใน 24 ชม.",
@@ -326,15 +668,48 @@
           "point_per_correct": 100,
           "point_value": 400,
           "choices": [
-            { "id": "A", "text": "Vital signs ทุก 15-60 นาที (ในช่วงแรก)", "is_correct": true },
-            { "id": "B", "text": "ระดับ Hb/Hct ทุก 4-8 ชั่วโมง จนกว่าจะคงที่", "is_correct": true },
-            { "id": "C", "text": "ลักษณะอุจจาระ (Melena) และปริมาณปัสสาวะ (I/O)", "is_correct": true },
-            { "id": "D", "text": "อาการปวดท้องหรือท้องแข็งเกร็ง (Signs of perforation)", "is_correct": true },
-            { "id": "E", "text": "ระดับ Amylase ในเลือด", "is_correct": false },
-            { "id": "F", "text": "ผล EKG ต่อเนื่อง 24 ชั่วโมง", "is_correct": false },
-            { "id": "G", "text": "ระดับแมกนีเซียมในเลือดทุกวัน", "is_correct": false }
+            {
+              "id": "A",
+              "text": "Vital signs ทุก 15-60 นาที (ในช่วงแรก)",
+              "is_correct": true
+            },
+            {
+              "id": "B",
+              "text": "ระดับ Hb/Hct ทุก 4-8 ชั่วโมง จนกว่าจะคงที่",
+              "is_correct": true
+            },
+            {
+              "id": "C",
+              "text": "ลักษณะอุจจาระ (Melena) และปริมาณปัสสาวะ (I/O)",
+              "is_correct": true
+            },
+            {
+              "id": "D",
+              "text": "อาการปวดท้องหรือท้องแข็งเกร็ง (Signs of perforation)",
+              "is_correct": true
+            },
+            {
+              "id": "E",
+              "text": "ระดับ Amylase ในเลือด",
+              "is_correct": false
+            },
+            {
+              "id": "F",
+              "text": "ผล EKG ต่อเนื่อง 24 ชั่วโมง",
+              "is_correct": false
+            },
+            {
+              "id": "G",
+              "text": "ระดับแมกนีเซียมในเลือดทุกวัน",
+              "is_correct": false
+            }
           ],
-          "correct_answers": ["A", "B", "C", "D"],
+          "correct_answers": [
+            "A",
+            "B",
+            "C",
+            "D"
+          ],
           "feedback": {
             "correct": "ถูกต้องทั้งหมด! ต้องเฝ้าระวังภาวะช็อก การเสียเลือดต่อเนื่อง และภาวะแทรกซ้อนรุนแรงอย่างแผลทะลุ",
             "partial": "ตอบถูกบางส่วน — ติดตาม 4 ด้าน: สัญญาณชีพ, Hb/Hct, Melena และ I/O, และอาการของแผลทะลุ",
@@ -348,15 +723,46 @@
           "point_per_correct": 100,
           "point_value": 200,
           "choices": [
-            { "id": "A", "text": "Volume Overload (น้ำเกิน) จากการให้สารน้ำปริมาณมากในผู้สูงอายุ", "is_correct": true },
-            { "id": "B", "text": "Hypomagnesemia และความเสี่ยงต่อโรคสมองเสื่อม (จากการใช้ PPI ระยะยาว)", "is_correct": true },
-            { "id": "C", "text": "ตับวายเฉียบพลันจากการได้รับ Omeprazole", "is_correct": false },
-            { "id": "D", "text": "ผื่นแพ้ยาอย่างรุนแรง (SJS) จาก NSS", "is_correct": false },
-            { "id": "E", "text": "ท้องผูกรุนแรงจากการได้รับ PPI ฉีด", "is_correct": false },
-            { "id": "F", "text": "ความดันโลหิตสูงเฉียบพลัน", "is_correct": false },
-            { "id": "G", "text": "ผมร่วง (Alopecia)", "is_correct": false }
+            {
+              "id": "A",
+              "text": "Volume Overload (น้ำเกิน) จากการให้สารน้ำปริมาณมากในผู้สูงอายุ",
+              "is_correct": true
+            },
+            {
+              "id": "B",
+              "text": "Hypomagnesemia และความเสี่ยงต่อโรคสมองเสื่อม (จากการใช้ PPI ระยะยาว)",
+              "is_correct": true
+            },
+            {
+              "id": "C",
+              "text": "ตับวายเฉียบพลันจากการได้รับ Omeprazole",
+              "is_correct": false
+            },
+            {
+              "id": "D",
+              "text": "ผื่นแพ้ยาอย่างรุนแรง (SJS) จาก NSS",
+              "is_correct": false
+            },
+            {
+              "id": "E",
+              "text": "ท้องผูกรุนแรงจากการได้รับ PPI ฉีด",
+              "is_correct": false
+            },
+            {
+              "id": "F",
+              "text": "ความดันโลหิตสูงเฉียบพลัน",
+              "is_correct": false
+            },
+            {
+              "id": "G",
+              "text": "ผมร่วง (Alopecia)",
+              "is_correct": false
+            }
           ],
-          "correct_answers": ["A", "B"],
+          "correct_answers": [
+            "A",
+            "B"
+          ],
           "feedback": {
             "correct": "ถูกต้อง! การ Resuscitation ในผู้สูงอายุต้องระวังน้ำท่วมปอด และ PPI มีประเด็นเรื่องแร่ธาตุและการสะสม Beta-amyloid หากใช้ระยะยาว",
             "partial": "ตอบถูกบางส่วน — ระวัง Volume Overload จากการให้สารน้ำ และผลระยะยาวของ PPI",
@@ -370,15 +776,47 @@
           "point_per_correct": 100,
           "point_value": 300,
           "choices": [
-            { "id": "A", "text": "งดการใช้ NSAIDs และ Aspirin โดยเด็ดขาด (หากไม่จำเป็น)", "is_correct": true },
-            { "id": "B", "text": "ต้องรับประทานยา PPI ต่อเนื่องตามสั่ง (มักเป็น 6-8 สัปดาห์)", "is_correct": true },
-            { "id": "C", "text": "งดสูบบุหรี่และแอลกอฮอล์ เพราะขัดขวางการหายของแผล", "is_correct": true },
-            { "id": "D", "text": "ออกกำลังกายด้วยการยกน้ำหนักเพื่อเพิ่มความแข็งแรง", "is_correct": false },
-            { "id": "E", "text": "กินยาสมุนไพรขมิ้นชันแทน PPI ได้ทันที", "is_correct": false },
-            { "id": "F", "text": "รับประทานอาหารรสจัดได้เพื่อให้เจริญอาหาร", "is_correct": false },
-            { "id": "G", "text": "ไม่ต้องมาพบแพทย์หากอุจจาระเป็นสีเหลือง", "is_correct": false }
+            {
+              "id": "A",
+              "text": "งดการใช้ NSAIDs และ Aspirin โดยเด็ดขาด (หากไม่จำเป็น)",
+              "is_correct": true
+            },
+            {
+              "id": "B",
+              "text": "ต้องรับประทานยา PPI ต่อเนื่องตามสั่ง (มักเป็น 6-8 สัปดาห์)",
+              "is_correct": true
+            },
+            {
+              "id": "C",
+              "text": "งดสูบบุหรี่และแอลกอฮอล์ เพราะขัดขวางการหายของแผล",
+              "is_correct": true
+            },
+            {
+              "id": "D",
+              "text": "ออกกำลังกายด้วยการยกน้ำหนักเพื่อเพิ่มความแข็งแรง",
+              "is_correct": false
+            },
+            {
+              "id": "E",
+              "text": "กินยาสมุนไพรขมิ้นชันแทน PPI ได้ทันที",
+              "is_correct": false
+            },
+            {
+              "id": "F",
+              "text": "รับประทานอาหารรสจัดได้เพื่อให้เจริญอาหาร",
+              "is_correct": false
+            },
+            {
+              "id": "G",
+              "text": "ไม่ต้องมาพบแพทย์หากอุจจาระเป็นสีเหลือง",
+              "is_correct": false
+            }
           ],
-          "correct_answers": ["A", "B", "C"],
+          "correct_answers": [
+            "A",
+            "B",
+            "C"
+          ],
           "feedback": {
             "correct": "ถูกต้องทั้งหมด! การกำจัดปัจจัยทำลายและกินยาเพื่อรักษาแผลคือหัวใจของการป้องกันการกลับเป็นซ้ำ",
             "partial": "ตอบถูกบางส่วน — เน้น 3 เรื่อง: งด NSAIDs/Aspirin, กิน PPI ต่อเนื่อง และงดบุหรี่/แอลกอฮอล์",
@@ -392,15 +830,46 @@
           "point_per_correct": 100,
           "point_value": 200,
           "choices": [
-            { "id": "A", "text": "ตรวจยืนยันการกำจัดเชื้อ H. pylori (Test of Cure) 4 สัปดาห์หลังจบยา", "is_correct": true },
-            { "id": "B", "text": "หากจำเป็นต้องใช้ NSAIDs ต่อ ต้องกินร่วมกับ PPI เสมอ", "is_correct": true },
-            { "id": "C", "text": "ต้องมาส่องกล้อง EGD ทุก 6 เดือนตลอดชีวิต", "is_correct": false },
-            { "id": "D", "text": "เปลี่ยนไปใช้ยาแก้ปวดกลุ่มยาเสพติด (Opioids) แทน NSAIDs ทั้งหมด", "is_correct": false },
-            { "id": "E", "text": "ทำศัลยกรรม Fundoplication เพื่อป้องกันแผล Peptic", "is_correct": false },
-            { "id": "F", "text": "ตรวจระดับยา Naproxen ในเลือดทุกเดือน", "is_correct": false },
-            { "id": "G", "text": "ไม่จำเป็นต้องดูแลอะไรเพิ่มเติมหากไม่มีอาการปวด", "is_correct": false }
+            {
+              "id": "A",
+              "text": "ตรวจยืนยันการกำจัดเชื้อ H. pylori (Test of Cure) 4 สัปดาห์หลังจบยา",
+              "is_correct": true
+            },
+            {
+              "id": "B",
+              "text": "หากจำเป็นต้องใช้ NSAIDs ต่อ ต้องกินร่วมกับ PPI เสมอ",
+              "is_correct": true
+            },
+            {
+              "id": "C",
+              "text": "ต้องมาส่องกล้อง EGD ทุก 6 เดือนตลอดชีวิต",
+              "is_correct": false
+            },
+            {
+              "id": "D",
+              "text": "เปลี่ยนไปใช้ยาแก้ปวดกลุ่มยาเสพติด (Opioids) แทน NSAIDs ทั้งหมด",
+              "is_correct": false
+            },
+            {
+              "id": "E",
+              "text": "ทำศัลยกรรม Fundoplication เพื่อป้องกันแผล Peptic",
+              "is_correct": false
+            },
+            {
+              "id": "F",
+              "text": "ตรวจระดับยา Naproxen ในเลือดทุกเดือน",
+              "is_correct": false
+            },
+            {
+              "id": "G",
+              "text": "ไม่จำเป็นต้องดูแลอะไรเพิ่มเติมหากไม่มีอาการปวด",
+              "is_correct": false
+            }
           ],
-          "correct_answers": ["A", "B"],
+          "correct_answers": [
+            "A",
+            "B"
+          ],
           "feedback": {
             "correct": "ถูกต้อง! ต้องมั่นใจว่าเชื้อหมด และหากต้องใช้ NSAID ต่อ ต้องมี Gastroprotection ตามความเสี่ยง",
             "partial": "ตอบถูกบางส่วน — ต้องทำ Test of Cure และให้ PPI ร่วมเสมอหากยังต้องใช้ NSAIDs",

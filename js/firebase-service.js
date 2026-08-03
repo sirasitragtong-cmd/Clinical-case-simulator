@@ -30,6 +30,55 @@
     const auth = typeof firebase !== 'undefined' ? firebase.auth() : null;
     const db   = typeof firebase !== 'undefined' ? firebase.firestore() : null;
 
+    // ─── Session Persistence ───────────────────────────────────
+    // Compat SDK equivalent of setPersistence(auth, browserLocalPersistence).
+    // LOCAL survives tab close and refresh; this is set before any sign-in
+    // call so the very first login already writes a durable session.
+    let persistenceReady = Promise.resolve();
+    if (auth) {
+        persistenceReady = auth
+            .setPersistence(firebase.auth.Auth.Persistence.LOCAL)
+            .then(() => console.log('[Auth] Persistence set to LOCAL (survives refresh).'))
+            .catch(err => console.error('[Auth Error] setPersistence failed:', err));
+    }
+
+    // ─── Auth Ready Gate ───────────────────────────────────────
+    // Resolves exactly once, on the FIRST onAuthStateChanged callback.
+    // Until it settles the app cannot know whether a session is being
+    // restored, so the UI must show the splash rather than guess.
+    window.authReadyPromise = new Promise(resolve => {
+        if (!auth) {
+            console.warn('[Auth] SDK unavailable — resolving authReadyPromise with null.');
+            resolve(null);
+            return;
+        }
+
+        let settled = false;
+        const unsubscribe = auth.onAuthStateChanged(
+            user => {
+                if (settled) return;
+                settled = true;
+                console.log('[Auth] Initial state resolved:', user ? (user.email || user.uid) : 'no session');
+                if (typeof unsubscribe === 'function') unsubscribe();
+                resolve(user);
+            },
+            err => {
+                if (settled) return;
+                settled = true;
+                console.error('[Auth Error] Initial state check failed:', err);
+                resolve(null);
+            }
+        );
+
+        // Safety valve: never let the splash hang forever on a network stall.
+        setTimeout(() => {
+            if (settled) return;
+            settled = true;
+            console.warn('[Auth] Initial state timed out after 8s — continuing as signed out.');
+            resolve(null);
+        }, 8000);
+    });
+
     // ─── Authentication Service ────────────────────────────────
     const AuthService = {
         /**
@@ -37,6 +86,7 @@
          */
         loginWithGoogle: async function() {
             if (!auth) throw new Error('Firebase Auth unavailable');
+            await persistenceReady;
             const provider = new firebase.auth.GoogleAuthProvider();
             provider.setCustomParameters({ prompt: 'select_account' });
             try {
@@ -54,6 +104,7 @@
          */
         loginAnonymously: async function() {
             if (!auth) throw new Error('Firebase Auth unavailable');
+            await persistenceReady;
             try {
                 const result = await auth.signInAnonymously();
                 console.log('[Auth] Anonymous Sign-In success:', result.user.uid);
