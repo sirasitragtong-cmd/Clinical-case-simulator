@@ -1,5 +1,8 @@
 {
   "case_id": "case_002",
+  "map_title": "ด่านที่ 2 · คลินิกผู้ป่วยนอก",
+  "map_subtitle": "ชายไทย 55 ปี มาด้วยปวดศีรษะท้ายทอย 2 วัน",
+  "ward": "Ambulatory Clinic",
   "case_title": "Hypertensive Urgency & Medication Non-adherence",
   "difficulty": "Intermediate",
   "tags": [

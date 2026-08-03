@@ -303,8 +303,20 @@
         .reaction-critical .pa-skin { fill: #C9AFA4; }
         .reaction-recovered .pa-skin { fill: #EFBE96; }
 
+        .pa-eyes-open { transition: opacity .18s ease; }
+        .reaction-pain .pa-eyes-open,
+        .reaction-critical .pa-eyes-open { opacity: 0; }
+
+        /* ECG trace on the wall monitor */
+        .pa-ecg { stroke-dasharray: 160; animation: paEcg 2.2s linear infinite; }
+        @keyframes paEcg { from { stroke-dashoffset: 160; } to { stroke-dashoffset: -160; } }
+        .pa-monitor-dot { animation: paBlinkDot 1.4s ease-in-out infinite; }
+        @keyframes paBlinkDot { 0%,100% { opacity: 1; } 50% { opacity: .25; } }
+        .reaction-critical .pa-ecg { stroke: #E63946; animation-duration: .9s; }
+        .reaction-critical .pa-monitor-dot { fill: #E63946; animation-duration: .5s; }
+
         /* Breathing — rate follows severity */
-        .pa-chest { transform-origin: 100px 150px; animation: paBreathe 3.4s ease-in-out infinite; }
+        .pa-chest { transform-origin: 160px 220px; animation: paBreathe 3.4s ease-in-out infinite; }
         .reaction-pain     .pa-chest { animation-duration: 2.4s; }
         .reaction-distress .pa-chest { animation-duration: 1.5s; }
         .reaction-critical .pa-chest { animation-duration: 4.6s; }
@@ -690,8 +702,8 @@
                  class="px-3 py-1 rounded-full text-[.62rem] font-bold text-acuity-500 bg-acuity-500/12 border border-acuity-500/35 animate-vital-pulse">
               ● —
             </div>
-            <!-- Animated half-body patient — reactions driven by UIController.setPatientReaction() -->
-            <div id="patient-avatar" class="reaction-neutral w-full max-w-[15rem] mt-2"></div>
+            <!-- Hospital-room scene: front-facing patient that tracks the cursor -->
+            <div id="patient-avatar" class="reaction-neutral w-full rounded-xl overflow-hidden border border-navy-700/60"></div>
 
             <div class="flex items-center gap-2 mt-2 w-full max-w-[15rem]">
               <span class="text-[.55rem] font-bold tracking-widest text-slate-500 uppercase flex-shrink-0">Condition</span>
@@ -775,9 +787,9 @@
 <!-- ═══════════════════════════════════════════════════════════════
      SCRIPTS
      ═══════════════════════════════════════════════════════════════ -->
-<script src="./js/firebase-service.js?v=202608032045"></script>
-<script src="./js/ui-controller.js?v=202608032045"></script>
-<script src="./js/game-engine.js?v=202608032045"></script>
+<script src="./js/firebase-service.js?v=202608032230"></script>
+<script src="./js/ui-controller.js?v=202608032230"></script>
+<script src="./js/game-engine.js?v=202608032230"></script>
 
 <script>
 (function() {
@@ -785,8 +797,8 @@
 
     // Case registry — every playable case, all unlocked.
     const CASE_FILES = [
-        './data/case_001.json?v=202608032045',
-        './data/case_002.json?v=202608032045'
+        './data/case_001.json?v=202608032230',
+        './data/case_002.json?v=202608032230'
     ];
 
     const btnLogin       = document.getElementById('btn-google-login');
@@ -879,7 +891,11 @@
             return;
         }
 
-        stageTitle.textContent = caseData.case_title || caseData.case_id;
+        // Never show the diagnosis here — that is what the learner must work out.
+        const p = caseData.patient || {};
+        stageTitle.textContent = p.name
+            ? `${p.name} ${p.age || ''}${p.sex || ''} · ${caseData.ward || ''}`
+            : (caseData.map_title || caseData.case_id);
         const st = GameEngine.getState();
         maxScoreEl.textContent = st.maxPossibleScore;
         UIController.buildStepDots(st.totalSteps);

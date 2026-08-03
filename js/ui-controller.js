@@ -410,30 +410,46 @@ const UIController = (function() {
     }
 
     // ─── Render: Info step ─────────────────────────────────────
+    // Info steps hold chart data, which belongs in the patient file on the
+    // left — NOT duplicated into the decision column. The right column
+    // stays a pure decision surface and simply points at the right tab.
     function renderInfoStep(stepData) {
-        const lines = Array.isArray(stepData.content) ? stepData.content : [];
-        let html = `
-            <div class="animate-fade-in">
-                <div class="flex items-center gap-2 mb-3">
-                    <span class="tag-pill !bg-teal-400/12 !text-teal-400 !border-teal-400/35">📋 CLINICAL DATA</span>
-                </div>
-                <div class="panel rounded-xl p-3">
-                    ${lines.map(l => `<p class="clinical-text">${l}</p>`).join('')}
-                </div>`;
+        const tab = stepData.chart_tab
+            || (String(state_currentStepId()).indexOf('objective') !== -1 ? 'objective' : 'subjective');
 
-        if (stepData.image_url) {
-            html += `<div class="mt-3 rounded-xl overflow-hidden border border-navy-700/60">
-                        <img src="${esc(stepData.image_url)}" alt="Clinical Data" loading="lazy" class="w-full" />
-                     </div>`;
-        }
+        soapTab = tab;
+        syncSoapTabs();
+        renderPatientChart(activeCase);
 
-        html += `
+        const label = tab === 'objective' ? 'Objective — ผลตรวจร่างกายและแล็บ'
+                                          : 'Subjective — ประวัติจากผู้ป่วย';
+
+        gameArea.innerHTML = `
+            <div class="animate-fade-in flex flex-col items-center justify-center text-center gap-3 py-8 px-2">
+                <div class="w-14 h-14 rounded-2xl grid place-items-center text-2xl border border-teal-400/35 bg-teal-400/10">📋</div>
+                <span class="tag-pill !bg-teal-400/12 !text-teal-400 !border-teal-400/35">รวบรวมข้อมูล</span>
+                <p class="text-sm font-bold text-white leading-relaxed">${esc(label)}</p>
+                <p class="text-[.72rem] text-slate-400 leading-relaxed max-w-[16rem]">
+                    เปิดแฟ้มผู้ป่วยเพื่ออ่านข้อมูลให้ครบก่อน แล้วจึงดำเนินการต่อ
+                </p>
+                <button id="btn-open-chart" class="md:hidden px-4 py-2.5 rounded-xl text-xs font-bold text-teal-400 bg-teal-400/10 border border-teal-400/35">
+                    📄 เปิดแฟ้มผู้ป่วย
+                </button>
+                <p class="hidden md:block text-[.68rem] text-slate-600">← ดูแฟ้มผู้ป่วยที่คอลัมน์ซ้าย</p>
+
                 <div class="submit-dock">
                     <button class="next-step-btn primary-btn w-full">อ่านเข้าใจแล้ว / ถัดไป →</button>
                 </div>
             </div>`;
 
-        gameArea.innerHTML = html;
+        const openChart = byId('btn-open-chart');
+        if (openChart) openChart.addEventListener('click', openDrawer);
+    }
+
+    // Small helper so renderInfoStep can pick the right chart tab.
+    function state_currentStepId() {
+        try { return GameEngine.getState().currentStepId || ''; }
+        catch (e) { return ''; }
     }
 
     // ─── Render: Single-answer MCQ (legacy case format) ────────
@@ -673,13 +689,18 @@ const UIController = (function() {
         setPatientHealth(Math.max(patientHealth, 40 + Math.round(score * 58)), { holdReaction: true });
         setPatientReaction(score >= 0.6 ? 'recovered' : 'neutral');
 
+        // Clearing a stage unlocks the next node on the journey map.
+        markCaseCompleted(activeCase && activeCase.case_id);
+        renderCaseMap(allCases, onStartCase);
+
         renderEndScreen({
             icon: '🎓',
             ringClass: 'border-teal-400/50 bg-teal-400/10',
-            tag: '✓ CASE COMPLETED',
+            tag: '✓ STAGE CLEARED',
             tagClass: '!bg-teal-400/12 !text-teal-400 !border-teal-400/35',
-            title: 'เคสสำเร็จ!',
-            message: 'คุณดำเนินการครบทุกขั้นตอนของกระบวนการ SOAP แล้ว',
+            title: 'ผ่านด่านแล้ว!',
+            // The diagnosis is the answer — reveal it only now, at the end.
+            message: 'คำวินิจฉัยของเคสนี้คือ ' + ((activeCase && activeCase.case_title) || '—'),
             score: state.currentScore,
             maxScore: state.maxPossibleScore,
             completedSteps: state.totalSteps,
@@ -690,6 +711,29 @@ const UIController = (function() {
 
     // ─── Dashboard: Case Map ───────────────────────────────────
     // Every case in the registry is playable; no artificial locks.
+    // ─── Local progression (unlock state) ──────────────────────
+    const PROGRESS_KEY = 'ccs_progress_v1';
+
+    function loadProgress() {
+        try {
+            const raw = JSON.parse(localStorage.getItem(PROGRESS_KEY));
+            return (raw && Array.isArray(raw.completed)) ? raw : { completed: [] };
+        } catch (e) { return { completed: [] }; }
+    }
+    function markCaseCompleted(caseId) {
+        if (!caseId) return;
+        const p = loadProgress();
+        if (p.completed.indexOf(caseId) === -1) {
+            p.completed.push(caseId);
+            try { localStorage.setItem(PROGRESS_KEY, JSON.stringify(p)); } catch (e) {}
+            console.log(`[Progress] Stage cleared: ${caseId}`);
+        }
+    }
+
+    // ─── Campaign: journey map ─────────────────────────────────
+    // Stage names never reveal the diagnosis — that is the answer the
+    // learner is being asked to work out. Only the presenting complaint
+    // is shown, which is what a pharmacist actually sees first.
     function renderCaseMap(cases, onStart) {
         allCases = cases || [];
         onStartCase = onStart;
@@ -700,45 +744,70 @@ const UIController = (function() {
             return;
         }
 
+        const done = loadProgress().completed;
+
         questTrack.innerHTML = cases.map((c, i) => {
             let steps = 0, pts = 0;
-            Object.values(c.stages || {}).forEach(st => {
-                Object.values(st.steps || {}).forEach(s => {
-                    steps++;
-                    pts += (s.point_value || 0);
-                });
-            });
+            Object.values(c.stages || {}).forEach(st =>
+                Object.values(st.steps || {}).forEach(s => { steps++; pts += (s.point_value || 0); }));
 
-            const p = c.patient || {};
-            const acuity = p.acuity || c.difficulty || '';
-            const isHigh = /HIGH|CRITICAL/i.test(acuity);
+            const p        = c.patient || {};
+            const acuity   = p.acuity || c.difficulty || '';
+            const isHigh   = /HIGH|CRITICAL/i.test(acuity);
+            const cleared  = done.indexOf(c.case_id) !== -1;
+            const unlocked = i === 0 || done.indexOf(cases[i - 1].case_id) !== -1;
+            const num      = String(i + 1).padStart(2, '0');
+
+            const connector = i < cases.length - 1
+                ? `<div class="hidden md:block absolute top-1/2 -right-3 w-6 h-px ${unlocked ? 'bg-teal-400/40' : 'bg-navy-600'}"></div>`
+                : '';
+
+            if (!unlocked) {
+                return `
+                    <div class="quest-node relative panel rounded-2xl p-4 flex flex-col gap-2 opacity-50 border-navy-700">
+                        ${connector}
+                        <div class="flex items-center gap-2">
+                            <span class="w-9 h-9 rounded-full grid place-items-center text-base bg-navy-800 border border-navy-600">🔒</span>
+                            <span class="tag-pill">STAGE ${num}</span>
+                        </div>
+                        <h3 class="text-sm font-extrabold text-slate-500 leading-snug">${esc(c.map_title || 'ด่านถัดไป')}</h3>
+                        <p class="text-[.7rem] text-slate-600 leading-relaxed">ผ่านด่านก่อนหน้าเพื่อปลดล็อกเส้นทางนี้</p>
+                        <div class="mt-auto pt-2">
+                            <button class="w-full py-3 rounded-xl text-xs font-bold text-slate-600 bg-navy-800 border border-navy-700 cursor-not-allowed" disabled>
+                                🔒 ยังไม่ปลดล็อก
+                            </button>
+                        </div>
+                    </div>`;
+            }
 
             return `
-                <div class="quest-node panel rounded-2xl p-4 flex flex-col gap-2 border-navy-600 hover:border-teal-400/50">
+                <div class="quest-node relative panel rounded-2xl p-4 flex flex-col gap-2 ${cleared ? 'border-teal-400/40' : 'border-teal-400/25 animate-quest-glow'}">
+                    ${connector}
                     <div class="flex items-center gap-2 flex-wrap">
-                        <span class="tag-pill !bg-navy-700 !text-slate-300">STAGE ${String(i + 1).padStart(3, '0')}</span>
+                        <span class="w-9 h-9 rounded-full grid place-items-center text-sm font-extrabold flex-shrink-0
+                                     ${cleared ? 'bg-teal-400 text-navy-900' : 'bg-teal-400/15 text-teal-400 border border-teal-400/50'}">
+                            ${cleared ? '✓' : '▶'}
+                        </span>
+                        <span class="tag-pill !bg-navy-700 !text-slate-300">STAGE ${num}</span>
                         <span class="tag-pill ${isHigh
                             ? '!bg-acuity-500/12 !text-acuity-500 !border-acuity-500/35'
                             : '!bg-gold-400/12 !text-gold-400 !border-gold-400/35'}">${esc(acuity)}</span>
                     </div>
 
-                    <h3 class="text-sm font-extrabold text-white leading-snug">${esc(c.case_title || c.case_id)}</h3>
+                    <h3 class="text-sm font-extrabold text-white leading-snug">${esc(c.map_title || ('ด่านที่ ' + (i + 1)))}</h3>
 
-                    <p class="text-[.7rem] text-slate-400 leading-relaxed line-clamp-3">
-                        ${esc(p.chief_complaint || '')}
+                    <p class="text-[.7rem] text-slate-400 leading-relaxed">
+                        ${esc(c.map_subtitle || p.chief_complaint || '')}
                     </p>
 
-                    <div class="flex flex-wrap gap-1.5">
-                        ${(c.tags || []).map(t => `<span class="tag-pill !text-[.6rem]">${esc(t)}</span>`).join('')}
-                    </div>
-
                     <div class="flex items-center gap-3 text-[.68rem] text-slate-400 mt-1">
+                        <span>🏥 ${esc(c.ward || '')}</span>
                         <span>☰ <strong class="text-white">${steps}</strong> steps</span>
-                        <span>★ <strong class="text-gold-400">${pts.toLocaleString('en-US')}</strong> pts</span>
+                        <span>★ <strong class="text-gold-400">${pts.toLocaleString('en-US')}</strong></span>
                     </div>
 
                     <button class="primary-btn w-full mt-2" data-case-index="${i}">
-                        ▶ START
+                        ${cleared ? '↻ เล่นซ้ำ' : '▶ เริ่มภารกิจ'}
                     </button>
                 </div>`;
         }).join('');
@@ -760,107 +829,157 @@ const UIController = (function() {
         .map(id => byId(id)).filter(Boolean);
     const avatarEl = avatarHosts[0];
 
-    function eyesOpen(cx) {
-        return `<ellipse cx="${cx}" cy="86" rx="7.5" ry="6.5" fill="#FFFFFF"/>
-                <circle cx="${cx}" cy="86" r="3.4" fill="#2A2118"/>
-                <circle cx="${cx + 1.6}" cy="84.2" r="1.1" fill="#FFFFFF"/>
-                <rect class="pa-eyelid pa-skin" x="${cx - 8}" y="79" width="16" height="8" rx="3"/>`;
-    }
-    function eyesSquint(cx) {
-        return `<path d="M${cx - 8} 87q8 -6 16 0" stroke="#2A2118" stroke-width="2.6" fill="none" stroke-linecap="round"/>`;
-    }
-    function eyesClosed(cx) {
-        return `<path d="M${cx - 8} 86h16" stroke="#2A2118" stroke-width="2.6" stroke-linecap="round"/>`;
-    }
-    function eyesWide(cx) {
-        return `<ellipse cx="${cx}" cy="86" rx="8.5" ry="8" fill="#FFFFFF"/>
-                <circle cx="${cx}" cy="86" r="3.2" fill="#2A2118"/>`;
-    }
-    function eyesHappy(cx) {
-        return `<path d="M${cx - 8} 88q8 -9 16 0" stroke="#2A2118" stroke-width="2.8" fill="none" stroke-linecap="round"/>`;
-    }
-
+    // Front-facing patient in a hospital room. The learner is the
+    // pharmacist standing at the bedside, so the patient looks straight
+    // out of the screen and tracks the cursor.
     function buildAvatarSVG() {
         return `
-<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Patient">
+<svg viewBox="0 0 320 240" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="ผู้ป่วยในห้องตรวจ" preserveAspectRatio="xMidYMid meet">
   <defs>
-    <radialGradient id="paAura">
-      <stop offset="40%" stop-color="#E63946" stop-opacity=".45"/>
+    <linearGradient id="paWall" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#16223B"/><stop offset="100%" stop-color="#0D1526"/>
+    </linearGradient>
+    <linearGradient id="paGown" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#4FD8BA"/><stop offset="100%" stop-color="#189A82"/>
+    </linearGradient>
+    <linearGradient id="paWindow" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#2B4A6B"/><stop offset="100%" stop-color="#14263C"/>
+    </linearGradient>
+    <radialGradient id="paSpot" cx="50%" cy="35%">
+      <stop offset="0%" stop-color="#48E5C2" stop-opacity=".16"/>
+      <stop offset="100%" stop-color="#48E5C2" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="paAlarm" cx="50%" cy="45%">
+      <stop offset="30%" stop-color="#E63946" stop-opacity=".38"/>
       <stop offset="100%" stop-color="#E63946" stop-opacity="0"/>
     </radialGradient>
-    <linearGradient id="paGown" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#3FD6B4"/><stop offset="100%" stop-color="#15907A"/>
-    </linearGradient>
+    <clipPath id="paHeadClip"><ellipse cx="160" cy="120" rx="41" ry="46"/></clipPath>
   </defs>
 
-  <ellipse class="pa-aura" cx="100" cy="105" rx="95" ry="90" fill="url(#paAura)"/>
-  <rect x="24" y="122" width="152" height="42" rx="20" fill="rgba(51,65,95,.40)"/>
+  <!-- ── ROOM ───────────────────────────────────────────── -->
+  <rect width="320" height="240" fill="url(#paWall)"/>
+  <ellipse cx="160" cy="95" rx="150" ry="110" fill="url(#paSpot)"/>
+  <path d="M0 186h320" stroke="rgba(72,229,194,.10)" stroke-width="2"/>
 
+  <!-- Window with blinds -->
+  <g opacity=".85">
+    <rect x="14" y="30" width="72" height="60" rx="4" fill="url(#paWindow)" stroke="rgba(72,229,194,.22)"/>
+    <path d="M16 42h68M16 54h68M16 66h68M16 78h68" stroke="rgba(72,229,194,.14)" stroke-width="2"/>
+    <path d="M50 30v60" stroke="rgba(72,229,194,.18)" stroke-width="2"/>
+  </g>
+
+  <!-- Wall monitor with ECG trace -->
+  <g>
+    <rect x="228" y="26" width="76" height="50" rx="5" fill="#0A1322" stroke="rgba(72,229,194,.28)"/>
+    <polyline class="pa-ecg" points="234,58 244,58 249,44 255,70 261,50 266,58 280,58 286,48 292,66 298,58"
+              fill="none" stroke="#48E5C2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle class="pa-monitor-dot" cx="298" cy="33" r="2.6" fill="#48E5C2"/>
+  </g>
+
+  <!-- IV stand -->
+  <g>
+    <path d="M296 92v96M286 188h20" stroke="#33415F" stroke-width="3" stroke-linecap="round"/>
+    <rect x="286" y="92" width="18" height="26" rx="5" fill="rgba(72,229,194,.18)" stroke="rgba(72,229,194,.4)"/>
+    <path d="M295 118c0 22-10 30-24 38" stroke="rgba(72,229,194,.35)" stroke-width="2" fill="none"/>
+  </g>
+
+  <!-- Curtain -->
+  <g opacity=".5">
+    <path d="M104 22v164M118 22v164M132 22v164" stroke="rgba(51,65,95,.6)" stroke-width="6" stroke-linecap="round"/>
+  </g>
+
+  <!-- Bed headboard + blanket -->
+  <rect x="86" y="126" width="148" height="30" rx="10" fill="#1B2740"/>
+  <path d="M74 240v-32c0-14 12-24 28-24h116c16 0 28 10 28 24v32Z" fill="#16223B"/>
+  <path d="M74 214h172" stroke="rgba(72,229,194,.12)" stroke-width="2"/>
+
+  <!-- Critical alarm glow -->
+  <ellipse class="pa-aura" cx="160" cy="120" rx="120" ry="105" fill="url(#paAlarm)"/>
+
+  <!-- ── PATIENT ────────────────────────────────────────── -->
   <g class="pa-chest">
-    <path d="M50 200v-24c0-21 17-36 36-40h28c19 4 36 19 36 40v24Z" fill="url(#paGown)" opacity=".92"/>
-    <path d="M100 136 85 151l15 14 15-14Z" fill="rgba(11,19,43,.30)"/>
-    <path d="M74 168h14" stroke="rgba(11,19,43,.25)" stroke-width="3" stroke-linecap="round"/>
+    <path d="M96 240v-30c0-24 22-40 46-44h36c24 4 46 20 46 44v30Z" fill="url(#paGown)" opacity=".95"/>
+    <path d="M160 168l-16 16 16 16 16-16Z" fill="rgba(11,19,43,.28)"/>
+    <path d="M120 214h16" stroke="rgba(11,19,43,.22)" stroke-width="3" stroke-linecap="round"/>
   </g>
 
-  <rect x="88" y="110" width="24" height="28" rx="10" class="pa-skin"/>
-  <ellipse cx="63" cy="92" rx="6" ry="9.5" class="pa-skin"/>
-  <ellipse cx="137" cy="92" rx="6" ry="9.5" class="pa-skin"/>
-  <ellipse cx="100" cy="88" rx="37" ry="41" class="pa-skin"/>
+  <g class="pa-head-group">
+    <rect x="146" y="146" width="28" height="26" rx="11" class="pa-skin"/>
+    <ellipse cx="118" cy="124" rx="6.5" ry="10" class="pa-skin"/>
+    <ellipse cx="202" cy="124" rx="6.5" ry="10" class="pa-skin"/>
+    <ellipse cx="160" cy="120" rx="41" ry="46" class="pa-skin"/>
 
-  <path d="M63 84c0-25 17-40 37-40s37 15 37 40c0-11-8-17-17-19-7 7-41 9-47-2-6 4-10 10-10 21Z" fill="#2A2118"/>
+    <!-- Hair -->
+    <g clip-path="url(#paHeadClip)">
+      <path d="M119 112c0-30 18-44 41-44s41 14 41 44c0-13-9-20-19-22-8 8-46 10-53-2-7 5-10 11-10 24Z" fill="#2A2118"/>
+    </g>
 
-  <path d="M77 103c7 7 39 7 46 0" stroke="rgba(226,232,240,.45)" stroke-width="2" fill="none"/>
-  <circle cx="77" cy="103" r="2" fill="rgba(226,232,240,.5)"/>
-  <circle cx="123" cy="103" r="2" fill="rgba(226,232,240,.5)"/>
+    <!-- Nasal cannula -->
+    <path d="M141 138c8 7 30 7 38 0" stroke="rgba(226,232,240,.42)" stroke-width="2" fill="none"/>
+    <circle cx="141" cy="138" r="2" fill="rgba(226,232,240,.45)"/>
+    <circle cx="179" cy="138" r="2" fill="rgba(226,232,240,.45)"/>
 
-  <g class="pa-sweat">
-    <ellipse cx="68" cy="74" rx="3" ry="4.6" fill="#7DD3FC"/>
-    <ellipse cx="133" cy="79" rx="2.6" ry="4" fill="#7DD3FC"/>
-  </g>
+    <!-- EYES — pupils follow the cursor -->
+    <g class="pa-eyes-open">
+      <ellipse cx="145" cy="118" rx="9.5" ry="7.5" fill="#FFFFFF"/>
+      <ellipse cx="175" cy="118" rx="9.5" ry="7.5" fill="#FFFFFF"/>
+      <g class="pa-pupil">
+        <circle cx="145" cy="118" r="4.2" fill="#3B2B20"/>
+        <circle cx="145" cy="118" r="2.1" fill="#12100E"/>
+        <circle cx="146.6" cy="116.2" r="1.3" fill="#FFFFFF"/>
+      </g>
+      <g class="pa-pupil">
+        <circle cx="175" cy="118" r="4.2" fill="#3B2B20"/>
+        <circle cx="175" cy="118" r="2.1" fill="#12100E"/>
+        <circle cx="176.6" cy="116.2" r="1.3" fill="#FFFFFF"/>
+      </g>
+      <rect class="pa-eyelid pa-skin" x="134" y="108" width="22" height="11" rx="4"/>
+      <rect class="pa-eyelid pa-skin" x="164" y="108" width="22" height="11" rx="4"/>
+    </g>
 
-  <path d="M162 182c15-18 19-44 10-66" stroke="rgba(72,229,194,.40)" stroke-width="2.5" fill="none" stroke-linecap="round"/>
-  <circle cx="170" cy="112" r="4.5" fill="rgba(72,229,194,.55)"/>
+    <!-- Nose -->
+    <path d="M160 122v10l-4 3" stroke="#B3775C" stroke-width="2" fill="none" stroke-linecap="round"/>
 
-  <!-- NEUTRAL -->
-  <g class="pa-variant pa-neutral">
-    <path d="M79 73h15M106 73h15" stroke="#2A2118" stroke-width="3.2" stroke-linecap="round"/>
-    ${eyesOpen(86)}${eyesOpen(114)}
-    <path d="M92 109h16" stroke="#9C4A3C" stroke-width="3.2" stroke-linecap="round"/>
-  </g>
+    <!-- Sweat -->
+    <g class="pa-sweat">
+      <ellipse cx="124" cy="100" rx="3.2" ry="5" fill="#7DD3FC"/>
+      <ellipse cx="196" cy="105" rx="2.8" ry="4.4" fill="#7DD3FC"/>
+    </g>
 
-  <!-- PAIN -->
-  <g class="pa-variant pa-pain">
-    <path d="M79 70l15 6M121 70l-15 6" stroke="#2A2118" stroke-width="3.4" stroke-linecap="round"/>
-    ${eyesSquint(86)}${eyesSquint(114)}
-    <path d="M89 111q5.5 -7 11 0t11 0" stroke="#9C4A3C" stroke-width="3.2" fill="none" stroke-linecap="round"/>
-  </g>
+    <!-- ── EXPRESSIONS (brows + mouth; closed eyes where needed) ── -->
+    <g class="pa-variant pa-neutral">
+      <path d="M134 103h18M168 103h18" stroke="#2A2118" stroke-width="3.4" stroke-linecap="round"/>
+      <path d="M150 146h20" stroke="#8E4436" stroke-width="3.4" stroke-linecap="round"/>
+    </g>
 
-  <!-- DISTRESS -->
-  <g class="pa-variant pa-distress">
-    <path d="M78 68q8 -5 16 -1M122 68q-8 -5 -16 -1" stroke="#2A2118" stroke-width="3.2" fill="none" stroke-linecap="round"/>
-    ${eyesWide(86)}${eyesWide(114)}
-    <ellipse cx="100" cy="111" rx="8" ry="9" fill="#7A2E28"/>
-  </g>
+    <g class="pa-variant pa-improving">
+      <path d="M134 101h18M168 101h18" stroke="#2A2118" stroke-width="3.4" stroke-linecap="round"/>
+      <path d="M148 144q12 7 24 0" stroke="#8E4436" stroke-width="3.4" fill="none" stroke-linecap="round"/>
+    </g>
 
-  <!-- CRITICAL -->
-  <g class="pa-variant pa-critical">
-    <path d="M79 74h15M106 74h15" stroke="#2A2118" stroke-width="2.8" stroke-linecap="round"/>
-    ${eyesClosed(86)}${eyesClosed(114)}
-    <ellipse cx="100" cy="112" rx="7" ry="8.5" fill="#5E2723"/>
-  </g>
+    <g class="pa-variant pa-recovered">
+      <path d="M134 100h18M168 100h18" stroke="#2A2118" stroke-width="3.4" stroke-linecap="round"/>
+      <path d="M144 142q16 14 32 0" stroke="#8E4436" stroke-width="3.6" fill="none" stroke-linecap="round"/>
+      <ellipse cx="128" cy="132" rx="7" ry="4" fill="#E06A6A" opacity=".35"/>
+      <ellipse cx="192" cy="132" rx="7" ry="4" fill="#E06A6A" opacity=".35"/>
+    </g>
 
-  <!-- IMPROVING -->
-  <g class="pa-variant pa-improving">
-    <path d="M79 72h15M106 72h15" stroke="#2A2118" stroke-width="3.2" stroke-linecap="round"/>
-    ${eyesOpen(86)}${eyesOpen(114)}
-    <path d="M91 108q9 5 18 0" stroke="#9C4A3C" stroke-width="3.2" fill="none" stroke-linecap="round"/>
-  </g>
+    <g class="pa-variant pa-pain">
+      <path d="M134 98l18 8M186 98l-18 8" stroke="#2A2118" stroke-width="3.6" stroke-linecap="round"/>
+      <path d="M136 119q9 -7 18 0M166 119q9 -7 18 0" stroke="#2A2118" stroke-width="2.8" fill="none" stroke-linecap="round"/>
+      <path d="M147 148q6.5 -8 13 0t13 0" stroke="#8E4436" stroke-width="3.4" fill="none" stroke-linecap="round"/>
+    </g>
 
-  <!-- RECOVERED -->
-  <g class="pa-variant pa-recovered">
-    <path d="M79 71h15M106 71h15" stroke="#2A2118" stroke-width="3.2" stroke-linecap="round"/>
-    ${eyesHappy(86)}${eyesHappy(114)}
-    <path d="M88 106q12 10 24 0" stroke="#9C4A3C" stroke-width="3.4" fill="none" stroke-linecap="round"/>
+    <g class="pa-variant pa-distress">
+      <path d="M133 97q10 -6 19 -1M187 97q-10 -6 -19 -1" stroke="#2A2118" stroke-width="3.4" fill="none" stroke-linecap="round"/>
+      <ellipse cx="160" cy="148" rx="9" ry="10.5" fill="#6E2A24"/>
+    </g>
+
+    <g class="pa-variant pa-critical">
+      <path d="M134 104h18M168 104h18" stroke="#2A2118" stroke-width="3" stroke-linecap="round"/>
+      <path d="M136 118h18M166 118h18" stroke="#2A2118" stroke-width="3" stroke-linecap="round"/>
+      <ellipse cx="160" cy="150" rx="8" ry="10" fill="#54201C"/>
+    </g>
   </g>
 </svg>`;
     }
@@ -919,11 +1038,49 @@ const UIController = (function() {
         else setPatientReaction(reactionForHealth(patientHealth));
     }
 
+    // ─── Cursor tracking ───────────────────────────────────────
+    // The patient watches the pharmacist: pupils and head follow the
+    // pointer. Written directly as SVG transforms (no CSS transition)
+    // so it stays responsive and does not depend on the compositor.
+    let eyeTrackingBound = false;
+
+    function aimEyes(clientX, clientY) {
+        avatarHosts.forEach(host => {
+            const svg = host.querySelector('svg');
+            if (!svg) return;
+            const r = svg.getBoundingClientRect();
+            if (r.width === 0) return;
+
+            const cx = r.left + r.width / 2;
+            const cy = r.top + r.height * 0.5;
+            const dx = Math.max(-1, Math.min(1, (clientX - cx) / (r.width * 0.75)));
+            const dy = Math.max(-1, Math.min(1, (clientY - cy) / (r.height * 0.75)));
+
+            host.querySelectorAll('.pa-pupil').forEach(p => {
+                p.setAttribute('transform', `translate(${(dx * 3.6).toFixed(2)} ${(dy * 2.6).toFixed(2)})`);
+            });
+            const head = host.querySelector('.pa-head-group');
+            if (head) {
+                head.setAttribute('transform', `translate(${(dx * 3.4).toFixed(2)} ${(dy * 1.8).toFixed(2)})`);
+            }
+        });
+    }
+
+    function initEyeTracking() {
+        if (eyeTrackingBound) return;
+        eyeTrackingBound = true;
+        document.addEventListener('mousemove', e => aimEyes(e.clientX, e.clientY), { passive: true });
+        document.addEventListener('touchmove', e => {
+            if (e.touches && e.touches[0]) aimEyes(e.touches[0].clientX, e.touches[0].clientY);
+        }, { passive: true });
+    }
+
     function initPatientAvatar(caseData) {
         if (avatarHosts.length === 0) return;
         const svg = buildAvatarSVG();
         avatarHosts.forEach(h => { h.innerHTML = svg; });
         clearTimeout(reactionTimer);
+        initEyeTracking();
 
         const p = (caseData && caseData.patient) || {};
         setText('patient-name-strip',

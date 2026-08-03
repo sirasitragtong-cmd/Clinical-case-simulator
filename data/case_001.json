@@ -1,5 +1,8 @@
 {
   "case_id": "case_001",
+  "map_title": "ด่านที่ 1 · ห้องฉุกเฉิน",
+  "map_subtitle": "ชายไทย 66 ปี มาด้วยถ่ายอุจจาระดำ ร่วมกับหน้ามืด ใจสั่น",
+  "ward": "Emergency Room",
   "case_title": "Upper GI Bleed — NSAID-induced Peptic Ulcer Disease",
   "difficulty": "Advanced",
   "tags": [
