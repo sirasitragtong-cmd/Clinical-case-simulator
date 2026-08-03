@@ -1,0 +1,29 @@
+{
+  "name": "clinical-case-simulator",
+  "version": "7.0.0",
+  "description": "Clinical Case Simulator — Pharmacy Edition. SOAP note and DTP practice for pharmacy students.",
+  "scripts": {
+    "build": "node build.js",
+    "build:css": "node build-css.js",
+    "icons": "node tools/gen-icons.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sirasitragtong-cmd/Clinical-case-simulator.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/sirasitragtong-cmd/Clinical-case-simulator/issues"
+  },
+  "homepage": "https://github.com/sirasitragtong-cmd/Clinical-case-simulator#readme",
+  "devDependencies": {
+    "cssnano": "^7.1.9",
+    "postcss": "^8.5.25",
+    "postcss-cli": "^11.0.1",
+    "tailwindcss": "^3.4.19"
+  },
+  "private": true
+}

@@ -1,0 +1,73 @@
+{
+  "//": [
+    "Composite indexes for Clinical Case Simulator — Pharmacy Edition.",
+    "",
+    "Deploy with:  firebase deploy --only firestore:indexes",
+    "",
+    "The app is written so that NONE of these are required for correctness:",
+    "reads are unordered + client-sorted, so a missing index degrades to a",
+    "slower query rather than a broken panel. They exist so the Leaderboard",
+    "and Instructor Analytics stay fast once the cohort grows past a few",
+    "hundred attempts and the queries can move server-side."
+  ],
+  "indexes": [
+    {
+      "//": "Leaderboard — best scores first, earliest submission wins a tie.",
+      "collectionGroup": "user_attempts",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "finalScore", "order": "DESCENDING" },
+        { "fieldPath": "completedAt", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "//": "Per-case leaderboard and per-case pass rates.",
+      "collectionGroup": "user_attempts",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "caseId", "order": "ASCENDING" },
+        { "fieldPath": "finalScore", "order": "DESCENDING" },
+        { "fieldPath": "completedAt", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "//": "My Stats — a single student's history, newest first.",
+      "collectionGroup": "user_attempts",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "uid", "order": "ASCENDING" },
+        { "fieldPath": "completedAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "//": "Instructor analytics — cohort submissions for one case over time.",
+      "collectionGroup": "user_attempts",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "caseId", "order": "ASCENDING" },
+        { "fieldPath": "completedAt", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "//": "Fatal-error rate per case, for the safety-critical mistake report.",
+      "collectionGroup": "user_attempts",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "caseId", "order": "ASCENDING" },
+        { "fieldPath": "isFatal", "order": "ASCENDING" },
+        { "fieldPath": "completedAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "//": "DTP classification accuracy across the cohort.",
+      "collectionGroup": "user_attempts",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "caseId", "order": "ASCENDING" },
+        { "fieldPath": "dtpTag", "order": "ASCENDING" },
+        { "fieldPath": "completedAt", "order": "DESCENDING" }
+      ]
+    }
+  ],
+  "fieldOverrides": []
+}

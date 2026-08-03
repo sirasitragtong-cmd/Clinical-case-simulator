@@ -1,0 +1,294 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ══════════════════════════════════════════════════════════════
+   Application CSS. Previously inlined in index.html; extracted so
+   the whole stylesheet ships as one minified file and no CDN
+   compiler runs in the browser.
+   ══════════════════════════════════════════════════════════════ */
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+    margin: 0;
+    background-color: #0A0F1D;
+    color: #E2E8F0;
+    font-family: 'Inter', 'Noto Sans Thai', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
+    overscroll-behavior-y: none;
+}
+
+/* ─── View gating ─────────────────────────────────────
+   Every view starts hidden. Nothing renders until the auth
+   gate resolves, which is what removes the login-flash. */
+.app-view { display: none; }
+.hidden-view { display: none !important; }
+.active-view { display: block; }
+
+/* ─── Loading splash ─────────────────────────────────── */
+#app-loading-screen {
+    position: fixed; inset: 0; z-index: 100;
+    background: #0A0F1D;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 1.1rem;
+    transition: opacity .45s ease, visibility .45s ease;
+}
+#app-loading-screen.is-hidden { opacity: 0; visibility: hidden; pointer-events: none; }
+.ecg-line {
+    stroke-dasharray: 260;
+    animation: ecgPulse 1.6s ease-in-out infinite;
+}
+
+/* ─── Backdrop ───────────────────────────────────────── */
+.rpg-grid-bg {
+    background-color: #0A0F1D;
+    background-image:
+        linear-gradient(rgba(72,229,194,.045) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(72,229,194,.045) 1px, transparent 1px),
+        radial-gradient(ellipse 80% 60% at 50% 0%, rgba(28,37,65,.85), transparent 70%);
+    background-size: 44px 44px, 44px 44px, 100% 100%;
+}
+
+.glass-card {
+    background: linear-gradient(160deg, rgba(28,37,65,.78), rgba(19,27,46,.88));
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+    border: 1px solid rgba(51,65,95,.55);
+}
+.panel { background: rgba(19,27,46,.72); border: 1px solid rgba(51,65,95,.5); }
+
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: #0A0F1D; }
+::-webkit-scrollbar-thumb { background: #26314F; border-radius: 8px; }
+::-webkit-scrollbar-thumb:hover { background: #33415F; }
+
+/* ─── Clinical text ──────────────────────────────────── */
+.clinical-text {
+    color: #CBD5E1; line-height: 1.85; font-size: .875rem;
+    padding: .5rem 0;
+    border-bottom: 1px solid rgba(51,65,95,.35);
+}
+.clinical-text:last-child { border-bottom: 0; }
+.clinical-text strong { color: #48E5C2; font-weight: 600; }
+
+/* ─── Choice cards (touch-first: min 48px target) ────── */
+.choice-btn {
+    display: flex; align-items: flex-start; gap: .75rem;
+    width: 100%; text-align: left;
+    min-height: 48px;
+    padding: 1rem;
+    border-radius: .75rem;
+    background: rgba(28,37,65,.55);
+    border: 1px solid rgba(51,65,95,.6);
+    color: #E2E8F0;
+    font-size: .875rem; line-height: 1.6;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    transition: border-color .15s ease, background .15s ease, transform .12s ease;
+}
+@media (hover: hover) {
+    .choice-btn:hover:not(:disabled) {
+        border-color: rgba(72,229,194,.6);
+        background: rgba(72,229,194,.07);
+    }
+    .choice-btn:hover:not(:disabled) .choice-key { background: rgba(72,229,194,.22); color: #48E5C2; }
+}
+.choice-btn:active:not(:disabled) { transform: scale(.985); border-color: rgba(72,229,194,.85); }
+.choice-btn:disabled { cursor: not-allowed; opacity: .55; }
+.choice-btn.is-correct { border-color: rgba(72,229,194,.9); background: rgba(72,229,194,.13); opacity: 1; }
+.choice-btn.is-wrong   { border-color: rgba(230,57,70,.85); background: rgba(230,57,70,.12); opacity: 1; }
+.choice-btn.is-fatal-pick { border-color: #E63946; background: rgba(230,57,70,.22); opacity: 1; }
+
+.choice-key {
+    flex-shrink: 0; width: 1.6rem; height: 1.6rem;
+    display: grid; place-items: center;
+    border-radius: .45rem;
+    background: rgba(51,65,95,.7); color: #94A3B8;
+    font-size: .7rem; font-weight: 700;
+}
+
+/* ─── Multi-select checkbox ──────────────────────────── */
+.choice-box {
+    flex-shrink: 0; width: 1.2rem; height: 1.2rem;
+    margin-top: .18rem;
+    border-radius: .3rem;
+    border: 1.5px solid rgba(100,116,139,.75);
+    background: rgba(11,19,43,.6);
+    display: grid; place-items: center;
+    transition: all .15s ease;
+}
+.choice-multi.is-selected { border-color: rgba(72,229,194,.75); background: rgba(72,229,194,.10); }
+.choice-multi.is-selected .choice-box { border-color: #48E5C2; background: #48E5C2; }
+.choice-multi.is-selected .choice-box::after { content: '✓'; font-size: .7rem; font-weight: 900; color: #06231D; }
+.choice-multi.is-selected .choice-key { background: rgba(72,229,194,.22); color: #48E5C2; }
+.choice-multi.is-correct .choice-box { border-color: #48E5C2; background: #48E5C2; }
+.choice-multi.is-correct .choice-box::after { content: '✓'; font-size: .7rem; font-weight: 900; color: #06231D; }
+.choice-multi.is-wrong .choice-box { border-color: #E63946; background: #E63946; }
+.choice-multi.is-wrong .choice-box::after { content: '✕'; font-size: .64rem; font-weight: 900; color: #fff; }
+
+/* ─── Buttons ────────────────────────────────────────── */
+.primary-btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: .5rem;
+    min-height: 48px;
+    padding: .75rem 1.1rem;
+    border-radius: .7rem;
+    background: linear-gradient(135deg, #48E5C2, #17A98A);
+    color: #06231D; font-weight: 700; font-size: .875rem;
+    border: 0; cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    transition: filter .15s ease, transform .12s ease;
+    box-shadow: 0 6px 20px rgba(72,229,194,.22);
+}
+.primary-btn:active:not(:disabled) { transform: scale(.98); }
+.primary-btn:disabled { opacity: .45; cursor: not-allowed; box-shadow: none; }
+@media (hover: hover) { .primary-btn:hover:not(:disabled) { filter: brightness(1.08); } }
+
+/* ─── Sticky submit dock (mobile) ────────────────────── */
+.submit-dock {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 50;
+    padding: .75rem 1rem calc(.75rem + env(safe-area-inset-bottom));
+    background: rgba(11,19,43,.96);
+    backdrop-filter: blur(12px);
+    border-top: 1px solid rgba(51,65,95,.6);
+}
+@media (min-width: 768px) {
+    .submit-dock {
+        position: static; padding: 0; margin-top: .25rem;
+        background: transparent; backdrop-filter: none; border-top: 0;
+    }
+}
+
+/* ─── Patient drawer (mobile) ────────────────────────── */
+#patient-drawer-backdrop {
+    position: fixed; inset: 0; z-index: 60;
+    background: rgba(7,11,22,.7);
+    backdrop-filter: blur(6px);
+    opacity: 0; visibility: hidden;
+    transition: opacity .3s ease, visibility .3s ease;
+}
+#patient-drawer-backdrop.is-open { opacity: 1; visibility: visible; }
+#patient-drawer {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 61;
+    height: 85vh;
+    background: #0B132B;
+    border-top: 1px solid rgba(51,65,95,.7);
+    border-radius: 1.25rem 1.25rem 0 0;
+    transform: translateY(100%);
+    transition: transform .35s cubic-bezier(.16,1,.3,1);
+    display: flex; flex-direction: column;
+}
+#patient-drawer.is-open { transform: translateY(0); }
+
+/* ─── Step dots ──────────────────────────────────────── */
+.step-dot { width: .5rem; height: .5rem; border-radius: 9999px; background: rgba(51,65,95,.9); transition: all .25s ease; }
+.step-dot.done { background: #48E5C2; }
+.step-dot.current { background: #48E5C2; transform: scale(1.7); box-shadow: 0 0 10px rgba(72,229,194,.8); }
+
+/* ─── Misc ───────────────────────────────────────────── */
+.quest-node { transition: border-color .2s ease, transform .15s ease; }
+.quest-node:active { transform: scale(.99); }
+.divider-v { width: 1px; background: rgba(51,65,95,.5); }
+.tag-pill {
+    display: inline-flex; align-items: center; gap: .3rem;
+    padding: .2rem .55rem; border-radius: 9999px;
+    font-size: .68rem; font-weight: 600;
+    background: rgba(51,65,95,.55); color: #94A3B8;
+    border: 1px solid rgba(51,65,95,.7);
+}
+.nav-link {
+    display: flex; align-items: center; gap: .6rem;
+    padding: .6rem .75rem; border-radius: .5rem;
+    font-size: .75rem; font-weight: 500;
+    color: #94A3B8; cursor: pointer;
+    transition: background .15s ease, color .15s ease;
+}
+.nav-link:hover { color: #fff; background: rgba(28,37,65,.6); }
+.nav-link.is-active { color: #0A0F1D; background: #48E5C2; font-weight: 700; }
+.nav-link.is-disabled { color: #475569; cursor: not-allowed; }
+.nav-link.is-disabled:hover { background: transparent; color: #475569; }
+
+.nav-chip {
+    flex-shrink: 0; white-space: nowrap;
+    padding: .5rem .8rem; min-height: 40px;
+    border-radius: 9999px;
+    font-size: .72rem; font-weight: 600;
+    color: #94A3B8;
+    background: rgba(28,37,65,.6);
+    border: 1px solid rgba(51,65,95,.6);
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+}
+.nav-chip.is-active { color: #0A0F1D; background: #48E5C2; border-color: #48E5C2; font-weight: 700; }
+
+/* ═══ Patient avatar ═══════════════════════════════════
+   Expression variants are all present in the DOM; the
+   reaction class on #patient-avatar decides which is
+   visible. Opacity is switched without a transition so the
+   state is immediate and testable. */
+#patient-avatar svg { width: 100%; height: auto; display: block; }
+
+.pa-variant { opacity: 0; }
+.reaction-neutral   .pa-neutral,
+.reaction-pain      .pa-pain,
+.reaction-distress  .pa-distress,
+.reaction-critical  .pa-critical,
+.reaction-improving .pa-improving,
+.reaction-recovered .pa-recovered { opacity: 1; }
+
+/* Skin tone shifts with condition */
+.pa-skin { fill: #E8B48F; transition: fill .5s ease; }
+.reaction-distress .pa-skin { fill: #DBAE94; }
+.reaction-critical .pa-skin { fill: #C9AFA4; }
+.reaction-recovered .pa-skin { fill: #EFBE96; }
+
+.pa-eyes-open { transition: opacity .18s ease; }
+.reaction-pain .pa-eyes-open,
+.reaction-critical .pa-eyes-open { opacity: 0; }
+
+/* ECG trace on the wall monitor */
+.pa-ecg { stroke-dasharray: 160; animation: paEcg 2.2s linear infinite; }
+@keyframes paEcg { from { stroke-dashoffset: 160; } to { stroke-dashoffset: -160; } }
+.pa-monitor-dot { animation: paBlinkDot 1.4s ease-in-out infinite; }
+@keyframes paBlinkDot { 0%,100% { opacity: 1; } 50% { opacity: .25; } }
+.reaction-critical .pa-ecg { stroke: #E63946; animation-duration: .9s; }
+.reaction-critical .pa-monitor-dot { fill: #E63946; animation-duration: .5s; }
+
+/* Breathing — rate follows severity */
+.pa-chest { transform-origin: 160px 220px; animation: paBreathe 3.4s ease-in-out infinite; }
+.reaction-pain     .pa-chest { animation-duration: 2.4s; }
+.reaction-distress .pa-chest { animation-duration: 1.5s; }
+.reaction-critical .pa-chest { animation-duration: 4.6s; }
+@keyframes paBreathe {
+    0%, 100% { transform: scaleY(1); }
+    50%      { transform: scaleY(1.035); }
+}
+
+/* Blink */
+.pa-eyelid { transform-origin: center; animation: paBlink 5s ease-in-out infinite; }
+@keyframes paBlink {
+    0%, 92%, 100% { transform: scaleY(0); }
+    95%           { transform: scaleY(1); }
+}
+.reaction-critical .pa-eyelid { animation: none; transform: scaleY(1); }
+
+/* Sweat */
+.pa-sweat { opacity: 0; }
+.reaction-pain .pa-sweat,
+.reaction-distress .pa-sweat { opacity: 1; animation: paSweat 2.6s ease-in infinite; }
+@keyframes paSweat {
+    0%   { transform: translateY(0); opacity: 0; }
+    30%  { opacity: .9; }
+    100% { transform: translateY(14px); opacity: 0; }
+}
+
+/* Pain aura */
+.pa-aura { opacity: 0; transition: opacity .4s ease; }
+.reaction-pain .pa-aura, .reaction-distress .pa-aura { opacity: .55; }
+.reaction-critical .pa-aura { opacity: .9; }
+
+@media (prefers-reduced-motion: reduce) {
+    .pa-chest, .pa-eyelid, .pa-sweat { animation: none !important; }
+}

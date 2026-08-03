@@ -881,5 +881,77 @@
         }
       }
     }
+  },
+  "renal": {
+    "weight_kg": 62,
+    "scr_mg_dl": 1.6,
+    "egfr_ml_min_1_73": 45,
+    "bun_mg_dl": 38,
+    "note": "BUN/Cr ratio > 20 เข้าได้กับ upper GI bleed ร่วมกับ pre-renal azotaemia จากภาวะขาดสารน้ำ"
+  },
+  "dtp": {
+    "step_id": "step_4_drps",
+    "correct_ids": [
+      5,
+      2
+    ],
+    "rationale": "Naproxen ทำให้เกิดแผลและเลือดออกในทางเดินอาหาร (ADR) และผู้ป่วยอายุ > 65 ปี ซึ่งเป็นกลุ่มเสี่ยงสูง ไม่เคยได้รับ PPI ป้องกันแผลขณะใช้ NSAID (Needs Additional Drug Therapy)"
+  },
+  "monitoring": {
+    "regimen": "IV PPI (Omeprazole 80 mg bolus → 8 mg/hr drip) + IV fluid resuscitation + PRC transfusion",
+    "efficacy": [
+      {
+        "param": "Melena / อุจจาระ",
+        "target": "เปลี่ยนเป็นสีปกติ ไม่มีเลือดออกซ้ำ",
+        "when": "ทุกครั้งที่ถ่าย"
+      },
+      {
+        "param": "Hb / Hct",
+        "target": "Hb ≥ 7 g/dL และคงที่ ไม่ลดต่อเนื่อง",
+        "when": "ทุก 4–8 ชม. จนคงที่"
+      },
+      {
+        "param": "BP / HR",
+        "target": "SBP ≥ 100 mmHg, HR < 100 bpm",
+        "when": "ทุก 15–60 นาที ในช่วงแรก"
+      },
+      {
+        "param": "Urine output",
+        "target": "≥ 0.5 mL/kg/hr",
+        "when": "ทุกชั่วโมง"
+      },
+      {
+        "param": "อาการหน้ามืด / ใจสั่น",
+        "target": "หายไป",
+        "when": "ทุกเวร"
+      }
+    ],
+    "safety": [
+      {
+        "param": "อาการปวดท้อง / ท้องแข็งเกร็ง",
+        "watch": "สัญญาณ perforation — ต้องรายงานแพทย์ทันที",
+        "when": "ทุกเวร"
+      },
+      {
+        "param": "Serum Mg²⁺",
+        "watch": "Hypomagnesaemia จาก PPI ระยะยาว",
+        "when": "ก่อนเริ่ม และเมื่อใช้ > 3 เดือน"
+      },
+      {
+        "param": "Renal function (Scr, CrCl)",
+        "watch": "CrCl 40 mL/min — ประเมินซ้ำหลังให้สารน้ำ",
+        "when": "ทุก 24–48 ชม."
+      },
+      {
+        "param": "สัญญาณติดเชื้อ",
+        "watch": "ความเสี่ยง C. difficile และปอดอักเสบเพิ่มขึ้นจาก PPI",
+        "when": "ทุกวัน"
+      },
+      {
+        "param": "ปฏิกิริยาจากการให้เลือด",
+        "watch": "ไข้ หนาวสั่น ผื่น หายใจลำบาก",
+        "when": "ระหว่างและหลังให้เลือด"
+      }
+    ]
   }
 }

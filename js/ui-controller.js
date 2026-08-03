@@ -41,6 +41,27 @@ const UIController = (function() {
     let multiLimit     = 1;
     let multiPerPoint  = 0;
 
+    // Drug Therapy Problem tagging (pharmacy practice)
+    let dtpSelection   = null;   // category id chosen on the current step
+    let dtpRequired    = false;  // true only on the case's designated DTP step
+    let dtpLastTag     = null;   // survives the step, for the Firestore payload
+
+    /**
+     * The seven standard Drug Therapy Problem categories from the
+     * Pharmaceutical Care Practice framework (Cipolle, Strand & Morley).
+     * Ids are stable and are what gets written to Firestore for analytics —
+     * do not renumber them.
+     */
+    const DTP_CATEGORIES = [
+        { id: 1, short: 'Unnecessary Drug Therapy',      th: 'ได้รับยาโดยไม่จำเป็น' },
+        { id: 2, short: 'Needs Additional Drug Therapy', th: 'ต้องการยาเพิ่ม' },
+        { id: 3, short: 'Ineffective Drug',              th: 'ยาไม่ได้ผล' },
+        { id: 4, short: 'Dosage Too Low',                th: 'ขนาดยาต่ำเกินไป' },
+        { id: 5, short: 'Adverse Drug Reaction',         th: 'อาการไม่พึงประสงค์จากยา' },
+        { id: 6, short: 'Dosage Too High',               th: 'ขนาดยาสูงเกินไป' },
+        { id: 7, short: 'Non-adherence',                 th: 'ไม่ให้ความร่วมมือในการใช้ยา' }
+    ];
+
     // ─── Helpers ───────────────────────────────────────────────
     function esc(str) {
         return String(str == null ? '' : str)
@@ -80,6 +101,17 @@ const UIController = (function() {
                     if (user) {
                         if (typeof options.onSignedIn === 'function') options.onSignedIn(user);
                         reveal('dashboard');
+
+                        // ?mode=instructor deep-links faculty straight into
+                        // the analytics panel. It reads the same signed-in
+                        // Firestore data as everything else — it is a
+                        // shortcut, not a privilege.
+                        try {
+                            if (new URLSearchParams(location.search).get('mode') === 'instructor') {
+                                console.log('[Boot] mode=instructor → opening analytics panel.');
+                                switchPanel('instructor');
+                            }
+                        } catch (e) { /* URLSearchParams unavailable — ignore */ }
                     } else {
                         reveal('login');
                     }
@@ -177,6 +209,9 @@ const UIController = (function() {
 
     // ─── Event Delegation ──────────────────────────────────────
     function handleClick(event) {
+        const dtpChip = event.target.closest('.dtp-chip');
+        if (dtpChip && !dtpChip.disabled) { selectDTP(dtpChip); return; }
+
         const multiBtn = event.target.closest('.choice-multi');
         if (multiBtn && !multiBtn.disabled) { toggleMultiChoice(multiBtn); return; }
 
@@ -341,6 +376,218 @@ const UIController = (function() {
             </div>`;
     }
 
+    // ═══ PHARMACY TOOLING ══════════════════════════════════════
+
+    /**
+     * Cockcroft-Gault creatinine clearance, in mL/min.
+     *
+     *     CrCl = ((140 - age) x weight_kg) / (72 x Scr)   x 0.85 if female
+     *
+     * This is deliberately CG and not eGFR: CG is what drug monographs and
+     * renal dose-adjustment tables are written against. The authored eGFR
+     * is displayed alongside it, never substituted for it.
+     *
+     * Returns null when the case lacks the inputs, so the badge can say so
+     * instead of printing a number derived from defaults.
+     */
+    function calcCockcroftGault(patient, renal) {
+        if (!patient || !renal) return null;
+        const age = Number(patient.age);
+        const wt  = Number(renal.weight_kg);
+        const scr = Number(renal.scr_mg_dl);
+        if (!age || !wt || !scr) return null;
+
+        let crcl = ((140 - age) * wt) / (72 * scr);
+        if (String(patient.sex || '').toUpperCase().charAt(0) === 'F') crcl *= 0.85;
+        return Math.round(crcl * 10) / 10;
+    }
+
+    /**
+     * Renal & pharmacokinetic quick-calc badge for the Objective tab.
+     * Below 60 mL/min it raises the amber "Renal Dose Adjustment Required"
+     * tag, which is the trigger a pharmacist is trained to act on.
+     */
+    function renderRenalBadge(caseData) {
+        const data = caseData || activeCase;
+        if (!data || !data.renal) return '';
+
+        const r = data.renal;
+        const crcl = calcCockcroftGault(data.patient, r);
+        const egfr = Number(r.egfr_ml_min_1_73);
+
+        // The lower of the two drives the warning — the conservative read.
+        const impaired = (crcl != null && crcl < 60) || (egfr && egfr < 60);
+
+        const cell = (label, value, unit, tone) => `
+            <div class="rounded-lg px-2 py-1.5 border ${tone || 'border-navy-600/70 bg-navy-800/60'}">
+                <p class="text-[.56rem] font-bold tracking-wider text-slate-500 uppercase">${label}</p>
+                <p class="text-[.82rem] font-mono font-bold text-white leading-tight">${value}<span class="text-[.55rem] font-sans font-medium text-slate-500 ml-0.5">${unit || ''}</span></p>
+            </div>`;
+
+        const crclTone = crcl != null && crcl < 60
+            ? 'border-gold-400/50 bg-gold-400/10'
+            : 'border-teal-400/35 bg-teal-400/[.07]';
+
+        return `
+            <div class="rounded-xl border border-navy-600/70 bg-navy-850/70 p-2.5 mb-3">
+                <div class="flex items-center gap-1.5 mb-2">
+                    <span class="text-xs">🧪</span>
+                    <p class="text-[.6rem] font-bold tracking-widest text-teal-400 uppercase">Renal &amp; PK Quick-Calc</p>
+                </div>
+
+                <div class="grid grid-cols-2 gap-1.5">
+                    ${cell('Scr', r.scr_mg_dl != null ? r.scr_mg_dl : '—', 'mg/dL')}
+                    ${cell('BUN', r.bun_mg_dl != null ? r.bun_mg_dl : '—', 'mg/dL')}
+                    ${cell('eGFR', egfr || '—', 'mL/min/1.73m²')}
+                    ${cell('CrCl (C-G)', crcl != null ? crcl : '—', 'mL/min', crclTone)}
+                </div>
+
+                <p class="text-[.58rem] text-slate-500 mt-1.5 leading-relaxed">
+                    น้ำหนัก ${r.weight_kg != null ? r.weight_kg : '—'} kg · คำนวณด้วยสูตร Cockcroft-Gault
+                </p>
+
+                ${impaired ? `
+                <div class="mt-2 flex items-start gap-1.5 rounded-lg border border-gold-400/40 bg-gold-400/10 px-2 py-1.5">
+                    <span class="text-gold-400 text-[.7rem] leading-none mt-0.5">⚠</span>
+                    <div>
+                        <p class="text-[.66rem] font-bold text-gold-400 leading-tight">Renal Dose Adjustment Required</p>
+                        <p class="text-[.58rem] text-slate-400 leading-relaxed mt-0.5">
+                            ตรวจสอบขนาดยาทุกตัวที่ขับออกทางไตก่อนสั่งจ่าย
+                        </p>
+                    </div>
+                </div>` : `
+                <div class="mt-2 flex items-center gap-1.5 rounded-lg border border-teal-400/30 bg-teal-400/[.07] px-2 py-1.5">
+                    <span class="text-teal-400 text-[.7rem] leading-none">✓</span>
+                    <p class="text-[.64rem] font-semibold text-teal-400">การทำงานของไตอยู่ในเกณฑ์ปกติ</p>
+                </div>`}
+            </div>`;
+    }
+
+    /**
+     * Efficacy vs. Safety monitoring framework for the Plan step — the
+     * two-column table every pharmacist care plan has to end with.
+     * Stacks to one column on narrow panels.
+     */
+    function renderMonitoringBlock(caseData) {
+        const data = caseData || activeCase;
+        const m = data && data.monitoring;
+
+        if (!m) {
+            return `<p class="text-slate-500 text-[.72rem] leading-relaxed">
+                        ยังไม่มีกรอบการติดตามสำหรับเคสนี้
+                    </p>`;
+        }
+
+        const row = (r, accent) => `
+            <div class="rounded-lg border border-navy-600/60 bg-navy-800/50 p-2">
+                <p class="text-[.7rem] font-bold ${accent} leading-tight">${esc(r.param)}</p>
+                <p class="text-[.66rem] text-slate-300 leading-relaxed mt-0.5">${esc(r.target || r.watch || '')}</p>
+                ${r.when ? `<p class="text-[.58rem] text-slate-500 mt-1">🕒 ${esc(r.when)}</p>` : ''}
+            </div>`;
+
+        return `
+            <div class="flex flex-col gap-3">
+                <div class="rounded-xl border border-teal-400/30 bg-teal-400/[.06] p-2.5">
+                    <p class="text-[.58rem] font-bold tracking-widest text-teal-400 uppercase mb-1">Regimen</p>
+                    <p class="text-[.72rem] text-slate-200 leading-relaxed">${esc(m.regimen || '—')}</p>
+                </div>
+
+                <div class="grid grid-cols-1 xl:grid-cols-2 gap-3">
+                    <div>
+                        <div class="flex items-center gap-1.5 mb-1.5">
+                            <span class="text-[.7rem]">🎯</span>
+                            <p class="text-[.6rem] font-bold tracking-widest text-teal-400 uppercase">Therapeutic Efficacy</p>
+                        </div>
+                        <div class="flex flex-col gap-1.5">
+                            ${(m.efficacy || []).map(r => row(r, 'text-teal-400')).join('')}
+                        </div>
+                    </div>
+
+                    <div>
+                        <div class="flex items-center gap-1.5 mb-1.5">
+                            <span class="text-[.7rem]">🛡</span>
+                            <p class="text-[.6rem] font-bold tracking-widest text-gold-400 uppercase">Safety / Toxicity</p>
+                        </div>
+                        <div class="flex flex-col gap-1.5">
+                            ${(m.safety || []).map(r => row(r, 'text-gold-400')).join('')}
+                        </div>
+                    </div>
+                </div>
+            </div>`;
+    }
+
+    // ─── DTP tagger ────────────────────────────────────────────
+    /** True when the current step is the one the case marks for DTP tagging. */
+    function isDTPStep() {
+        const dtp = activeCase && activeCase.dtp;
+        return !!(dtp && dtp.step_id && dtp.step_id === state_currentStepId());
+    }
+
+    function renderDTPTagger() {
+        const chips = DTP_CATEGORIES.map(c => `
+            <button class="dtp-chip text-left px-2 py-2 min-h-[48px] rounded-lg border border-navy-600/70 bg-navy-800/60
+                           text-[.64rem] leading-tight text-slate-300 transition"
+                    data-dtp-id="${c.id}" aria-pressed="false">
+                <span class="font-bold text-slate-500 mr-1">${c.id}.</span>${esc(c.short)}
+                <span class="block text-[.56rem] text-slate-500 mt-0.5">${esc(c.th)}</span>
+            </button>`).join('');
+
+        return `
+            <div id="dtp-tagger" class="rounded-xl border border-gold-400/35 bg-gold-400/[.05] p-2.5">
+                <div class="flex items-center gap-1.5 mb-1">
+                    <span class="text-xs">🏷</span>
+                    <p class="text-[.6rem] font-bold tracking-widest text-gold-400 uppercase">Drug Therapy Problem</p>
+                </div>
+                <p class="text-[.66rem] text-slate-400 leading-relaxed mb-2">
+                    จำแนกประเภทของปัญหาจากการใช้ยาก่อน แล้วจึงเลือกคำตอบด้านล่าง
+                </p>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-1.5">${chips}</div>
+                <div id="dtp-verdict"></div>
+            </div>`;
+    }
+
+    function selectDTP(chip) {
+        const id = Number(chip.dataset.dtpId);
+        if (!id) return;
+
+        dtpSelection = id;
+        dtpLastTag = id;
+
+        document.querySelectorAll('.dtp-chip').forEach(c => {
+            const on = Number(c.dataset.dtpId) === id;
+            c.classList.toggle('border-gold-400', on);
+            c.classList.toggle('bg-gold-400/15', on);
+            c.classList.toggle('text-white', on);
+            c.setAttribute('aria-pressed', on ? 'true' : 'false');
+        });
+
+        syncSubmitState();
+    }
+
+    /** Reveals whether the tag matched the case key, after the answer. */
+    function renderDTPVerdict() {
+        const host = byId('dtp-verdict');
+        const dtp = activeCase && activeCase.dtp;
+        if (!host || !dtp) return;
+
+        document.querySelectorAll('.dtp-chip').forEach(c => { c.disabled = true; });
+
+        const key = Array.isArray(dtp.correct_ids) ? dtp.correct_ids : [];
+        const ok = key.indexOf(dtpSelection) !== -1;
+        const names = key
+            .map(id => (DTP_CATEGORIES.find(c => c.id === id) || {}).short)
+            .filter(Boolean);
+
+        host.innerHTML = `
+            <div class="mt-2 rounded-lg border ${ok ? 'border-teal-400/45 bg-teal-400/10' : 'border-acuity-500/45 bg-acuity-500/10'} px-2 py-1.5">
+                <p class="text-[.66rem] font-bold ${ok ? 'text-teal-400' : 'text-acuity-500'} leading-tight">
+                    ${ok ? '✓ จำแนก DTP ถูกต้อง' : '✕ จำแนก DTP ยังไม่ตรง'}
+                    <span class="font-normal text-slate-400">— เฉลย: ${esc(names.join(' + ') || '—')}</span>
+                </p>
+                ${dtp.rationale ? `<p class="text-[.6rem] text-slate-400 leading-relaxed mt-1">${esc(dtp.rationale)}</p>` : ''}
+            </div>`;
+    }
+
     // ─── Patient Chart (panel + drawer) ────────────────────────
     function renderPatientChart(caseData) {
         if (caseData) activeCase = caseData;
@@ -370,7 +617,10 @@ const UIController = (function() {
         if (soapTab === 'subjective') {
             html = contentBlock(infoSteps[0], 'ไม่มีข้อมูล Subjective');
         } else if (soapTab === 'objective') {
-            html = contentBlock(infoSteps[1], 'ไม่มีข้อมูล Objective');
+            // Renal/PK parameters are objective data, so they lead the tab.
+            html = renderRenalBadge(data) + contentBlock(infoSteps[1], 'ไม่มีข้อมูล Objective');
+        } else if (soapTab === 'monitoring') {
+            html = renderMonitoringBlock(data);
         } else {
             html = renderCPGBlock(data.cpg);
         }
@@ -484,6 +734,19 @@ const UIController = (function() {
         multiLimit     = limit;
         multiPerPoint  = per;
 
+        // DTP tagging is required only on the step the case designates.
+        dtpSelection = null;
+        dtpRequired  = isDTPStep();
+
+        // Monitoring steps read against the efficacy/safety framework, so
+        // open the patient file on that tab rather than making the student
+        // hunt for it.
+        if (String(state_currentStepId()).indexOf('monitoring') !== -1 && activeCase && activeCase.monitoring) {
+            soapTab = 'monitoring';
+            syncSoapTabs();
+            renderPatientChart(activeCase);
+        }
+
         const choices = (stepData.choices || []).map(c => `
             <button class="choice-btn choice-multi" data-choice-id="${esc(c.id)}" aria-pressed="false">
                 <span class="choice-box" aria-hidden="true"></span>
@@ -501,6 +764,8 @@ const UIController = (function() {
                         ⓘ เลือก <strong>${limit}</strong> ข้อ — Partial Credit Enabled
                     </p>
                 </div>
+
+                ${dtpRequired ? renderDTPTagger() : ''}
 
                 <div class="flex flex-col gap-2">${choices}</div>
                 <div id="feedback-area"></div>
@@ -537,16 +802,29 @@ const UIController = (function() {
             btn.setAttribute('aria-pressed', 'true');
         }
 
+        syncSubmitState();
+    }
+
+    /**
+     * Single owner of the Submit button's enabled state and label.
+     * Both the choice buttons and the DTP chips feed into it, so the rule
+     * "tag the DTP before choosing therapy" is enforced in one place.
+     */
+    function syncSubmitState() {
         setText('multi-count', multiSelection.size);
         setText('multi-est', '+' + (multiSelection.size * multiPerPoint));
 
         const submit = document.querySelector('.submit-decision-btn');
-        if (submit) {
-            submit.disabled = multiSelection.size === 0;
-            submit.textContent = multiSelection.size === multiLimit
+        if (!submit) return;
+
+        const needsTag = dtpRequired && dtpSelection == null;
+        submit.disabled = multiSelection.size === 0 || needsTag;
+
+        submit.textContent = needsTag
+            ? '🏷 เลือกประเภท DTP ก่อน'
+            : (multiSelection.size === multiLimit
                 ? 'Submit Clinical Decision ✓'
-                : `Submit Clinical Decision (${multiSelection.size}/${multiLimit})`;
-        }
+                : `Submit Clinical Decision (${multiSelection.size}/${multiLimit})`);
     }
 
     // ─── Render: Feedback (single answer) ──────────────────────
@@ -588,6 +866,8 @@ const UIController = (function() {
 
         const dock = document.querySelector('.submit-dock');
         if (dock) dock.remove();
+
+        if (dtpRequired) renderDTPVerdict();
 
         // Condition tracks how well the plan was executed.
         if (result.allCorrect)      adjustPatientHealth(10, 'improving');
@@ -1117,6 +1397,7 @@ const UIController = (function() {
         if (name === 'stats')        renderStatsPanel();
         if (name === 'leaderboard')  renderLeaderboardPanel();
         if (name === 'achievements') renderAchievementsPanel();
+        if (name === 'instructor')   renderInstructorPanel();
     }
 
     function loadingBlock(text) {
@@ -1141,6 +1422,16 @@ const UIController = (function() {
                         <p class="text-[.7rem] text-slate-400 leading-relaxed">
                             Security Rules ของคอลเลกชัน <code class="text-teal-400">user_attempts</code>
                             ยังไม่อนุญาตให้อ่าน — ต้องแก้ที่ Firebase Console
+                        </p>
+                    </div>`;
+        }
+        if (result.reason === 'missing-index') {
+            return `<div class="panel rounded-2xl p-6 text-center border-gold-400/30">
+                        <p class="text-2xl mb-2">🗂</p>
+                        <p class="text-xs font-bold text-gold-400 mb-1">ยังไม่ได้สร้าง Composite Index</p>
+                        <p class="text-[.7rem] text-slate-400 leading-relaxed">
+                            Deploy ไฟล์ <code class="text-teal-400">firestore.indexes.json</code>
+                            ด้วยคำสั่ง <code class="text-teal-400">firebase deploy --only firestore:indexes</code>
                         </p>
                     </div>`;
         }
@@ -1327,6 +1618,139 @@ const UIController = (function() {
             </div>`;
     }
 
+    // ═══ INSTRUCTOR ANALYTICS ══════════════════════════════════
+    // Cohort-level pedagogy, not grading. Every number here is derived
+    // from real attempts; when the read fails the panel says why rather
+    // than showing a plausible-looking zero.
+
+    /** Human-readable label for a step id, using the loaded case files. */
+    function stepLabel(caseId, stepId, cases) {
+        const c = (cases || []).find(x => x.case_id === caseId);
+        if (c) {
+            for (const stage of Object.values(c.stages || {})) {
+                const s = (stage.steps || {})[stepId];
+                if (s && s.question) return s.question.split(':')[0].trim();
+            }
+        }
+        return stepId.replace(/^step_\d+_/, '').replace(/_/g, ' ');
+    }
+
+    async function renderInstructorPanel() {
+        const host = byId('instructor-body');
+        if (!host) return;
+        host.innerHTML = loadingBlock('กำลังรวบรวมข้อมูลของนักศึกษา…');
+
+        const result = await window.DBService.getAllAttempts(1000);
+        if (!result.ok || result.rows.length === 0) {
+            host.innerHTML = stateBlock(result, 'ยังไม่มีการส่งผลจากนักศึกษา');
+            return;
+        }
+
+        const rows = result.rows;
+        const total = rows.length;
+
+        // Pass = finished without a fatal error and scored at least 60%.
+        const passed = rows.filter(r => !r.isFatal && pct(r.finalScore, r.maxScore) >= 60).length;
+        const fatal  = rows.filter(r => r.isFatal).length;
+        const avg    = Math.round(rows.reduce((s, r) => s + pct(r.finalScore, r.maxScore), 0) / total);
+
+        // ── Most-missed steps ──────────────────────────────────
+        // A step counts as "missed" for an attempt if that attempt logged
+        // at least one wrong choice on it. Counting attempts rather than
+        // wrong clicks stops multi-select steps from dominating the chart.
+        const missed = {};
+        rows.forEach(r => {
+            Object.keys(r.mistakeHistory || {}).forEach(stepId => {
+                const picks = r.mistakeHistory[stepId];
+                if (!Array.isArray(picks) || picks.length === 0) return;
+                const key = r.caseId + '::' + stepId;
+                missed[key] = (missed[key] || 0) + 1;
+            });
+        });
+
+        const chart = Object.keys(missed)
+            .map(key => {
+                const [caseId, stepId] = key.split('::');
+                return {
+                    caseId, stepId,
+                    label: stepLabel(caseId, stepId, allCases),
+                    count: missed[key],
+                    rate: pct(missed[key], total)
+                };
+            })
+            .sort((a, b) => b.rate - a.rate)
+            .slice(0, 8);
+
+        // ── DTP classification accuracy ────────────────────────
+        const tagged = rows.filter(r => r.dtpTag != null);
+        const dtpCounts = {};
+        tagged.forEach(r => { dtpCounts[r.dtpTag] = (dtpCounts[r.dtpTag] || 0) + 1; });
+        const dtpCorrect = tagged.filter(r => r.dtpCorrect === true).length;
+
+        const stat = (label, value, suffix, tone) => `
+            <div class="panel rounded-2xl p-3.5">
+                <p class="text-[.58rem] font-bold tracking-widest text-slate-500 uppercase mb-1">${label}</p>
+                <p class="text-2xl font-extrabold ${tone || 'text-white'} leading-none">
+                    ${value}<span class="text-xs font-bold text-slate-500 ml-0.5">${suffix || ''}</span>
+                </p>
+            </div>`;
+
+        const bar = (item, tone) => `
+            <div class="mb-2.5">
+                <div class="flex items-baseline justify-between gap-2 mb-1">
+                    <p class="text-[.7rem] font-semibold text-slate-200 truncate">${esc(item.label)}</p>
+                    <p class="text-[.66rem] font-mono font-bold ${tone} flex-shrink-0">${item.rate}%
+                        <span class="text-slate-600 font-sans font-normal">(${item.count}/${total})</span></p>
+                </div>
+                <div class="h-1.5 rounded-full bg-navy-700/70 overflow-hidden">
+                    <div class="h-full rounded-full ${item.rate >= 50 ? 'bg-acuity-500' : item.rate >= 25 ? 'bg-gold-400' : 'bg-teal-400'}"
+                         style="width:${Math.max(item.rate, 2)}%"></div>
+                </div>
+                <p class="text-[.55rem] text-slate-600 mt-0.5 font-mono">${esc(item.caseId)} · ${esc(item.stepId)}</p>
+            </div>`;
+
+        host.innerHTML = `
+            <div class="grid grid-cols-2 lg:grid-cols-4 gap-2.5 mb-4">
+                ${stat('Submissions', total, '', 'text-white')}
+                ${stat('Pass Rate', pct(passed, total), '%', pct(passed, total) >= 60 ? 'text-teal-400' : 'text-gold-400')}
+                ${stat('Average Score', avg, '%', 'text-white')}
+                ${stat('Fatal Errors', pct(fatal, total), '%', fatal > 0 ? 'text-acuity-500' : 'text-teal-400')}
+            </div>
+
+            <div class="panel rounded-2xl p-4 mb-4">
+                <div class="flex items-baseline justify-between mb-3">
+                    <h3 class="text-xs font-extrabold text-white">Most Common Clinical Mistakes</h3>
+                    <p class="text-[.6rem] text-slate-500">% ของนักศึกษาที่ตอบผิดในขั้นตอนนั้น</p>
+                </div>
+                ${chart.length
+                    ? chart.map(i => bar(i, 'text-slate-300')).join('')
+                    : '<p class="text-[.72rem] text-slate-500">ยังไม่พบข้อผิดพลาดที่บันทึกไว้</p>'}
+            </div>
+
+            <div class="panel rounded-2xl p-4">
+                <div class="flex items-baseline justify-between mb-3">
+                    <h3 class="text-xs font-extrabold text-white">DTP Classification</h3>
+                    <p class="text-[.6rem] text-slate-500">${tagged.length} attempt(s) ที่ติดแท็ก</p>
+                </div>
+                ${tagged.length === 0
+                    ? `<p class="text-[.72rem] text-slate-500 leading-relaxed">
+                           ยังไม่มีข้อมูลการจำแนก DTP — ข้อมูลจะเริ่มเก็บจากการส่งผลครั้งถัดไป
+                       </p>`
+                    : `<p class="text-[.72rem] text-slate-300 mb-3">
+                           จำแนกถูกต้อง <strong class="text-teal-400">${pct(dtpCorrect, tagged.length)}%</strong>
+                           (${dtpCorrect}/${tagged.length})
+                       </p>
+                       ${DTP_CATEGORIES.map(c => {
+                           const n = dtpCounts[c.id] || 0;
+                           return bar({
+                               label: `${c.id}. ${c.short}`,
+                               caseId: c.th, stepId: '',
+                               count: n, rate: pct(n, tagged.length)
+                           }, 'text-slate-300');
+                       }).join('')}`}
+            </div>`;
+    }
+
     function initPanelNav() {
         document.querySelectorAll('[data-panel]').forEach(el => {
             el.addEventListener('click', () => switchPanel(el.dataset.panel));
@@ -1379,7 +1803,15 @@ const UIController = (function() {
         switchPanel,
         setPatientReaction,
         setPatientHealth,
-        getPatientHealth: () => patientHealth
+        getPatientHealth: () => patientHealth,
+
+        // Pharmacy tooling
+        calcCockcroftGault,
+        DTP_CATEGORIES,
+        // The DTP the student tagged this run, for the Firestore payload.
+        getDTPTag: () => dtpLastTag,
+        resetDTPTag: function() { dtpLastTag = null; dtpSelection = null; dtpRequired = false; },
+        renderInstructorPanel
     };
 })();
 

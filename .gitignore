@@ -25,3 +25,7 @@ integration-test.cjs
 
 # Local dev helpers (not part of the production bundle)
 .claude/
+
+# NOTE: css/style.min.css IS committed on purpose. GitHub Pages serves the
+# repository as-is and never runs `node build.js`, so the compiled stylesheet
+# has to be in the tree or the deployed site loads with no CSS at all.

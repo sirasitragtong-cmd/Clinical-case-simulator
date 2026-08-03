@@ -265,6 +265,58 @@
                     message: error.message
                 };
             }
+        },
+
+        /**
+         * Read the cohort's attempts for the instructor analytics panel.
+         *
+         * Deliberately unordered: adding .orderBy() here would demand the
+         * composite index in firestore.indexes.json to be live before the
+         * panel works at all. Aggregation is cheap client-side at this
+         * cohort size, so a missing index degrades to "slower", not "broken".
+         *
+         * Identity is dropped on read — faculty see cohort behaviour, not
+         * who made which mistake.
+         */
+        getAllAttempts: async function(max) {
+            if (!db) return { ok: false, reason: 'offline', rows: [] };
+
+            const user = AuthService.getCurrentUser();
+            if (!user) return { ok: false, reason: 'signed-out', rows: [] };
+
+            try {
+                const snap = await db.collection('user_attempts').limit(max || 1000).get();
+
+                const rows = snap.docs.map(d => {
+                    const a = d.data() || {};
+                    return {
+                        // No uid, email or displayName — anonymised at the boundary.
+                        caseId: a.caseId || 'unknown',
+                        finalScore: a.finalScore || 0,
+                        maxScore: a.maxScore || 0,
+                        completedSteps: a.completedSteps || 0,
+                        totalSteps: a.totalSteps || 0,
+                        isFatal: Boolean(a.isFatal),
+                        dtpTag: a.dtpTag != null ? a.dtpTag : null,
+                        dtpCorrect: a.dtpCorrect != null ? a.dtpCorrect : null,
+                        mistakeHistory: a.mistakeHistory || {},
+                        completedAt: a.completedAt || null
+                    };
+                });
+
+                console.log(`[DB Service] Instructor analytics: ${rows.length} attempt(s) aggregated.`);
+                return { ok: true, reason: null, rows: rows };
+            } catch (error) {
+                console.error('[DB Service Error] getAllAttempts failed:', error);
+                return {
+                    ok: false,
+                    reason: error.code === 'permission-denied' ? 'permission-denied'
+                          : error.code === 'failed-precondition' ? 'missing-index'
+                          : 'error',
+                    rows: [],
+                    message: error.message
+                };
+            }
         }
     };
 

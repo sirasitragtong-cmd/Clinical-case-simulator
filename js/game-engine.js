@@ -149,6 +149,10 @@ const GameEngine = (function() {
         state.isGameOver = false;
         state.isWaitingForNext = false;
         state.mistakeHistory = {};
+        // A fresh run must not inherit the previous run's DTP tag.
+        if (window.UIController && typeof UIController.resetDTPTag === 'function') {
+            UIController.resetDTPTag();
+        }
         state.currentStageId = null;
         state.currentStepId = null;
 
@@ -337,6 +341,18 @@ const GameEngine = (function() {
             mistakeHistory: state.mistakeHistory,
             isFatal: state.isGameOver
         };
+
+        // Drug Therapy Problem classification, for the instructor analytics.
+        // Only attached when the case actually asked for a tag, so an
+        // untagged case records null rather than a misleading "wrong".
+        const dtpKey = state.caseData && state.caseData.dtp;
+        if (dtpKey && window.UIController && typeof UIController.getDTPTag === 'function') {
+            const tag = UIController.getDTPTag();
+            payload.dtpTag = tag != null ? tag : null;
+            payload.dtpCorrect = tag != null
+                ? (Array.isArray(dtpKey.correct_ids) && dtpKey.correct_ids.indexOf(tag) !== -1)
+                : null;
+        }
 
         console.log('[DB Sync] Persisting current state to Firestore...', payload);
 
