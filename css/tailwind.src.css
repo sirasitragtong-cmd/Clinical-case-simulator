@@ -228,7 +228,8 @@ body {
    reaction class on #patient-avatar decides which is
    visible. Opacity is switched without a transition so the
    state is immediate and testable. */
-#patient-avatar svg { width: 100%; height: auto; display: block; }
+#patient-avatar svg,
+#patient-avatar-mobile svg { width: 100%; height: auto; display: block; }
 
 .pa-variant { opacity: 0; }
 .reaction-neutral   .pa-neutral,
@@ -238,23 +239,25 @@ body {
 .reaction-improving .pa-improving,
 .reaction-recovered .pa-recovered { opacity: 1; }
 
-/* Skin tone shifts with condition */
-.pa-skin { fill: #E8B48F; transition: fill .5s ease; }
-.reaction-distress .pa-skin { fill: #DBAE94; }
-.reaction-critical .pa-skin { fill: #C9AFA4; }
-.reaction-recovered .pa-skin { fill: #EFBE96; }
+/* Skin tone shifts with condition. Base matches the flat sticker artwork. */
+.pa-skin { fill: #F8CBAA; transition: fill .5s ease; }
+.reaction-distress .pa-skin { fill: #EDBCA0; }
+.reaction-critical .pa-skin { fill: #DCC5BA; }
+.reaction-recovered .pa-skin { fill: #FBD5B6; }
 
 .pa-eyes-open { transition: opacity .18s ease; }
 .reaction-pain .pa-eyes-open,
 .reaction-critical .pa-eyes-open { opacity: 0; }
 
-/* ECG trace on the wall monitor */
-.pa-ecg { stroke-dasharray: 160; animation: paEcg 2.2s linear infinite; }
-@keyframes paEcg { from { stroke-dashoffset: 160; } to { stroke-dashoffset: -160; } }
-.pa-monitor-dot { animation: paBlinkDot 1.4s ease-in-out infinite; }
-@keyframes paBlinkDot { 0%,100% { opacity: 1; } 50% { opacity: .25; } }
-.reaction-critical .pa-ecg { stroke: #E63946; animation-duration: .9s; }
-.reaction-critical .pa-monitor-dot { fill: #E63946; animation-duration: .5s; }
+/* The wall-monitor ECG rules were removed with the hospital-room scene —
+   the sticker design has no room furniture for them to attach to. */
+
+/* Ponytail sways gently with the breathing cycle */
+.pa-tail { transform-origin: 200px 120px; animation: paTail 4.2s ease-in-out infinite; }
+@keyframes paTail {
+    0%, 100% { transform: rotate(0deg); }
+    50%      { transform: rotate(3.5deg); }
+}
 
 /* Breathing — rate follows severity */
 .pa-chest { transform-origin: 160px 220px; animation: paBreathe 3.4s ease-in-out infinite; }
@@ -290,5 +293,5 @@ body {
 .reaction-critical .pa-aura { opacity: .9; }
 
 @media (prefers-reduced-motion: reduce) {
-    .pa-chest, .pa-eyelid, .pa-sweat { animation: none !important; }
+    .pa-chest, .pa-eyelid, .pa-sweat, .pa-tail { animation: none !important; }
 }

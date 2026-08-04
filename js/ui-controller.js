@@ -1132,158 +1132,215 @@ const UIController = (function() {
         .map(id => byId(id)).filter(Boolean);
     const avatarEl = avatarHosts[0];
 
-    // Front-facing patient in a hospital room. The learner is the
-    // pharmacist standing at the bedside, so the patient looks straight
-    // out of the screen and tracks the cursor.
-    function buildAvatarSVG() {
+    // Flat sticker-style patient portrait: a white disc on a blue field, thick
+    // dark linework, front-facing so the learner is addressed directly.
+    //
+    // Two designs only — male and female. Age is not depicted, by design: the
+    // patient's age is written on the chart, and drawing it would add a visual
+    // cue the case data already carries.
+    //
+    // Every animation hook the stylesheet drives is preserved:
+    //   .pa-head-group  head follows the cursor
+    //   .pa-pupil       eyes follow the cursor
+    //   .pa-eyes-open   hidden on pain/critical, revealing the closed-eye lines
+    //   .pa-eyelid      blink
+    //   .pa-skin        skin tone shifts with condition
+    //   .pa-chest       breathing, rate varies by condition
+    //   .pa-sweat       sweat on pain/distress
+    //   .pa-aura        red glow on critical
+    //   .pa-variant     the six expression sets
+    function buildAvatarSVG(sex) {
+        const female = String(sex || '').toUpperCase().charAt(0) === 'F';
+
+        const INK   = '#2F3542';   // outline
+        const HAIR  = female ? '#7A4B2C' : '#2E3440';
+        // The male gown is slightly grey rather than white so its silhouette
+        // still reads against the white sticker disc behind it.
+        const GOWN  = female ? '#9BDBD6' : '#E3E7ED';
+        const GOWN2 = female ? '#6FBDB8' : '#C9D0DA';
+
+        // ── Hair ────────────────────────────────────────────────
+        const hair = female
+            ? `
+      <!-- Long hair: fringe swept to one side, falling past the jaw.
+           The inner edge stays above y≈80 so it clears the eyebrows at 86. -->
+      <path d="M112 112 C110 60 133 38 160 38 C190 38 210 60 208 112
+               C208 130 206 142 204 152 C200 130 200 112 199 92
+               C186 80 150 80 136 68 C124 76 118 88 116 112
+               C115 128 114 142 112 152 Z" fill="${HAIR}"/>
+      <path d="M136 68 C150 80 186 80 199 92" fill="none" stroke="${HAIR}" stroke-width="6" stroke-linecap="round"/>`
+            : `
+      <!-- Short hair with a side part. It wraps down past the ears on both
+           sides, and the fringe bottom is held near y≈70 so the forehead and
+           eyebrows stay clear of it. -->
+      <path d="M114 116 C112 56 134 36 160 36 C188 36 208 56 206 116
+               C205 104 204 92 203 84 C202 74 196 68 186 64
+               C177 76 141 78 131 64 C121 70 118 78 117 88
+               C116 96 115 106 114 116 Z" fill="${HAIR}"/>`;
+
+        // Ponytail sits outside the head clip so it reads beyond the silhouette.
+        const ponytail = female
+            ? `
+    <g class="pa-tail">
+      <path d="M200 118 C222 118 234 136 230 158 C227 176 214 184 204 178
+               C214 168 216 148 206 136 Z" fill="${HAIR}" stroke="${INK}" stroke-width="3.5" stroke-linejoin="round"/>
+    </g>`
+            : '';
+
+        // Glasses are part of the male design in the reference artwork.
+        const glasses = female ? '' : `
+      <g class="pa-glasses" fill="none" stroke="${INK}" stroke-width="3.4">
+        <circle cx="141" cy="104" r="15.5"/>
+        <circle cx="179" cy="104" r="15.5"/>
+        <path d="M156.5 103 q3.5 -3 7 0" stroke-linecap="round"/>
+        <path d="M125.5 101 L118 99" stroke-linecap="round"/>
+        <path d="M194.5 101 L202 99" stroke-linecap="round"/>
+      </g>`;
+
+        // A small dressing on the brow, as drawn in the reference sheet.
+        const dressing = female ? `
+      <g transform="rotate(-18 190 74)">
+        <rect x="178" y="66" width="24" height="13" rx="3" fill="#FFFFFF" stroke="${INK}" stroke-width="3"/>
+        <path d="M186 68 v9 M194 68 v9" stroke="${INK}" stroke-width="1.6" opacity=".55"/>
+      </g>` : '';
+
+        // Blush is used only on the female design, matching the reference.
+        const blush = female ? `
+      <ellipse cx="128" cy="120" rx="8.5" ry="5" fill="#F2A6A6" opacity=".75"/>
+      <ellipse cx="192" cy="120" rx="8.5" ry="5" fill="#F2A6A6" opacity=".75"/>` : '';
+
+        // Decorative trim on the male gown, as in the reference.
+        const trim = female ? '' : `
+      <path d="M147 154 L162 184" fill="none" stroke="#8FC7D8" stroke-width="2.4"
+            stroke-linecap="round" stroke-dasharray="4 5"/>`;
+
         return `
-<svg viewBox="0 0 320 240" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="ผู้ป่วยในห้องตรวจ" preserveAspectRatio="xMidYMid meet">
+<svg viewBox="0 0 320 240" xmlns="http://www.w3.org/2000/svg" role="img"
+     aria-label="ภาพผู้ป่วย${female ? 'หญิง' : 'ชาย'}" preserveAspectRatio="xMidYMid meet">
   <defs>
-    <linearGradient id="paWall" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#16223B"/><stop offset="100%" stop-color="#0D1526"/>
-    </linearGradient>
-    <linearGradient id="paGown" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#4FD8BA"/><stop offset="100%" stop-color="#189A82"/>
-    </linearGradient>
-    <linearGradient id="paWindow" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#2B4A6B"/><stop offset="100%" stop-color="#14263C"/>
-    </linearGradient>
-    <radialGradient id="paSpot" cx="50%" cy="35%">
-      <stop offset="0%" stop-color="#48E5C2" stop-opacity=".16"/>
-      <stop offset="100%" stop-color="#48E5C2" stop-opacity="0"/>
-    </radialGradient>
-    <radialGradient id="paAlarm" cx="50%" cy="45%">
-      <stop offset="30%" stop-color="#E63946" stop-opacity=".38"/>
+    <clipPath id="paDisc"><circle cx="160" cy="120" r="88"/></clipPath>
+    <clipPath id="paHead"><ellipse cx="160" cy="102" rx="41" ry="45"/></clipPath>
+    <radialGradient id="paAlarm" cx="50%" cy="50%">
+      <stop offset="35%" stop-color="#E63946" stop-opacity=".55"/>
       <stop offset="100%" stop-color="#E63946" stop-opacity="0"/>
     </radialGradient>
-    <clipPath id="paHeadClip"><ellipse cx="160" cy="120" rx="41" ry="46"/></clipPath>
   </defs>
 
-  <!-- ── ROOM ───────────────────────────────────────────── -->
-  <rect width="320" height="240" fill="url(#paWall)"/>
-  <ellipse cx="160" cy="95" rx="150" ry="110" fill="url(#paSpot)"/>
-  <path d="M0 186h320" stroke="rgba(72,229,194,.10)" stroke-width="2"/>
+  <!-- Blue field -->
+  <rect width="320" height="240" fill="#6EC5E9"/>
 
-  <!-- Window with blinds -->
-  <g opacity=".85">
-    <rect x="14" y="30" width="72" height="60" rx="4" fill="url(#paWindow)" stroke="rgba(72,229,194,.22)"/>
-    <path d="M16 42h68M16 54h68M16 66h68M16 78h68" stroke="rgba(72,229,194,.14)" stroke-width="2"/>
-    <path d="M50 30v60" stroke="rgba(72,229,194,.18)" stroke-width="2"/>
-  </g>
+  <!-- Critical alarm glow, behind the sticker -->
+  <circle class="pa-aura" cx="160" cy="120" r="118" fill="url(#paAlarm)"/>
 
-  <!-- Wall monitor with ECG trace -->
-  <g>
-    <rect x="228" y="26" width="76" height="50" rx="5" fill="#0A1322" stroke="rgba(72,229,194,.28)"/>
-    <polyline class="pa-ecg" points="234,58 244,58 249,44 255,70 261,50 266,58 280,58 286,48 292,66 298,58"
-              fill="none" stroke="#48E5C2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-    <circle class="pa-monitor-dot" cx="298" cy="33" r="2.6" fill="#48E5C2"/>
-  </g>
+  <!-- White sticker disc -->
+  <circle cx="160" cy="120" r="96" fill="#FFFFFF"/>
 
-  <!-- IV stand -->
-  <g>
-    <path d="M296 92v96M286 188h20" stroke="#33415F" stroke-width="3" stroke-linecap="round"/>
-    <rect x="286" y="92" width="18" height="26" rx="5" fill="rgba(72,229,194,.18)" stroke="rgba(72,229,194,.4)"/>
-    <path d="M295 118c0 22-10 30-24 38" stroke="rgba(72,229,194,.35)" stroke-width="2" fill="none"/>
-  </g>
+  <g clip-path="url(#paDisc)">
 
-  <!-- Curtain -->
-  <g opacity=".5">
-    <path d="M104 22v164M118 22v164M132 22v164" stroke="rgba(51,65,95,.6)" stroke-width="6" stroke-linecap="round"/>
-  </g>
+    <!-- ── BODY ─────────────────────────────────────────── -->
+    <g class="pa-chest">
+      <path d="M160 146 C116 148 86 174 78 236 L242 236 C234 174 204 148 160 146 Z"
+            fill="${GOWN}" stroke="${INK}" stroke-width="3.8" stroke-linejoin="round"/>
 
-  <!-- Bed headboard + blanket -->
-  <rect x="86" y="126" width="148" height="30" rx="10" fill="#1B2740"/>
-  <path d="M74 240v-32c0-14 12-24 28-24h116c16 0 28 10 28 24v32Z" fill="#16223B"/>
-  <path d="M74 214h172" stroke="rgba(72,229,194,.12)" stroke-width="2"/>
-
-  <!-- Critical alarm glow -->
-  <ellipse class="pa-aura" cx="160" cy="120" rx="120" ry="105" fill="url(#paAlarm)"/>
-
-  <!-- ── PATIENT ────────────────────────────────────────── -->
-  <g class="pa-chest">
-    <path d="M96 240v-30c0-24 22-40 46-44h36c24 4 46 20 46 44v30Z" fill="url(#paGown)" opacity=".95"/>
-    <path d="M160 168l-16 16 16 16 16-16Z" fill="rgba(11,19,43,.28)"/>
-    <path d="M120 214h16" stroke="rgba(11,19,43,.22)" stroke-width="3" stroke-linecap="round"/>
-  </g>
-
-  <g class="pa-head-group">
-    <rect x="146" y="146" width="28" height="26" rx="11" class="pa-skin"/>
-    <ellipse cx="118" cy="124" rx="6.5" ry="10" class="pa-skin"/>
-    <ellipse cx="202" cy="124" rx="6.5" ry="10" class="pa-skin"/>
-    <ellipse cx="160" cy="120" rx="41" ry="46" class="pa-skin"/>
-
-    <!-- Hair -->
-    <g clip-path="url(#paHeadClip)">
-      <path d="M119 112c0-30 18-44 41-44s41 14 41 44c0-13-9-20-19-22-8 8-46 10-53-2-7 5-10 11-10 24Z" fill="#2A2118"/>
+      <!-- Kimono wrap: the chest opening, then the two collar bands, then the
+           single seam where the left panel laps over the right. Earlier this
+           was two lines splaying from the V, which read as suspenders. -->
+      <path d="M140 149 L160 188 L180 149 Z" class="pa-skin"/>
+      <path d="M136 148 L160 190 L184 148" fill="none" stroke="${INK}"
+            stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/>
+      <path d="M143 150 L160 183 L177 150" fill="none" stroke="${GOWN2}"
+            stroke-width="5" stroke-linejoin="round" stroke-linecap="round"/>
+      <path d="M160 190 L141 236" fill="none" stroke="${INK}" stroke-width="3.4" stroke-linecap="round"/>
+      ${trim}
     </g>
 
-    <!-- Nasal cannula -->
-    <path d="M141 138c8 7 30 7 38 0" stroke="rgba(226,232,240,.42)" stroke-width="2" fill="none"/>
-    <circle cx="141" cy="138" r="2" fill="rgba(226,232,240,.45)"/>
-    <circle cx="179" cy="138" r="2" fill="rgba(226,232,240,.45)"/>
+    <!-- Neck -->
+    <path d="M144 128 h32 v22 q-16 10 -32 0 z" class="pa-skin" stroke="${INK}"
+          stroke-width="3.6" stroke-linejoin="round"/>
 
-    <!-- EYES — pupils follow the cursor -->
-    <g class="pa-eyes-open">
-      <ellipse cx="145" cy="118" rx="9.5" ry="7.5" fill="#FFFFFF"/>
-      <ellipse cx="175" cy="118" rx="9.5" ry="7.5" fill="#FFFFFF"/>
-      <g class="pa-pupil">
-        <circle cx="145" cy="118" r="4.2" fill="#3B2B20"/>
-        <circle cx="145" cy="118" r="2.1" fill="#12100E"/>
-        <circle cx="146.6" cy="116.2" r="1.3" fill="#FFFFFF"/>
+    ${ponytail}
+
+    <!-- ── HEAD ─────────────────────────────────────────── -->
+    <g class="pa-head-group">
+
+      <!-- Ears -->
+      <ellipse cx="119" cy="108" rx="7" ry="10" class="pa-skin" stroke="${INK}" stroke-width="3.2"/>
+      <ellipse cx="201" cy="108" rx="7" ry="10" class="pa-skin" stroke="${INK}" stroke-width="3.2"/>
+
+      <!-- Face -->
+      <ellipse cx="160" cy="102" rx="41" ry="45" class="pa-skin" stroke="${INK}" stroke-width="3.8"/>
+
+      <g clip-path="url(#paHead)">${hair}</g>
+      ${dressing}
+      ${blush}
+      ${glasses}
+
+      <!-- EYES — follow the cursor -->
+      <g class="pa-eyes-open">
+        <g class="pa-pupil">
+          <ellipse cx="141" cy="104" rx="6.2" ry="7.4" fill="${INK}"/>
+          <circle cx="143" cy="101" r="2.1" fill="#FFFFFF"/>
+        </g>
+        <g class="pa-pupil">
+          <ellipse cx="179" cy="104" rx="6.2" ry="7.4" fill="${INK}"/>
+          <circle cx="181" cy="101" r="2.1" fill="#FFFFFF"/>
+        </g>
+        <rect class="pa-eyelid pa-skin" x="132" y="94" width="18" height="10" rx="3"/>
+        <rect class="pa-eyelid pa-skin" x="170" y="94" width="18" height="10" rx="3"/>
       </g>
-      <g class="pa-pupil">
-        <circle cx="175" cy="118" r="4.2" fill="#3B2B20"/>
-        <circle cx="175" cy="118" r="2.1" fill="#12100E"/>
-        <circle cx="176.6" cy="116.2" r="1.3" fill="#FFFFFF"/>
+
+      <!-- Nose -->
+      <path d="M160 108 q4 6 -1 8" fill="none" stroke="${INK}" stroke-width="2.6" stroke-linecap="round"/>
+
+      <!-- Sweat -->
+      <g class="pa-sweat">
+        <ellipse cx="123" cy="86" rx="3.4" ry="5.2" fill="#7DD3FC" stroke="${INK}" stroke-width="1.6"/>
+        <ellipse cx="197" cy="92" rx="3" ry="4.6" fill="#7DD3FC" stroke="${INK}" stroke-width="1.6"/>
       </g>
-      <rect class="pa-eyelid pa-skin" x="134" y="108" width="22" height="11" rx="4"/>
-      <rect class="pa-eyelid pa-skin" x="164" y="108" width="22" height="11" rx="4"/>
-    </g>
 
-    <!-- Nose -->
-    <path d="M160 122v10l-4 3" stroke="#B3775C" stroke-width="2" fill="none" stroke-linecap="round"/>
+      <!-- ── EXPRESSIONS ────────────────────────────────── -->
+      <g class="pa-variant pa-neutral">
+        <path d="M131 86 h19 M170 86 h19" stroke="${INK}" stroke-width="3.4" stroke-linecap="round"/>
+        <path d="M151 128 h18" stroke="${INK}" stroke-width="3.4" stroke-linecap="round"/>
+      </g>
 
-    <!-- Sweat -->
-    <g class="pa-sweat">
-      <ellipse cx="124" cy="100" rx="3.2" ry="5" fill="#7DD3FC"/>
-      <ellipse cx="196" cy="105" rx="2.8" ry="4.4" fill="#7DD3FC"/>
-    </g>
+      <g class="pa-variant pa-improving">
+        <path d="M131 84 h19 M170 84 h19" stroke="${INK}" stroke-width="3.4" stroke-linecap="round"/>
+        <path d="M149 125 q11 8 22 0" fill="none" stroke="${INK}" stroke-width="3.4" stroke-linecap="round"/>
+      </g>
 
-    <!-- ── EXPRESSIONS (brows + mouth; closed eyes where needed) ── -->
-    <g class="pa-variant pa-neutral">
-      <path d="M134 103h18M168 103h18" stroke="#2A2118" stroke-width="3.4" stroke-linecap="round"/>
-      <path d="M150 146h20" stroke="#8E4436" stroke-width="3.4" stroke-linecap="round"/>
-    </g>
+      <g class="pa-variant pa-recovered">
+        <path d="M131 82 h19 M170 82 h19" stroke="${INK}" stroke-width="3.4" stroke-linecap="round"/>
+        <path d="M145 122 q15 14 30 0" fill="none" stroke="${INK}" stroke-width="3.6" stroke-linecap="round"/>
+        <ellipse cx="128" cy="120" rx="8.5" ry="5" fill="#F2A6A6" opacity=".8"/>
+        <ellipse cx="192" cy="120" rx="8.5" ry="5" fill="#F2A6A6" opacity=".8"/>
+      </g>
 
-    <g class="pa-variant pa-improving">
-      <path d="M134 101h18M168 101h18" stroke="#2A2118" stroke-width="3.4" stroke-linecap="round"/>
-      <path d="M148 144q12 7 24 0" stroke="#8E4436" stroke-width="3.4" fill="none" stroke-linecap="round"/>
-    </g>
+      <g class="pa-variant pa-pain">
+        <path d="M131 80 l19 8 M189 80 l-19 8" stroke="${INK}" stroke-width="3.6" stroke-linecap="round"/>
+        <!-- eyes are hidden by CSS here, so the squeeze is drawn in -->
+        <path d="M133 104 q8 -7 16 0 M171 104 q8 -7 16 0" fill="none" stroke="${INK}" stroke-width="3.2" stroke-linecap="round"/>
+        <path d="M148 130 q6 -8 12 0 t12 0" fill="none" stroke="${INK}" stroke-width="3.4" stroke-linecap="round"/>
+      </g>
 
-    <g class="pa-variant pa-recovered">
-      <path d="M134 100h18M168 100h18" stroke="#2A2118" stroke-width="3.4" stroke-linecap="round"/>
-      <path d="M144 142q16 14 32 0" stroke="#8E4436" stroke-width="3.6" fill="none" stroke-linecap="round"/>
-      <ellipse cx="128" cy="132" rx="7" ry="4" fill="#E06A6A" opacity=".35"/>
-      <ellipse cx="192" cy="132" rx="7" ry="4" fill="#E06A6A" opacity=".35"/>
-    </g>
+      <g class="pa-variant pa-distress">
+        <path d="M130 80 q10 -7 20 -1 M190 80 q-10 -7 -20 -1" fill="none" stroke="${INK}" stroke-width="3.4" stroke-linecap="round"/>
+        <ellipse cx="160" cy="130" rx="9" ry="10.5" fill="#7E3A3A" stroke="${INK}" stroke-width="3"/>
+      </g>
 
-    <g class="pa-variant pa-pain">
-      <path d="M134 98l18 8M186 98l-18 8" stroke="#2A2118" stroke-width="3.6" stroke-linecap="round"/>
-      <path d="M136 119q9 -7 18 0M166 119q9 -7 18 0" stroke="#2A2118" stroke-width="2.8" fill="none" stroke-linecap="round"/>
-      <path d="M147 148q6.5 -8 13 0t13 0" stroke="#8E4436" stroke-width="3.4" fill="none" stroke-linecap="round"/>
-    </g>
-
-    <g class="pa-variant pa-distress">
-      <path d="M133 97q10 -6 19 -1M187 97q-10 -6 -19 -1" stroke="#2A2118" stroke-width="3.4" fill="none" stroke-linecap="round"/>
-      <ellipse cx="160" cy="148" rx="9" ry="10.5" fill="#6E2A24"/>
-    </g>
-
-    <g class="pa-variant pa-critical">
-      <path d="M134 104h18M168 104h18" stroke="#2A2118" stroke-width="3" stroke-linecap="round"/>
-      <path d="M136 118h18M166 118h18" stroke="#2A2118" stroke-width="3" stroke-linecap="round"/>
-      <ellipse cx="160" cy="150" rx="8" ry="10" fill="#54201C"/>
+      <g class="pa-variant pa-critical">
+        <path d="M131 88 h19 M170 88 h19" stroke="${INK}" stroke-width="3" stroke-linecap="round"/>
+        <path d="M132 104 h18 M170 104 h18" stroke="${INK}" stroke-width="3.2" stroke-linecap="round"/>
+        <ellipse cx="160" cy="132" rx="8" ry="9.5" fill="#5F2B2B" stroke="${INK}" stroke-width="3"/>
+      </g>
     </g>
   </g>
+
+  <!-- Crisp sticker edge -->
+  <circle cx="160" cy="120" r="96" fill="none" stroke="#FFFFFF" stroke-width="9"/>
+
+  <!-- Sticker sparkle -->
+  <path d="M268 196 l3 8 8 3 -8 3 -3 8 -3 -8 -8 -3 8 -3 z" fill="#FFFFFF" opacity=".7"/>
 </svg>`;
     }
 
@@ -1291,8 +1348,23 @@ const UIController = (function() {
     let patientHealth = 60;
     let reactionTimer = null;
 
+    // Case files author clinical states ("shock", "stabilized"); the artwork
+    // has six expressions. This maps one onto the other so an authored state
+    // never silently degrades to a blank neutral face.
+    const CLINICAL_STATE_MAP = {
+        shock: 'distress',
+        stabilized: 'neutral',
+        improving: 'improving',
+        recovered: 'recovered',
+        pain: 'pain',
+        distress: 'distress',
+        critical: 'critical',
+        neutral: 'neutral'
+    };
+
     function setPatientReaction(state) {
-        const next = REACTIONS.indexOf(state) !== -1 ? state : 'neutral';
+        const mapped = CLINICAL_STATE_MAP[state] || state;
+        const next = REACTIONS.indexOf(mapped) !== -1 ? mapped : 'neutral';
         avatarHosts.forEach(host => {
             REACTIONS.forEach(r => host.classList.remove('reaction-' + r));
             host.classList.add('reaction-' + next);
@@ -1380,25 +1452,29 @@ const UIController = (function() {
 
     function initPatientAvatar(caseData) {
         if (avatarHosts.length === 0) return;
-        const svg = buildAvatarSVG();
+
+        const p = (caseData && caseData.patient) || {};
+
+        // The portrait follows the case's patient sex and nothing else.
+        // Anything absent or unrecognised falls back to the male design
+        // rather than rendering no patient at all.
+        const svg = buildAvatarSVG(p.sex);
         avatarHosts.forEach(h => { h.innerHTML = svg; });
         clearTimeout(reactionTimer);
         initEyeTracking();
 
-        const p = (caseData && caseData.patient) || {};
         setText('patient-name-strip',
             `${p.name || 'ผู้ป่วย'}${p.age ? `, ${p.age}${p.sex || ''}` : ''}`);
 
-        const acuity = String((caseData && caseData.patient && caseData.patient.acuity) || '').toUpperCase();
-        const critical = (caseData && caseData.vitals || []).filter(v => v.severity === 'critical').length;
-
-        // Baseline condition derives from the case's own acuity and vitals.
-        let start = 70;
-        if (acuity.indexOf('HIGH') !== -1 || acuity.indexOf('CRITICAL') !== -1) start = 32;
-        else if (acuity.indexOf('URGENCY') !== -1) start = 50;
-        start = Math.max(12, start - critical * 3);
-
-        setPatientHealth(start);
+        // Every case now starts from the same neutral baseline.
+        //
+        // This used to be derived from patient.acuity and the count of vitals
+        // flagged "critical". Both fields were removed from the case files
+        // because they stated conclusions the learner is supposed to reach, and
+        // an avatar that already looks near death is the same hint drawn in
+        // pixels. Each step's authored patient_state drives the expression from
+        // here, and the learner's own decisions move it after that.
+        setPatientHealth(70);
     }
 
     // ═══ DASHBOARD PANELS ══════════════════════════════════════

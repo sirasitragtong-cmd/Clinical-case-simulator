@@ -29,3 +29,7 @@ integration-test.cjs
 # NOTE: css/style.min.css IS committed on purpose. GitHub Pages serves the
 # repository as-is and never runs `node build.js`, so the compiled stylesheet
 # has to be in the tree or the deployed site loads with no CSS at all.
+
+# Dev-only avatar contact sheet (node tools/preview-avatar.js)
+avatar-preview.png
+_*.html
