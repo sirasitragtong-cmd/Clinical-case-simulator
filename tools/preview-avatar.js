@@ -22,8 +22,8 @@ const CELL = 320, CELL_H = 240;
 
 function loadBuilder() {
     const src = fs.readFileSync(path.join(ROOT, 'js', 'ui-controller.js'), 'utf8');
-    const m = src.match(/function buildAvatarSVG\(sex\)\s*\{[\s\S]*?\n    \}\n/);
-    if (!m) throw new Error('buildAvatarSVG(sex) not found in ui-controller.js');
+    const m = src.match(/function buildAvatarSVG\(sex, uid\)\s*\{[\s\S]*?\n    \}\n/);
+    if (!m) throw new Error('buildAvatarSVG(sex, uid) not found in ui-controller.js');
     return new Function(m[0] + '; return buildAvatarSVG;')();
 }
 

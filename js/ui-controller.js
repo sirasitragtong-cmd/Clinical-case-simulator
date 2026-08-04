@@ -1291,8 +1291,23 @@ const UIController = (function() {
     //   .pa-sweat       sweat on pain/distress
     //   .pa-aura        red glow on critical
     //   .pa-variant     the six expression sets
-    function buildAvatarSVG(sex) {
+    /**
+     * The same portrait is mounted into two hosts (desktop panel + mobile
+     * strip). Every id inside must therefore be unique per instance: two SVGs
+     * declaring id="paRoom" is a duplicate-id collision, and a url(#paRoom)
+     * that resolves into a hidden sibling SVG paints as *nothing* — which is
+     * how the room ended up with an unfilled window and a colourless wall
+     * while the flat-filled shapes beside it rendered fine. `uid` suffixes
+     * every id so each copy references only its own defs.
+     */
+    function buildAvatarSVG(sex, uid) {
         const female = String(sex || '').toUpperCase().charAt(0) === 'F';
+        // The counter hangs off the function itself so the whole builder stays
+        // self-contained — tools/preview-avatar.js lifts this function out of
+        // the file and runs it standalone.
+        const u = uid == null
+            ? `a${buildAvatarSVG.seq = (buildAvatarSVG.seq || 0) + 1}`
+            : uid;
 
         const INK   = '#2F3542';   // outline
         const HAIR  = female ? '#7A4B2C' : '#2E3440';
@@ -1360,47 +1375,58 @@ const UIController = (function() {
 <svg viewBox="0 0 320 240" xmlns="http://www.w3.org/2000/svg" role="img"
      aria-label="ภาพผู้ป่วย${female ? 'หญิง' : 'ชาย'}" preserveAspectRatio="xMidYMid meet">
   <defs>
-    <clipPath id="paFrame"><rect x="0" y="0" width="320" height="240" rx="14"/></clipPath>
-    <clipPath id="paHead"><ellipse cx="160" cy="102" rx="41" ry="45"/></clipPath>
-    <radialGradient id="paAlarm" cx="50%" cy="50%">
+    <clipPath id="paFrame-${u}"><rect x="0" y="0" width="320" height="240" rx="14"/></clipPath>
+    <clipPath id="paHead-${u}"><ellipse cx="160" cy="102" rx="41" ry="45"/></clipPath>
+    <clipPath id="paGlass-${u}"><rect x="26" y="34" width="86" height="74" rx="6"/></clipPath>
+    <radialGradient id="paAlarm-${u}" cx="50%" cy="50%">
       <stop offset="35%" stop-color="#E63946" stop-opacity=".55"/>
       <stop offset="100%" stop-color="#E63946" stop-opacity="0"/>
     </radialGradient>
-    <linearGradient id="paRoom" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#8FD8F2"/>
-      <stop offset="62%" stop-color="#6EC5E9"/>
-      <stop offset="100%" stop-color="#57B2D8"/>
-    </linearGradient>
-    <linearGradient id="paGlass" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#CFEEFB" stop-opacity=".95"/>
-      <stop offset="100%" stop-color="#A9DDF3" stop-opacity=".95"/>
-    </linearGradient>
   </defs>
 
-  <g clip-path="url(#paFrame)">
+  <g clip-path="url(#paFrame-${u})">
 
   <!-- ── ROOM ───────────────────────────────────────────────
-       A ward setting behind the patient instead of the sticker
-       disc: wall, wainscot rail, a window, and a privacy curtain.
-       Everything is flat and low-contrast so the figure stays
-       the focus. -->
-  <rect width="320" height="240" fill="url(#paRoom)"/>
+       A ward room behind the patient. Every shape carries an
+       explicit solid fill — no gradients, no opacity-only
+       washes over an assumed backdrop — so the scene renders
+       identically in the browser, in a static rasteriser and
+       inside a second mounted copy of this SVG.
 
-  <!-- Window -->
-  <rect x="26" y="34" width="86" height="74" rx="6" fill="url(#paGlass)" stroke="#FFFFFF" stroke-width="4"/>
-  <path d="M69 36 V106 M28 71 H110" stroke="#FFFFFF" stroke-width="4" stroke-linecap="round"/>
+       Colour is carried by the objects (sky, plant, curtain,
+       blanket rail) rather than by a loud wall, so the figure
+       still reads as the subject. -->
+  <rect width="320" height="240" fill="#F2E4D0"/>
+  <rect y="150" width="320" height="90" fill="#DFC9AC"/>
+  <rect y="146" width="320" height="6" fill="#C9A87E"/>
+  <rect y="212" width="320" height="28" fill="#C9A87E"/>
+
+  <!-- Window: sky, sun and cloud behind a white frame -->
+  <g clip-path="url(#paGlass-${u})">
+    <rect x="26" y="34" width="86" height="74" fill="#8FD3EE"/>
+    <rect x="26" y="34" width="86" height="26" fill="#B4E4F6"/>
+    <circle cx="97" cy="50" r="11" fill="#FFD972"/>
+    <ellipse cx="52" cy="60" rx="17" ry="8" fill="#FFFFFF"/>
+    <ellipse cx="64" cy="57" rx="11" ry="7" fill="#FFFFFF"/>
+    <rect x="26" y="92" width="86" height="16" fill="#7FC3A0"/>
+  </g>
+  <rect x="26" y="34" width="86" height="74" rx="6" fill="none" stroke="#FFFFFF" stroke-width="5"/>
+  <path d="M69 36 V106 M28 71 H110" stroke="#FFFFFF" stroke-width="4.5" stroke-linecap="round"/>
+  <rect x="18" y="108" width="102" height="8" rx="3" fill="#C9A87E"/>
+
+  <!-- Potted plant on the sill -->
+  <path d="M34 108 C34 92 44 88 44 80 C52 86 50 100 46 108 Z" fill="#5FA777"/>
+  <path d="M46 108 C48 96 58 92 64 92 C62 102 54 108 50 108 Z" fill="#77BE8A"/>
+  <path d="M32 108 h26 l-4 14 h-18 Z" fill="#E07A5F"/>
 
   <!-- Privacy curtain on the far side -->
-  <path d="M232 18 h72 v150 h-72 Z" fill="#BFE7F7" opacity=".5"/>
-  <path d="M244 18 v150 M258 18 v150 M272 18 v150 M286 18 v150"
-        stroke="#FFFFFF" stroke-width="3" opacity=".55" stroke-linecap="round"/>
-
-  <!-- Wainscot rail -->
-  <path d="M0 168 H320" stroke="#FFFFFF" stroke-width="5" opacity=".55"/>
-  <rect y="171" width="320" height="69" fill="#FFFFFF" opacity=".18"/>
+  <rect x="228" y="20" width="78" height="146" fill="#F0B3A3"/>
+  <path d="M240 20 v146 M256 20 v146 M272 20 v146 M290 20 v146"
+        stroke="#E09A89" stroke-width="5" stroke-linecap="round"/>
+  <rect x="222" y="14" width="92" height="8" rx="4" fill="#B7BCC9"/>
 
   <!-- Critical alarm glow -->
-  <circle class="pa-aura" cx="160" cy="120" r="132" fill="url(#paAlarm)"/>
+  <circle class="pa-aura" cx="160" cy="120" r="132" fill="url(#paAlarm-${u})"/>
 
   <g>
 
@@ -1437,7 +1463,7 @@ const UIController = (function() {
       <!-- Face -->
       <ellipse cx="160" cy="102" rx="41" ry="45" class="pa-skin" stroke="${INK}" stroke-width="3.8"/>
 
-      <g clip-path="url(#paHead)">${hair}</g>
+      <g clip-path="url(#paHead-${u})">${hair}</g>
       ${dressing}
       ${blush}
       ${glasses}
@@ -1621,8 +1647,10 @@ const UIController = (function() {
         // The portrait follows the case's patient sex and nothing else.
         // Anything absent or unrecognised falls back to the male design
         // rather than rendering no patient at all.
-        const svg = buildAvatarSVG(p.sex);
-        avatarHosts.forEach(h => { h.innerHTML = svg; });
+        // One build per host, each with its own id namespace — see the note on
+        // buildAvatarSVG(). Sharing one markup string between both hosts is
+        // what broke the room's fills.
+        avatarHosts.forEach((h, i) => { h.innerHTML = buildAvatarSVG(p.sex, `h${i}`); });
         clearTimeout(reactionTimer);
         initEyeTracking();
 
