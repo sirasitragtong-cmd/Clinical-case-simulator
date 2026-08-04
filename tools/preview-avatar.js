@@ -27,10 +27,21 @@ function loadBuilder() {
     return new Function(m[0] + '; return buildAvatarSVG;')();
 }
 
-/** The avatar rules only — the rest of the stylesheet is irrelevant here. */
+/**
+ * The avatar rules only — the rest of the stylesheet is irrelevant here.
+ *
+ * Takes the whole block from the "Patient avatar" banner to the end of the
+ * file. An earlier version filtered line-by-line for /pa-|reaction-/, which
+ * silently dropped the continuation lines of any multi-line rule and left an
+ * unterminated declaration that broke every rule after it — the preview then
+ * showed sweat and the alarm glow on a healthy patient. Never parse CSS by
+ * line.
+ */
 function loadAvatarCSS() {
     const css = fs.readFileSync(path.join(ROOT, 'css', 'tailwind.src.css'), 'utf8');
-    return css.split('\n').filter(l => /pa-|reaction-/.test(l)).join('\n');
+    const start = css.indexOf('Patient avatar');
+    if (start === -1) throw new Error('avatar CSS block not found in tailwind.src.css');
+    return css.slice(css.lastIndexOf('/*', start));
 }
 
 /** Strips the <svg> wrapper so the body can be nested inside a bigger sheet. */

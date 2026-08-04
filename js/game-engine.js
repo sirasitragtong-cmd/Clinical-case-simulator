@@ -355,7 +355,12 @@ const GameEngine = (function() {
             completedSteps: state.currentStepIndex + 1,
             totalSteps: state.stepSequence.length,
             mistakeHistory: state.mistakeHistory,
-            isFatal: state.isGameOver
+            isFatal: state.isGameOver,
+            // Stamps which revision of the case this attempt measured. Without
+            // it, re-authoring a case leaves old attempts in Firestore whose
+            // step ids no longer exist, and the analytics cannot tell that the
+            // numbers describe a different set of questions.
+            caseVersion: (state.caseData && state.caseData.case_version) || 1
         };
 
         // Drug Therapy Problem classification, for the instructor analytics.

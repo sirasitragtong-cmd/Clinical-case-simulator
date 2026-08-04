@@ -8,7 +8,7 @@
     <title>Clinical Case Simulator — Medical RPG</title>
 
     <!-- PWA — installable on iPad for clinical rotations -->
-    <link rel="manifest" href="./manifest.json?v=202608041003" />
+    <link rel="manifest" href="./manifest.json?v=202608042314" />
     <link rel="apple-touch-icon" href="./icons/icon-192.png" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
@@ -26,7 +26,7 @@
 
     <!-- Compiled production stylesheet (node build.js). Replaces the
          cdn.tailwindcss.com in-browser compiler and its production warning. -->
-    <link rel="stylesheet" href="./css/style.min.css?v=202608041003" />
+    <link rel="stylesheet" href="./css/style.min.css?v=202608042314" />
 </head>
 <body>
 
@@ -186,7 +186,6 @@
       <!-- Sidebar nav (lg+) — every item is functional -->
       <aside class="hidden lg:flex flex-col w-56 flex-shrink-0 border-r border-navy-700/60 bg-navy-850/50 p-3 gap-1">
         <a class="nav-link is-active" data-panel="campaign">🗺 Campaign Map</a>
-        <a class="nav-link" data-panel="library">📖 Free-Play Library</a>
         <a class="nav-link" data-panel="stats">📊 My Stats</a>
         <a class="nav-link" data-panel="leaderboard">🏅 Leaderboard</a>
         <a class="nav-link" data-panel="achievements">🎖 Achievements</a>
@@ -203,7 +202,6 @@
         <!-- Mobile/tablet nav -->
         <div class="lg:hidden sticky top-0 z-20 flex gap-1.5 overflow-x-auto px-3 py-2 bg-navy-900/95 backdrop-blur border-b border-navy-700/60">
           <button class="nav-chip is-active" data-panel="campaign">🗺 Campaign</button>
-          <button class="nav-chip" data-panel="library">📖 Library</button>
           <button class="nav-chip" data-panel="stats">📊 Stats</button>
           <button class="nav-chip" data-panel="leaderboard">🏅 Ranking</button>
           <button class="nav-chip" data-panel="achievements">🎖 Badges</button>
@@ -213,17 +211,14 @@
         <div class="p-3 sm:p-5">
           <!-- CAMPAIGN -->
           <section data-panel-body="campaign">
+            <!-- Daily practice streak -->
+            <div id="streak-card" class="mb-4"></div>
+
             <h2 class="text-base font-extrabold text-white">เลือกกรณีศึกษา</h2>
             <p class="text-[.7rem] text-slate-500 mt-0.5 mb-4">แต่ละเคสดำเนินตามกระบวนการ SOAP — DATA → IDENTIFY → ASSESSMENT → PLAN</p>
             <div id="quest-track" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3"></div>
           </section>
 
-          <!-- FREE-PLAY LIBRARY -->
-          <section data-panel-body="library" class="hidden">
-            <h2 class="text-base font-extrabold text-white">Free-Play Library</h2>
-            <p class="text-[.7rem] text-slate-500 mt-0.5 mb-4">เล่นเคสใดก็ได้ซ้ำได้ไม่จำกัด — เหมาะสำหรับทบทวนก่อนสอบ</p>
-            <div id="library-list" class="flex flex-col gap-2"></div>
-          </section>
 
           <!-- MY STATS -->
           <section data-panel-body="stats" class="hidden">
@@ -374,7 +369,7 @@
           <div class="flex gap-1 p-2 border-b border-navy-700/60 flex-shrink-0">
             <button class="soap-tab flex-1 px-2 py-2 rounded-lg text-[.68rem] font-bold text-navy-900 bg-teal-400 transition" data-soap="subjective">💬 Subj</button>
             <button class="soap-tab flex-1 px-2 py-2 rounded-lg text-[.68rem] font-semibold text-slate-400 transition" data-soap="objective">🔬 Obj</button>
-            <button class="soap-tab flex-1 px-2 py-2 rounded-lg text-[.68rem] font-semibold text-slate-400 transition" data-soap="cpg">📋 CPG</button>
+            <button class="soap-tab flex-1 px-2 py-2 rounded-lg text-[.68rem] font-semibold text-slate-400 transition" data-soap="cpg">📚 อ้างอิง</button>
             <button class="soap-tab flex-1 px-2 py-2 rounded-lg text-[.68rem] font-semibold text-slate-400 transition" data-soap="monitoring">🎯 Mon</button>
           </div>
           <div id="soap-content" class="flex-1 overflow-y-auto p-3 text-xs"></div>
@@ -461,7 +456,7 @@
   <div class="flex gap-1 p-2 border-b border-navy-700/60 flex-shrink-0">
     <button class="soap-tab flex-1 px-2 py-2.5 rounded-lg text-xs font-bold text-navy-900 bg-teal-400 transition" data-soap="subjective">💬 Subjective</button>
     <button class="soap-tab flex-1 px-2 py-2.5 rounded-lg text-xs font-semibold text-slate-400 transition" data-soap="objective">🔬 Objective</button>
-    <button class="soap-tab flex-1 px-2 py-2.5 rounded-lg text-xs font-semibold text-slate-400 transition" data-soap="cpg">📋 CPG</button>
+    <button class="soap-tab flex-1 px-2 py-2.5 rounded-lg text-xs font-semibold text-slate-400 transition" data-soap="cpg">📚 อ้างอิง</button>
     <button class="soap-tab flex-1 px-2 py-2.5 rounded-lg text-xs font-semibold text-slate-400 transition" data-soap="monitoring">🎯 Monitoring</button>
   </div>
 
@@ -480,18 +475,18 @@
 <!-- ═══════════════════════════════════════════════════════════════
      SCRIPTS
      ═══════════════════════════════════════════════════════════════ -->
-<script src="./js/firebase-service.js?v=202608041003"></script>
-<script src="./js/ui-controller.js?v=202608041003"></script>
-<script src="./js/game-engine.js?v=202608041003"></script>
+<script src="./js/firebase-service.js?v=202608042314"></script>
+<script src="./js/ui-controller.js?v=202608042314"></script>
+<script src="./js/game-engine.js?v=202608042314"></script>
 
 <script>
 (function() {
     'use strict';
 
-    // Case registry — every playable case, all unlocked.
+    // Case registry. Stage 1 only for now — later stages get added here as
+    // they are authored, and the campaign map unlocks them in order.
     const CASE_FILES = [
-        './data/case_001.json?v=202608041003',
-        './data/case_002.json?v=202608041003'
+        './data/case_001.json?v=202608042314'
     ];
 
     const btnLogin       = document.getElementById('btn-google-login');

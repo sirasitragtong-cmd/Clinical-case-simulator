@@ -1,5 +1,6 @@
 {
   "case_id": "case_001",
+  "case_version": 2,
   "map_title": "ด่านที่ 1 · ห้องฉุกเฉิน",
   "map_subtitle": "ชายไทย 55 ปี มาด้วยถ่ายอุจจาระดำ 2 วัน และอาเจียนเป็นเลือดสด 1 ครั้ง",
   "ward": "Emergency Room",
@@ -142,104 +143,225 @@
       }
     ]
   },
-  "cpg": {
-    "title": "CPG: Acute Non-Variceal Upper GI Bleeding",
-    "note": "อ้างอิง ACG Guideline 2021, DiPiro และแนวทางเวชปฏิบัติของประเทศไทย พ.ศ. 2557",
-    "columns": [
-      "ภาวะทางคลินิก",
-      "ประวัติและอาการนำ",
-      "ผล Lab และตรวจร่างกาย",
-      "ผลส่องกล้อง (EGD)"
-    ],
-    "rows": [
+  "reference": {
+    "title": "ข้อมูลอ้างอิง (Clinical Reference)",
+    "note": "อ้างอิง ACG Guideline 2021, ACG H. pylori 2024, DiPiro และแนวทางเวชปฏิบัติของประเทศไทย พ.ศ. 2557",
+    "sections": [
       {
-        "label": "Differential 1",
-        "values": [
-          "Peptic Ulcer Disease Bleeding",
-          "ใช้ NSAIDs/ASA, ปวด epigastrium, melena",
-          "BUN/Cr > 20:1, Hb ต่ำ",
-          "พบ ulcer พร้อม Forrest stigmata"
+        "id": "abbrev",
+        "title": "คำย่อและศัพท์ที่พบในเคสนี้",
+        "icon": "🔤",
+        "rows": [
+          [
+            "UGIB",
+            "Upper Gastrointestinal Bleeding — ภาวะเลือดออกในทางเดินอาหารส่วนต้น"
+          ],
+          [
+            "PUD",
+            "Peptic Ulcer Disease — โรคแผลในกระเพาะอาหารและลำไส้เล็กส่วนต้น"
+          ],
+          [
+            "NSAIDs",
+            "Non-Steroidal Anti-Inflammatory Drugs — ยาแก้ปวดลดอักเสบที่ไม่ใช่สเตียรอยด์"
+          ],
+          [
+            "PPI",
+            "Proton Pump Inhibitor — ยายับยั้งการหลั่งกรดในกระเพาะอาหาร"
+          ],
+          [
+            "H2RA",
+            "Histamine-2 Receptor Antagonist — ยาลดกรดกลุ่มต้านฮิสตามีนชนิดที่ 2"
+          ],
+          [
+            "EGD",
+            "Esophagogastroduodenoscopy — การส่องกล้องทางเดินอาหารส่วนต้น"
+          ],
+          [
+            "Melena",
+            "อุจจาระดำเหนียวคล้ายยางมะตอย จากเลือดที่ถูกย่อยในทางเดินอาหาร"
+          ],
+          [
+            "Hematemesis",
+            "การอาเจียนเป็นเลือด"
+          ],
+          [
+            "MAP",
+            "Mean Arterial Pressure — ความดันเลือดแดงเฉลี่ย"
+          ],
+          [
+            "PRBC",
+            "Packed Red Blood Cells — เม็ดเลือดแดงเข้มข้นสำหรับให้เลือด"
+          ],
+          [
+            "FFP",
+            "Fresh Frozen Plasma — พลาสมาแช่แข็งสด"
+          ],
+          [
+            "DTP",
+            "Drug Therapy Problem — ปัญหาจากการใช้ยา"
+          ],
+          [
+            "CrCl",
+            "Creatinine Clearance — ค่าการกำจัดครีอะตินิน ใช้ปรับขนาดยาตามการทำงานของไต"
+          ],
+          [
+            "NPO",
+            "Nil Per Os — งดน้ำและอาหารทางปาก"
+          ]
         ]
       },
       {
-        "label": "Differential 2",
-        "values": [
-          "Variceal Bleeding",
-          "ดื่มสุราเรื้อรัง, ประวัติ cirrhosis",
-          "LFT ผิดปกติ, platelet ต่ำ, INR สูง, พบ ascites",
-          "พบ variceal columns ในหลอดอาหาร"
+        "id": "differential",
+        "title": "การวินิจฉัยแยกโรค (Differential Diagnosis)",
+        "icon": "🧭",
+        "note": "เกณฑ์สำหรับแยกแต่ละภาวะ — ไม่ได้ระบุว่าผู้ป่วยรายนี้เป็นภาวะใด",
+        "table": {
+          "columns": [
+            "ภาวะ",
+            "ประวัติและอาการนำ",
+            "ผล Lab / ตรวจร่างกาย",
+            "ผลส่องกล้อง"
+          ],
+          "rows": [
+            [
+              "Peptic Ulcer Bleeding (แผลในทางเดินอาหารมีเลือดออก)",
+              "ใช้ NSAIDs หรือแอสไพริน, ปวดใต้ลิ้นปี่, ถ่ายดำ",
+              "BUN/Cr > 20:1, Hb ต่ำ",
+              "พบแผล ulcer พร้อม Forrest stigmata"
+            ],
+            [
+              "Variceal Bleeding (เลือดออกจากหลอดเลือดขอด)",
+              "ดื่มสุราเรื้อรัง, มีประวัติตับแข็ง",
+              "LFT ผิดปกติ, เกล็ดเลือดต่ำ, INR สูง, มีน้ำในช่องท้อง",
+              "พบ varices ในหลอดอาหาร"
+            ],
+            [
+              "Mallory-Weiss Tear (แผลฉีกรอยต่อหลอดอาหาร)",
+              "อาเจียนรุนแรง (retching) นำมาก่อนอาเจียนเป็นเลือด",
+              "สัญญาณชีพมักคงที่",
+              "พบรอยฉีกที่รอยต่อหลอดอาหารกับกระเพาะ"
+            ],
+            [
+              "Erosive Gastritis / Stress Ulcer (กระเพาะอักเสบจากภาวะเครียดวิกฤต)",
+              "ผู้ป่วยวิกฤตใน ICU, ติดเชื้อในกระแสเลือด, ใส่เครื่องช่วยหายใจ",
+              "มีอวัยวะล้มเหลวอื่นร่วม",
+              "พบแผลตื้นหลายจุดกระจาย"
+            ]
+          ]
+        }
+      },
+      {
+        "id": "risk",
+        "title": "เกณฑ์แบ่งกลุ่มเสี่ยงและการให้เลือด",
+        "icon": "📊",
+        "rows": [
+          [
+            "BUN/Cr ratio",
+            "ค่ามากกว่า 20:1 เป็นตัวบ่งชี้ของเลือดออกในทางเดินอาหารส่วนต้น เกิดจากการย่อยและดูดซึมโปรตีนจากเลือดในลำไส้เล็ก ร่วมกับภาวะ prerenal azotaemia"
+          ],
+          [
+            "Glasgow-Blatchford Score",
+            "GBS > 1 = กลุ่มเสี่ยงสูง ต้องรับไว้ในโรงพยาบาลและส่องกล้องภายใน 24 ชม. · GBS = 0 = กลุ่มเสี่ยงต่ำ พิจารณาดูแลแบบผู้ป่วยนอกได้"
+          ],
+          [
+            "Forrest Ia / Ib",
+            "เลือดพุ่ง / เลือดซึม — กลุ่มเสี่ยงสูงต่อการเลือดออกซ้ำ ต้องได้ high-dose IV PPI ต่อเนื่อง 72 ชม."
+          ],
+          [
+            "Forrest IIa / IIb / IIc",
+            "เห็นหลอดเลือดโผล่ / มีลิ่มเลือดเกาะ / มีจุดสีคล้ำ — ความเสี่ยงลดหลั่นลงมาตามลำดับ"
+          ],
+          [
+            "Forrest III",
+            "ก้นแผลสะอาด — ความเสี่ยงเลือดออกซ้ำต่ำที่สุด"
+          ],
+          [
+            "Restrictive transfusion",
+            "ให้ PRBC เมื่อ Hb < 7 g/dL เป้าหมายหลังให้ 7–9 g/dL — ลดอัตราการเสียชีวิตเมื่อเทียบกับการให้เลือดมากเกินจำเป็น"
+          ],
+          [
+            "Liberal transfusion",
+            "ให้เมื่อ Hb < 8 g/dL เฉพาะผู้ป่วยที่มีโรคหลอดเลือดหัวใจอยู่เดิม"
+          ]
         ]
       },
       {
-        "label": "Differential 3",
-        "values": [
-          "Mallory-Weiss Tear",
-          "อาเจียนรุนแรง (retching) ก่อนอาเจียนเป็นเลือด",
-          "vital signs มัก stable",
-          "พบ mucosal tear ที่ GE junction"
+        "id": "pharm",
+        "title": "ขนาดยาและแนวทางการรักษา",
+        "icon": "💊",
+        "rows": [
+          [
+            "High-dose IV PPI",
+            "Pantoprazole หรือ Omeprazole 80 mg IV bolus ตามด้วย 8 mg/ชม. หยดต่อเนื่อง 72 ชม. — เป้าหมายคือรักษา pH ในกระเพาะให้ ≥ 6.0 เพื่อไม่ให้ลิ่มเลือดสลาย"
+          ],
+          [
+            "Fluid resuscitation",
+            "Isotonic crystalloid (0.9% NSS หรือ Lactated Ringer's) 1–2 ลิตร IV bolus เป้าหมาย MAP ≥ 65 mmHg — D5W ไม่ใช้เพราะไม่เพิ่มปริมาตรในหลอดเลือด"
+          ],
+          [
+            "Pre-endoscopy prokinetic",
+            "Erythromycin 250 mg IV ก่อนส่องกล้อง 20–60 นาที เพื่อไล่เลือดค้างในกระเพาะและเพิ่มทัศนวิสัย"
+          ],
+          [
+            "Tranexamic acid",
+            "ปัจจุบัน \"ไม่แนะนำ\" ใน non-variceal UGIB — ไม่ลดอัตราการเสียชีวิตและเพิ่มความเสี่ยงลิ่มเลือดอุดตัน"
+          ],
+          [
+            "Somatostatin / Octreotide",
+            "ใช้สำหรับเลือดออกจากหลอดเลือดขอด (variceal) ไม่ใช่แผล peptic ulcer"
+          ],
+          [
+            "H. pylori eradication",
+            "Bismuth Quadruple Therapy 14 วัน = PPI (ขนาดมาตรฐาน วันละ 2 ครั้ง) + Bismuth subsalicylate + Metronidazole + Tetracycline"
+          ],
+          [
+            "การตรวจ H. pylori",
+            "UBT และ stool antigen ให้ผลลบปลอมได้ ต้องหยุด PPI ≥ 2 สัปดาห์ และหยุดยาปฏิชีวนะ ≥ 4 สัปดาห์ก่อนตรวจ · serology แยกไม่ได้ระหว่างติดเชื้อในอดีตกับปัจจุบัน"
+          ],
+          [
+            "การกลับมาใช้ NSAIDs",
+            "หยุดทันทีในระยะเลือดออก · หากจำเป็นต้องใช้ต่อ ให้เปลี่ยนเป็น COX-2 selective inhibitor ร่วมกับ PPI ทุกวัน"
+          ],
+          [
+            "ผลข้างเคียง PPI ระยะยาว",
+            "ภาวะแมกนีเซียมต่ำ, ขาดวิตามิน B12, เพิ่มความเสี่ยงติดเชื้อ C. difficile และปอดอักเสบ"
+          ]
         ]
       },
       {
-        "label": "Differential 4",
-        "values": [
-          "Erosive Gastritis / Stress Ulcer",
-          "ผู้ป่วยวิกฤต (ICU), sepsis, ใส่เครื่องช่วยหายใจ",
-          "มี organ failure อื่นร่วม",
-          "พบ multiple superficial mucosal erosions"
-        ]
-      },
-      {
-        "label": "Risk stratification",
-        "values": [
-          "Glasgow-Blatchford Score (GBS)",
-          "GBS > 1 = high risk — admit และส่องกล้องภายใน 24 ชม.",
-          "GBS = 0 = low risk — พิจารณาดูแลแบบผู้ป่วยนอกได้",
-          "—"
-        ]
-      },
-      {
-        "label": "Transfusion threshold",
-        "values": [
-          "Restrictive vs Liberal strategy",
-          "Restrictive: ให้ PRBC เมื่อ Hb < 7 g/dL, เป้าหมาย 7–9 g/dL",
-          "Liberal: Hb < 8 g/dL เฉพาะผู้ที่มี active cardiovascular disease",
-          "—"
-        ]
-      },
-      {
-        "label": "Acute pharmacotherapy",
-        "values": [
-          "High-dose IV PPI",
-          "Pantoprazole/Omeprazole 80 mg IV bolus → 8 mg/hr infusion 72 ชม.",
-          "เป้าหมาย intragastric pH ≥ 6.0 เพื่อคงตัวของ fibrin clot",
-          "—"
-        ]
-      },
-      {
-        "label": "Resuscitation",
-        "values": [
-          "Isotonic crystalloids",
-          "0.9% NSS หรือ Lactated Ringer's 1–2 L IV bolus",
-          "เป้าหมาย MAP ≥ 65 mmHg",
-          "—"
-        ]
-      },
-      {
-        "label": "Pre-endoscopy",
-        "values": [
-          "Prokinetic",
-          "Erythromycin 250 mg IV 30–60 นาทีก่อนส่องกล้อง",
-          "กระตุ้น gastric emptying เพื่อเพิ่มทัศนวิสัย",
-          "—"
-        ]
-      },
-      {
-        "label": "Post-bleeding care",
-        "values": [
-          "H. pylori eradication + NSAID rules",
-          "Bismuth Quadruple Therapy 14 วัน (PPI bid + bismuth + metronidazole + tetracycline)",
-          "หยุด NSAIDs ทันทีในระยะเลือดออก; หากจำเป็นให้ใช้ COX-2 selective ร่วมกับ PPI",
-          "ส่องกล้องซ้ำในแผลเสี่ยงสูงหรือสงสัย malignancy"
+        "id": "dtp",
+        "title": "ประเภทปัญหาจากการใช้ยา (DTP Categories)",
+        "icon": "🏷",
+        "note": "กรอบการจำแนกตามหลัก Pharmaceutical Care Practice",
+        "rows": [
+          [
+            "1. Unnecessary Drug Therapy",
+            "ได้รับยาโดยไม่มีข้อบ่งชี้"
+          ],
+          [
+            "2. Needs Additional Drug Therapy",
+            "มีข้อบ่งชี้แต่ยังไม่ได้รับยา"
+          ],
+          [
+            "3. Ineffective Drug",
+            "ยาที่ได้รับไม่ได้ผลกับภาวะนั้น"
+          ],
+          [
+            "4. Dosage Too Low",
+            "ขนาดยาต่ำเกินกว่าจะได้ผล"
+          ],
+          [
+            "5. Adverse Drug Reaction",
+            "เกิดอาการไม่พึงประสงค์จากยา"
+          ],
+          [
+            "6. Dosage Too High",
+            "ขนาดยาสูงเกินไปจนเสี่ยงเป็นพิษ"
+          ],
+          [
+            "7. Non-adherence",
+            "ผู้ป่วยไม่ได้ใช้ยาตามที่สั่ง"
+          ]
         ]
       }
     ]
@@ -252,28 +374,28 @@
           "type": "info",
           "chart_tab": "subjective",
           "content": [
-            "<strong>PATIENT PROFILE</strong>",
+            "<strong>PATIENT PROFILE (ข้อมูลผู้ป่วย)</strong>",
             "ชายไทย อายุ 55 ปี · อาชีพพนักงานขับรถบรรทุกส่งสินค้าทางไกล · รูปแบบงาน: ขับรถระยะทางไกล พักผ่อนไม่เป็นเวลา",
-            "น้ำหนัก 68 kg · ส่วนสูง 168 cm · BMI 24.1 kg/m²",
-            "<strong>CHIEF COMPLAINT</strong>",
+            "น้ำหนัก 68 kg · ส่วนสูง 168 cm · BMI 24.1 kg/m² <span class=\"ref\">(เกณฑ์ปกติชาวเอเชีย 18.5–22.9)</span>",
+            "<strong>CHIEF COMPLAINT (อาการสำคัญที่มาพบแพทย์)</strong>",
             "\"ถ่ายอุจจาระเป็นสีดำเหนียวเหมือนยางมะตอยมา 2 วัน วันนี้เวียนหัวมาก อาเจียนออกมาเป็นเลือดสด 1 ครั้งก่อนมา รพ.\"",
-            "<strong>HISTORY OF PRESENT ILLNESS</strong>",
-            "<u>14 วันก่อนมา รพ.</u> — ปวดยอกบริเวณคอและไหล่จากการขับรถ ซื้อยาแก้ปวด Ibuprofen (400 mg) รับประทานเอง ครั้งละ 1 เม็ด หลังอาหาร 3 มื้อ (TID PC) สม่ำเสมอทุกวัน",
-            "<u>5 วันก่อนมา รพ.</u> — เริ่มปวดแสบร้อนใต้ลิ้นปี่ (epigastric pain) ปวดมากช่วงท้องว่างและหลังอาหาร 1–2 ชั่วโมง ซื้อยาขับลมและยาน้ำลดกรดทานเอง อาการไม่ดีขึ้น และยังคงรับประทาน Ibuprofen ต่อเนื่อง",
+            "<strong>HISTORY OF PRESENT ILLNESS (ประวัติการเจ็บป่วยปัจจุบัน)</strong>",
+            "<u>14 วันก่อนมา รพ.</u> — ปวดยอกบริเวณคอและไหล่จากการขับรถ ซื้อยาแก้ปวด Ibuprofen (ไอบูโพรเฟน — ยาแก้ปวดกลุ่ม NSAIDs) 400 mg รับประทานเอง ครั้งละ 1 เม็ด หลังอาหาร 3 มื้อ (TID PC — วันละ 3 ครั้ง หลังอาหาร) สม่ำเสมอทุกวัน",
+            "<u>5 วันก่อนมา รพ.</u> — เริ่มปวดแสบร้อนใต้ลิ้นปี่ (epigastric pain — ปวดบริเวณยอดอก/ใต้ลิ้นปี่) ปวดมากช่วงท้องว่างและหลังอาหาร 1–2 ชั่วโมง ซื้อยาขับลมและยาน้ำลดกรดทานเอง อาการไม่ดีขึ้น และยังคงรับประทาน Ibuprofen ต่อเนื่อง",
             "<u>2 วันก่อนมา รพ.</u> — ถ่ายอุจจาระดำเหนียว กลิ่นเหม็นคาวจัด วันละ 2–3 ครั้ง เริ่มอ่อนเพลีย วิงเวียนศีรษะเวลาลุกเดิน",
             "<u>3 ชั่วโมงก่อนมา รพ.</u> — หน้ามืด ใจสั่น เหงื่อออก ตัวเย็น อาเจียนเป็นเลือดสดปนลิ่มเลือด ปริมาณประมาณ 1 แก้วน้ำ (~200 mL)",
-            "<strong>PAST MEDICAL HISTORY</strong>",
-            "Hypertension — เป็นมา 5 ปี, ขาดยาบ้างเป็นบางครั้ง",
-            "Dyslipidemia — เป็นมา 5 ปี",
-            "ปฏิเสธประวัติโรคตับแข็ง (cirrhosis) · ปฏิเสธประวัติ peptic ulcer ในอดีต · ปฏิเสธประวัติการผ่าตัด",
-            "<strong>CURRENT MEDICATIONS (Drug Reconciliation)</strong>",
-            "Amlodipine 10 mg — 1 tab po qd pc — ทานสม่ำเสมอ",
-            "Simvastatin 20 mg — 1 tab po hs — ทานสม่ำเสมอ",
-            "Ibuprofen 400 mg — 1 tab po tid pc — ซื้อทานเอง ต่อเนื่อง 14 วัน (รวม 1,200 mg/วัน)",
-            "ยาขับลม / ยาน้ำลดกรด — ทานเมื่อมีอาการ — เริ่มใช้เมื่อ 5 วันก่อน",
-            "<strong>ALLERGIES</strong>",
-            "No Known Drug Allergy (NKDA)",
-            "<strong>SOCIAL HISTORY</strong>",
+            "<strong>PAST MEDICAL HISTORY (ประวัติการเจ็บป่วยในอดีต)</strong>",
+            "Hypertension (ความดันโลหิตสูง) — เป็นมา 5 ปี, ขาดยาบ้างเป็นบางครั้ง",
+            "Dyslipidemia (ไขมันในเลือดผิดปกติ) — เป็นมา 5 ปี",
+            "ปฏิเสธประวัติโรคตับแข็ง (cirrhosis) · ปฏิเสธประวัติแผลในทางเดินอาหาร (peptic ulcer) ในอดีต · ปฏิเสธประวัติการผ่าตัด",
+            "<strong>CURRENT MEDICATIONS (รายการยาที่ใช้อยู่)</strong>",
+            "Amlodipine (แอมโลดิพีน — ยาลดความดันกลุ่ม CCB) 10 mg — 1 เม็ด วันละครั้ง หลังอาหาร — ทานสม่ำเสมอ",
+            "Simvastatin (ซิมวาสแตติน — ยาลดไขมัน) 20 mg — 1 เม็ด ก่อนนอน — ทานสม่ำเสมอ",
+            "Ibuprofen (ไอบูโพรเฟน — NSAIDs) 400 mg — 1 เม็ด วันละ 3 ครั้ง หลังอาหาร — ซื้อทานเอง ต่อเนื่อง 14 วัน (รวม 1,200 mg/วัน)",
+            "ยาขับลม / ยาน้ำลดกรด (antacid) — ทานเมื่อมีอาการ — เริ่มใช้เมื่อ 5 วันก่อน",
+            "<strong>ALLERGIES (ประวัติการแพ้ยา)</strong>",
+            "No Known Drug Allergy — NKDA (ไม่มีประวัติแพ้ยาที่ทราบ)",
+            "<strong>SOCIAL HISTORY (ประวัติส่วนตัวและพฤติกรรม)</strong>",
             "สูบบุหรี่ 0.5 ซอง/วัน ต่อเนื่องมา 15 ปี",
             "ดื่มแอลกอฮอล์ — เบียร์ 2–3 ขวด/ครั้ง สัปดาห์ละ 2–3 วัน",
             "กาแฟกระป๋องวันละ 2–3 กระป๋อง",
@@ -284,30 +406,41 @@
           "type": "info",
           "chart_tab": "objective",
           "content": [
-            "<strong>VITAL SIGNS</strong>",
-            "BP 88/55 mmHg · HR 115 bpm · RR 22 /min · BT 36.8 °C · SpO₂ 96% (room air) · GCS E4V5M6 = 15",
-            "<strong>PHYSICAL EXAMINATION</strong>",
-            "<u>General</u> — ผู้ป่วยดูป่วยหนักและวิตกกังวล ซีด เหงื่อออกมาก ปลายมือปลายเท้าเย็น",
-            "<u>HEENT</u> — เยื่อบุตาขาวซีดมาก, ตาไม่เหลือง (anicteric sclera), เยื่อบุช่องปากแห้ง",
-            "<u>Cardiovascular</u> — หัวใจเต้นเร็ว จังหวะสม่ำเสมอ ไม่มีเสียงฟู่ (no murmurs), ชีพจรส่วนปลายเบา",
-            "<u>Abdomen</u> — หน้าท้องนุ่ม กดเจ็บเล็กน้อยถึงปานกลางบริเวณใต้ลิ้นปี่ ไม่พบ guarding และไม่พบ rebound tenderness",
-            "<u>Bowel sounds</u> — hyperactive, 8 ครั้ง/นาที",
-            "<u>Liver / Spleen</u> — ไม่พบตับหรือม้ามโต, ไม่พบ spider nevi, caput medusae หรือ palmar erythema",
-            "<u>Digital rectal exam</u> — พบอุจจาระดำเหนียวติดถุงมือ กลิ่นเหม็นคาวจัด",
-            "<strong>LABORATORY — Complete Blood Count</strong>",
-            "Hb 6.8 g/dL (ref 13–17) · Hct 21% (ref 39–50)",
-            "WBC 11,200 /µL (ref 4,000–10,000) · Platelet 220,000 /µL (ref 150,000–400,000)",
-            "<strong>LABORATORY — Renal Function</strong>",
-            "BUN 35 mg/dL (ref 7–20) · Cr 1.25 mg/dL (ref 0.7–1.2) · BUN/Cr ratio = 28:1",
-            "<strong>LABORATORY — Electrolytes (mEq/L)</strong>",
-            "Na 138 · K 3.8 · Cl 102 · HCO₃ 20",
-            "<strong>LABORATORY — Liver Function & Coagulation</strong>",
-            "Albumin 3.8 g/dL (ref 3.5–5.0) · PT 11.5 s · INR 1.0 (ref ~1.0)",
-            "<strong>URGENT ESOPHAGOGASTRODUODENOSCOPY (EGD)</strong>",
-            "พบแผลเดี่ยวขนาด 2.0 ซม. ลักษณะ punch-out ulcer บริเวณ duodenal bulb",
-            "มีเลือดซึมออกจากแผลตลอดเวลา (active oozing)",
-            "ไม่พบหลอดเลือดโป่งพองในหลอดอาหารหรือกระเพาะอาหาร (no esophageal or gastric varices)",
-            "Forrest classification: Grade Ib"
+            "<strong>VITAL SIGNS (สัญญาณชีพ)</strong>",
+            "BP (ความดันโลหิต) 88/55 mmHg <span class=\"ref\">(ปกติ 90/60–140/90)</span>",
+            "HR (อัตราการเต้นหัวใจ) 115 ครั้ง/นาที <span class=\"ref\">(ปกติ 60–100)</span>",
+            "RR (อัตราการหายใจ) 22 ครั้ง/นาที <span class=\"ref\">(ปกติ 12–20)</span>",
+            "BT (อุณหภูมิร่างกาย) 36.8 °C <span class=\"ref\">(ปกติ 36.5–37.5)</span>",
+            "SpO₂ (ความอิ่มตัวออกซิเจนในเลือด) 96% ที่อากาศห้อง <span class=\"ref\">(ปกติ ≥ 95)</span>",
+            "GCS (ระดับความรู้สึกตัว) E4V5M6 = 15 <span class=\"ref\">(เต็ม 15)</span>",
+            "<strong>PHYSICAL EXAMINATION (ผลตรวจร่างกาย)</strong>",
+            "<u>General (ลักษณะทั่วไป)</u> — ผู้ป่วยดูป่วยหนักและวิตกกังวล ซีด เหงื่อออกมาก (diaphoretic) ปลายมือปลายเท้าเย็น",
+            "<u>HEENT (ศีรษะ ตา หู จมูก คอ)</u> — เยื่อบุตาขาวซีดมาก, ตาไม่เหลือง (anicteric sclera — ไม่มีภาวะดีซ่าน), เยื่อบุช่องปากแห้ง",
+            "<u>Cardiovascular (ระบบหัวใจและหลอดเลือด)</u> — หัวใจเต้นเร็ว จังหวะสม่ำเสมอ ไม่มีเสียงฟู่ (no murmurs), ชีพจรส่วนปลายเบา",
+            "<u>Abdomen (หน้าท้อง)</u> — หน้าท้องนุ่ม กดเจ็บเล็กน้อยถึงปานกลางบริเวณใต้ลิ้นปี่ ไม่พบ guarding (กล้ามเนื้อหน้าท้องเกร็ง) และไม่พบ rebound tenderness (เจ็บเมื่อปล่อยมือ)",
+            "<u>Bowel sounds (เสียงการเคลื่อนไหวลำไส้)</u> — hyperactive (เร็วกว่าปกติ), 8 ครั้ง/นาที <span class=\"ref\">(ปกติ 5–30 ครั้ง/นาที)</span>",
+            "<u>Liver / Spleen (ตับและม้าม)</u> — ไม่พบตับหรือม้ามโต, ไม่พบ spider nevi (เส้นเลือดฝอยรูปใยแมงมุม), caput medusae (เส้นเลือดขอดรอบสะดือ) หรือ palmar erythema (ฝ่ามือแดง) ซึ่งเป็นอาการแสดงของโรคตับเรื้อรัง",
+            "<u>Digital rectal exam (ตรวจทางทวารหนัก)</u> — พบอุจจาระดำเหนียว (melena) ติดถุงมือ กลิ่นเหม็นคาวจัด",
+            "<strong>LABORATORY — Complete Blood Count / CBC (ความสมบูรณ์ของเม็ดเลือด)</strong>",
+            "Hb (ฮีโมโกลบิน) 6.8 g/dL <span class=\"ref\">(ปกติ 13–17)</span>",
+            "Hct (ความเข้มข้นเลือด) 21% <span class=\"ref\">(ปกติ 39–50)</span>",
+            "WBC (เม็ดเลือดขาว) 11,200 /µL <span class=\"ref\">(ปกติ 4,000–10,000)</span>",
+            "Platelet (เกล็ดเลือด) 220,000 /µL <span class=\"ref\">(ปกติ 150,000–400,000)</span>",
+            "<strong>LABORATORY — Renal Function (การทำงานของไต)</strong>",
+            "BUN (ยูเรียไนโตรเจนในเลือด) 35 mg/dL <span class=\"ref\">(ปกติ 7–20)</span>",
+            "Cr (ครีอะตินิน) 1.25 mg/dL <span class=\"ref\">(ปกติ 0.7–1.2)</span>",
+            "BUN/Cr ratio (อัตราส่วน BUN ต่อ Cr) = 28:1 <span class=\"ref\">(ปกติ 10–20:1)</span>",
+            "<strong>LABORATORY — Electrolytes (เกลือแร่ในเลือด, mEq/L)</strong>",
+            "Na (โซเดียม) 138 <span class=\"ref\">(ปกติ 135–145)</span> · K (โพแทสเซียม) 3.8 <span class=\"ref\">(ปกติ 3.5–5.0)</span>",
+            "Cl (คลอไรด์) 102 <span class=\"ref\">(ปกติ 98–107)</span> · HCO₃ (ไบคาร์บอเนต) 20 <span class=\"ref\">(ปกติ 22–28)</span>",
+            "<strong>LABORATORY — Liver Function & Coagulation (การทำงานของตับและการแข็งตัวของเลือด)</strong>",
+            "Albumin (อัลบูมิน) 3.8 g/dL <span class=\"ref\">(ปกติ 3.5–5.0)</span>",
+            "PT (เวลาการแข็งตัวของเลือด) 11.5 วินาที <span class=\"ref\">(ปกติ 11–13.5)</span> · INR 1.0 <span class=\"ref\">(ปกติ 0.8–1.2)</span>",
+            "<strong>URGENT ENDOSCOPY / EGD (ส่องกล้องทางเดินอาหารส่วนต้นแบบเร่งด่วน)</strong>",
+            "พบแผลเดี่ยวขนาด 2.0 ซม. ลักษณะ punch-out ulcer (แผลขอบชัดเหมือนถูกเจาะ) บริเวณ duodenal bulb (ลำไส้เล็กส่วนต้น)",
+            "มีเลือดซึมออกจากแผลตลอดเวลา (active oozing — เลือดออกแบบซึมต่อเนื่อง)",
+            "ไม่พบหลอดเลือดโป่งพองในหลอดอาหารหรือกระเพาะอาหาร (no varices)",
+            "Forrest classification (การแบ่งระดับแผลเลือดออกจากการส่องกล้อง): Grade Ib"
           ]
         }
       }

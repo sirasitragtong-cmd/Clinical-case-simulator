@@ -73,6 +73,24 @@ body {
 }
 .clinical-text:last-child { border-bottom: 0; }
 .clinical-text strong { color: #48E5C2; font-weight: 600; }
+.clinical-text u { text-decoration: none; color: #94A3B8; font-weight: 600; }
+
+/* Inline reference range printed next to a lab value. Dimmed so the measured
+   number stays dominant, but always present so the learner can judge
+   normal-versus-abnormal without leaving the chart. */
+.clinical-text .ref {
+    color: #64748B;
+    font-size: .78em;
+    white-space: nowrap;
+}
+
+/* ─── Collapsible clinical reference ─────────────────── */
+.ref-section > summary { list-style: none; }
+.ref-section > summary::-webkit-details-marker { display: none; }
+.ref-section > summary:hover { background: rgba(28,37,65,.55); }
+.ref-section .ref-chevron { transition: transform .2s ease; }
+.ref-section[open] > summary { border-bottom: 1px solid rgba(51,65,95,.5); }
+.ref-section[open] .ref-chevron { transform: rotate(180deg); }
 
 /* ─── Choice cards (touch-first: min 48px target) ────── */
 .choice-btn {
@@ -269,13 +287,20 @@ body {
     50%      { transform: scaleY(1.035); }
 }
 
-/* Blink */
-.pa-eyelid { transform-origin: center; animation: paBlink 5s ease-in-out infinite; }
+/* Blink.
+   The lid is driven by OPACITY, not transform. opacity:0 is the resting
+   state — eyes open — so the eyes stay open wherever the animation is not
+   running: under prefers-reduced-motion, and in static SVG renderers that
+   do not apply CSS transforms to SVG elements. An earlier transform-based
+   version left the lid at full height in both cases, giving the patient a
+   permanently half-closed, sedated look. */
+.pa-eyelid { opacity: 0; animation: paBlink 5s ease-in-out infinite; }
 @keyframes paBlink {
-    0%, 92%, 100% { transform: scaleY(0); }
-    95%           { transform: scaleY(1); }
+    0%, 92%, 100% { opacity: 0; }
+    94%, 96%      { opacity: 1; }
 }
-.reaction-critical .pa-eyelid { animation: none; transform: scaleY(1); }
+/* Eyes held shut while critical. */
+.reaction-critical .pa-eyelid { animation: none; opacity: 1; }
 
 /* Sweat */
 .pa-sweat { opacity: 0; }

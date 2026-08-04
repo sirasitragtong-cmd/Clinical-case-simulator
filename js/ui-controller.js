@@ -348,40 +348,60 @@ const UIController = (function() {
         }
     }
 
-    // ─── CPG block ─────────────────────────────────────────────
-    function renderCPGBlock(cpg) {
-        if (!cpg || !Array.isArray(cpg.rows) || cpg.rows.length === 0) {
+    // ─── Clinical reference (collapsible) ──────────────────────
+    // Replaces the old flat CPG table. Every section is a <details> that
+    // starts closed: consulting a reference should be a deliberate act, not
+    // something the interface does on the learner's behalf. This is also
+    // where any material that deliberately helps the learner belongs, so the
+    // patient chart itself stays raw data.
+    function renderReferenceBlock(ref) {
+        if (!ref || !Array.isArray(ref.sections) || ref.sections.length === 0) {
             return `<p class="text-[.7rem] text-slate-500 leading-relaxed">
-                        เคสนี้ยังไม่มีข้อมูลแนวทางเวชปฏิบัติ — เพิ่มฟิลด์
-                        <code class="text-teal-400">cpg</code> ใน case JSON เพื่อแสดงที่นี่
+                        เคสนี้ยังไม่มีข้อมูลอ้างอิง — เพิ่มฟิลด์
+                        <code class="text-teal-400">reference</code> ใน case JSON เพื่อแสดงที่นี่
                     </p>`;
         }
 
-        const cols = cpg.columns || [];
-        const blocks = cpg.rows.map(row => {
-            const cells = (row.values || []).map((v, i) => `
-                <div class="rounded-lg p-2 ${i === 0
-                    ? 'bg-teal-400/[.07] border border-teal-400/25'
-                    : 'bg-navy-800/60 border border-navy-700/50'}">
-                    <p class="text-[.55rem] font-bold uppercase tracking-wide mb-0.5 ${i === 0 ? 'text-teal-400' : 'text-slate-500'}">
-                        ${esc(cols[i] || '—')}
-                    </p>
-                    <p class="text-[.68rem] leading-relaxed ${i === 0 ? 'text-slate-200' : 'text-slate-400'}">${esc(v)}</p>
-                </div>`).join('');
-            return `
-                <div>
-                    <p class="text-[.6rem] font-bold tracking-widest text-slate-500 uppercase mb-1.5">${esc(row.label)}</p>
-                    <div class="flex flex-col gap-1.5">${cells}</div>
-                </div>`;
-        }).join('');
+        const rowList = rows => `
+            <div class="flex flex-col gap-1.5 mt-2">
+                ${rows.map(pair => `
+                    <div class="rounded-lg border border-navy-700/60 bg-navy-800/50 px-2 py-1.5">
+                        <p class="text-[.66rem] font-bold text-teal-400 leading-tight">${esc(pair[0])}</p>
+                        <p class="text-[.64rem] text-slate-300 leading-relaxed mt-0.5">${esc(pair[1])}</p>
+                    </div>`).join('')}
+            </div>`;
+
+        const tableList = t => `
+            <div class="flex flex-col gap-2 mt-2">
+                ${t.rows.map(cells => `
+                    <div class="rounded-lg border border-navy-700/60 bg-navy-800/50 p-2">
+                        <p class="text-[.66rem] font-bold text-teal-400 leading-tight mb-1">${esc(cells[0])}</p>
+                        ${cells.slice(1).map((v, i) => `
+                            <p class="text-[.56rem] font-bold uppercase tracking-wide text-slate-500 mt-1.5">${esc(t.columns[i + 1] || '')}</p>
+                            <p class="text-[.64rem] text-slate-300 leading-relaxed">${esc(v)}</p>`).join('')}
+                    </div>`).join('')}
+            </div>`;
+
+        const sections = ref.sections.map(sec => `
+            <details class="ref-section rounded-xl border border-navy-600/70 bg-navy-850/60 overflow-hidden">
+                <summary class="flex items-center gap-2 px-2.5 py-2 cursor-pointer select-none min-h-[44px]">
+                    <span class="text-xs flex-shrink-0">${esc(sec.icon || '📄')}</span>
+                    <span class="text-[.7rem] font-bold text-slate-200 flex-1 leading-tight">${esc(sec.title)}</span>
+                    <span class="ref-chevron text-slate-500 text-[.7rem] flex-shrink-0">▾</span>
+                </summary>
+                <div class="px-2.5 pb-2.5">
+                    ${sec.note ? `<p class="text-[.6rem] text-slate-500 leading-relaxed">${esc(sec.note)}</p>` : ''}
+                    ${sec.table ? tableList(sec.table) : rowList(sec.rows || [])}
+                </div>
+            </details>`).join('');
 
         return `
-            <div class="space-y-3">
+            <div class="flex flex-col gap-2">
                 <div>
-                    <p class="text-xs font-extrabold text-white">${esc(cpg.title || 'CPG')}</p>
-                    ${cpg.note ? `<p class="text-[.62rem] text-slate-500 mt-0.5 leading-relaxed">${esc(cpg.note)}</p>` : ''}
+                    <p class="text-xs font-extrabold text-white">${esc(ref.title || 'ข้อมูลอ้างอิง')}</p>
+                    ${ref.note ? `<p class="text-[.6rem] text-slate-500 mt-0.5 leading-relaxed">${esc(ref.note)}</p>` : ''}
                 </div>
-                ${blocks}
+                ${sections}
             </div>`;
     }
 
@@ -646,7 +666,7 @@ const UIController = (function() {
         } else if (soapTab === 'monitoring') {
             html = renderMonitoringBlock(data);
         } else {
-            html = renderCPGBlock(data.cpg);
+            html = renderReferenceBlock(data.reference);
         }
 
         soapHosts.forEach(h => { h.innerHTML = html; });
@@ -841,6 +861,8 @@ const UIController = (function() {
 
         document.querySelectorAll('.choice-btn').forEach(btn => { btn.disabled = true; });
 
+        markStreakActive();
+
         // The patient responds to the decision.
         adjustPatientHealth(isCorrect ? 8 : -12, isCorrect ? 'improving' : 'pain');
 
@@ -873,6 +895,8 @@ const UIController = (function() {
 
         const dock = document.querySelector('.submit-dock');
         if (dock) dock.remove();
+
+        markStreakActive();
 
         if (dtpRequired) renderDTPVerdict();
 
@@ -1033,6 +1057,119 @@ const UIController = (function() {
         }
     }
 
+    // ═══ DAILY PRACTICE STREAK ═════════════════════════════════
+    // Clinical reasoning is a habit, so the reward is for turning up, not for
+    // scoring well: a day counts once the learner commits to any answer. That
+    // keeps a bad day from breaking the streak, which would punish exactly the
+    // practice the streak exists to encourage.
+    const STREAK_KEY = 'ccs_streak_v1';
+
+    /** Local calendar date as YYYY-MM-DD. Deliberately local, not UTC — a
+     *  student in Bangkok should roll over at their midnight, not London's. */
+    function todayKey(d) {
+        const t = d || new Date();
+        const p = n => String(n).padStart(2, '0');
+        return `${t.getFullYear()}-${p(t.getMonth() + 1)}-${p(t.getDate())}`;
+    }
+
+    function daysBetween(a, b) {
+        const toDate = s => { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d); };
+        return Math.round((toDate(b) - toDate(a)) / 86400000);
+    }
+
+    function loadStreak() {
+        try {
+            const raw = JSON.parse(localStorage.getItem(STREAK_KEY));
+            if (raw && typeof raw.current === 'number') {
+                return { current: raw.current, best: raw.best || raw.current, last: raw.last || null,
+                         days: Array.isArray(raw.days) ? raw.days : [] };
+            }
+        } catch (e) { /* corrupt or unavailable — start fresh */ }
+        return { current: 0, best: 0, last: null, days: [] };
+    }
+
+    /**
+     * Records today as an active day. Idempotent: calling it repeatedly within
+     * the same day does not inflate the count.
+     * Returns { streak, changed } so the caller can celebrate only on the
+     * first commitment of the day.
+     */
+    function markStreakActive() {
+        const s = loadStreak();
+        const today = todayKey();
+        if (s.last === today) return { streak: s, changed: false };
+
+        const gap = s.last ? daysBetween(s.last, today) : null;
+        if (gap === 1) s.current += 1;        // consecutive day
+        else s.current = 1;                    // first ever, or the chain broke
+
+        s.best = Math.max(s.best, s.current);
+        s.last = today;
+        s.days = s.days.concat(today).slice(-60);
+
+        try { localStorage.setItem(STREAK_KEY, JSON.stringify(s)); } catch (e) {}
+        console.log(`[Streak] Day recorded — current ${s.current}, best ${s.best}.`);
+        return { streak: s, changed: true };
+    }
+
+    /** The last 7 calendar days, oldest first, flagged active or not. */
+    function recentWeek(s) {
+        const out = [];
+        const now = new Date();
+        for (let i = 6; i >= 0; i--) {
+            const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() - i);
+            const k = todayKey(d);
+            out.push({ key: k, active: s.days.indexOf(k) !== -1,
+                       label: ['อา', 'จ', 'อ', 'พ', 'พฤ', 'ศ', 'ส'][d.getDay()] });
+        }
+        return out;
+    }
+
+    function renderStreakCard() {
+        const host = byId('streak-card');
+        if (!host) return;
+
+        const s = loadStreak();
+        const week = recentWeek(s);
+        const activeToday = s.last === todayKey();
+        const flame = s.current > 0 ? '🔥' : '🕯';
+
+        const dots = week.map(d => `
+            <div class="flex flex-col items-center gap-1">
+                <div class="w-7 h-7 rounded-lg grid place-items-center text-[.7rem] font-bold
+                            ${d.active ? 'bg-gold-400/20 border border-gold-400/60 text-gold-400'
+                                       : 'bg-navy-800/60 border border-navy-700/60 text-slate-600'}">
+                    ${d.active ? '🔥' : ''}
+                </div>
+                <span class="text-[.55rem] ${d.active ? 'text-gold-400' : 'text-slate-600'}">${d.label}</span>
+            </div>`).join('');
+
+        host.innerHTML = `
+            <div class="panel rounded-2xl p-3.5 flex flex-col sm:flex-row sm:items-center gap-3.5">
+                <div class="flex items-center gap-3 flex-shrink-0">
+                    <div class="w-12 h-12 rounded-xl grid place-items-center text-2xl flex-shrink-0
+                                ${s.current > 0 ? 'bg-gold-400/12 border border-gold-400/40' : 'bg-navy-800 border border-navy-700'}">
+                        ${flame}
+                    </div>
+                    <div class="leading-tight">
+                        <p class="text-[.58rem] font-bold tracking-widest text-slate-500 uppercase">Practice Streak</p>
+                        <p class="text-xl font-extrabold ${s.current > 0 ? 'text-gold-400' : 'text-slate-400'} leading-none mt-0.5">
+                            ${s.current}<span class="text-[.7rem] font-bold text-slate-500 ml-1.5">วันติดต่อกัน</span>
+                        </p>
+                        <p class="text-[.6rem] text-slate-500 mt-0.5">สถิติสูงสุด ${s.best} วัน</p>
+                    </div>
+                </div>
+
+                <div class="flex gap-1.5 sm:ml-auto">${dots}</div>
+
+                <p class="text-[.64rem] leading-relaxed sm:max-w-[13rem] ${activeToday ? 'text-teal-400' : 'text-slate-400'}">
+                    ${activeToday
+                        ? '✓ วันนี้ฝึกแล้ว — พรุ่งนี้กลับมาต่อเพื่อรักษาสถิติ'
+                        : 'ตอบคำถามอย่างน้อย 1 ข้อวันนี้ เพื่อต่อสถิติของคุณ'}
+                </p>
+            </div>`;
+    }
+
     // ─── Campaign: journey map ─────────────────────────────────
     // Stage names never reveal the diagnosis — that is the answer the
     // learner is being asked to work out. Only the presenting complaint
@@ -1040,6 +1177,11 @@ const UIController = (function() {
     function renderCaseMap(cases, onStart) {
         allCases = cases || [];
         onStartCase = onStart;
+
+        // The campaign panel is the default view at boot, so switchPanel()
+        // never fires for it — draw the streak card here as well.
+        renderStreakCard();
+
         if (!questTrack) return;
 
         if (!cases || cases.length === 0) {
@@ -1132,8 +1274,8 @@ const UIController = (function() {
         .map(id => byId(id)).filter(Boolean);
     const avatarEl = avatarHosts[0];
 
-    // Flat sticker-style patient portrait: a white disc on a blue field, thick
-    // dark linework, front-facing so the learner is addressed directly.
+    // Flat patient portrait set in a ward room, thick dark linework,
+    // front-facing so the learner is addressed directly.
     //
     // Two designs only — male and female. Age is not depicted, by design: the
     // patient's age is written on the chart, and drawing it would add a visual
@@ -1218,24 +1360,49 @@ const UIController = (function() {
 <svg viewBox="0 0 320 240" xmlns="http://www.w3.org/2000/svg" role="img"
      aria-label="ภาพผู้ป่วย${female ? 'หญิง' : 'ชาย'}" preserveAspectRatio="xMidYMid meet">
   <defs>
-    <clipPath id="paDisc"><circle cx="160" cy="120" r="88"/></clipPath>
+    <clipPath id="paFrame"><rect x="0" y="0" width="320" height="240" rx="14"/></clipPath>
     <clipPath id="paHead"><ellipse cx="160" cy="102" rx="41" ry="45"/></clipPath>
     <radialGradient id="paAlarm" cx="50%" cy="50%">
       <stop offset="35%" stop-color="#E63946" stop-opacity=".55"/>
       <stop offset="100%" stop-color="#E63946" stop-opacity="0"/>
     </radialGradient>
+    <linearGradient id="paRoom" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#8FD8F2"/>
+      <stop offset="62%" stop-color="#6EC5E9"/>
+      <stop offset="100%" stop-color="#57B2D8"/>
+    </linearGradient>
+    <linearGradient id="paGlass" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#CFEEFB" stop-opacity=".95"/>
+      <stop offset="100%" stop-color="#A9DDF3" stop-opacity=".95"/>
+    </linearGradient>
   </defs>
 
-  <!-- Blue field -->
-  <rect width="320" height="240" fill="#6EC5E9"/>
+  <g clip-path="url(#paFrame)">
 
-  <!-- Critical alarm glow, behind the sticker -->
-  <circle class="pa-aura" cx="160" cy="120" r="118" fill="url(#paAlarm)"/>
+  <!-- ── ROOM ───────────────────────────────────────────────
+       A ward setting behind the patient instead of the sticker
+       disc: wall, wainscot rail, a window, and a privacy curtain.
+       Everything is flat and low-contrast so the figure stays
+       the focus. -->
+  <rect width="320" height="240" fill="url(#paRoom)"/>
 
-  <!-- White sticker disc -->
-  <circle cx="160" cy="120" r="96" fill="#FFFFFF"/>
+  <!-- Window -->
+  <rect x="26" y="34" width="86" height="74" rx="6" fill="url(#paGlass)" stroke="#FFFFFF" stroke-width="4"/>
+  <path d="M69 36 V106 M28 71 H110" stroke="#FFFFFF" stroke-width="4" stroke-linecap="round"/>
 
-  <g clip-path="url(#paDisc)">
+  <!-- Privacy curtain on the far side -->
+  <path d="M232 18 h72 v150 h-72 Z" fill="#BFE7F7" opacity=".5"/>
+  <path d="M244 18 v150 M258 18 v150 M272 18 v150 M286 18 v150"
+        stroke="#FFFFFF" stroke-width="3" opacity=".55" stroke-linecap="round"/>
+
+  <!-- Wainscot rail -->
+  <path d="M0 168 H320" stroke="#FFFFFF" stroke-width="5" opacity=".55"/>
+  <rect y="171" width="320" height="69" fill="#FFFFFF" opacity=".18"/>
+
+  <!-- Critical alarm glow -->
+  <circle class="pa-aura" cx="160" cy="120" r="132" fill="url(#paAlarm)"/>
+
+  <g>
 
     <!-- ── BODY ─────────────────────────────────────────── -->
     <g class="pa-chest">
@@ -1285,8 +1452,9 @@ const UIController = (function() {
           <ellipse cx="179" cy="104" rx="6.2" ry="7.4" fill="${INK}"/>
           <circle cx="181" cy="101" r="2.1" fill="#FFFFFF"/>
         </g>
-        <rect class="pa-eyelid pa-skin" x="132" y="94" width="18" height="10" rx="3"/>
-        <rect class="pa-eyelid pa-skin" x="170" y="94" width="18" height="10" rx="3"/>
+        <!-- Blink lids, hidden at rest and flashed in by the CSS animation. -->
+        <rect class="pa-eyelid pa-skin" x="132" y="93" width="18" height="13" rx="4"/>
+        <rect class="pa-eyelid pa-skin" x="170" y="93" width="18" height="13" rx="4"/>
       </g>
 
       <!-- Nose -->
@@ -1335,12 +1503,7 @@ const UIController = (function() {
       </g>
     </g>
   </g>
-
-  <!-- Crisp sticker edge -->
-  <circle cx="160" cy="120" r="96" fill="none" stroke="#FFFFFF" stroke-width="9"/>
-
-  <!-- Sticker sparkle -->
-  <path d="M268 196 l3 8 8 3 -8 3 -3 8 -3 -8 -8 -3 8 -3 z" fill="#FFFFFF" opacity=".7"/>
+  </g>
 </svg>`;
     }
 
@@ -1492,7 +1655,7 @@ const UIController = (function() {
             el.classList.toggle('hidden', el.dataset.panelBody !== name);
         });
 
-        if (name === 'library')      renderLibraryPanel();
+        if (name === 'campaign')     renderStreakCard();
         if (name === 'stats')        renderStatsPanel();
         if (name === 'leaderboard')  renderLeaderboardPanel();
         if (name === 'achievements') renderAchievementsPanel();
@@ -1547,39 +1710,6 @@ const UIController = (function() {
     }
 
     function pct(a, b) { return b > 0 ? Math.round((a / b) * 100) : 0; }
-
-    // ─── Free-Play Library ─────────────────────────────────────
-    function renderLibraryPanel() {
-        const host = byId('library-list');
-        if (!host) return;
-
-        if (!allCases.length) {
-            host.innerHTML = stateBlock({ reason: 'empty' }, 'ยังไม่มีเคสในระบบ');
-            return;
-        }
-
-        host.innerHTML = allCases.map((c, i) => {
-            let steps = 0, pts = 0;
-            Object.values(c.stages || {}).forEach(st =>
-                Object.values(st.steps || {}).forEach(s => { steps++; pts += (s.point_value || 0); }));
-            return `
-                <div class="panel rounded-xl p-3 flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-lg bg-navy-700 grid place-items-center text-lg flex-shrink-0">🩺</div>
-                    <div class="min-w-0 flex-1">
-                        <p class="text-xs font-bold text-white truncate">${esc(c.case_title || c.case_id)}</p>
-                        <p class="text-[.65rem] text-slate-500">${steps} steps · ${pts.toLocaleString('en-US')} pts · ${esc(c.difficulty || '')}</p>
-                    </div>
-                    <button class="primary-btn !min-h-[40px] !px-4 flex-shrink-0" data-library-index="${i}">เล่น</button>
-                </div>`;
-        }).join('');
-
-        host.querySelectorAll('[data-library-index]').forEach(btn => {
-            btn.addEventListener('click', () => {
-                const idx = parseInt(btn.dataset.libraryIndex, 10);
-                if (typeof onStartCase === 'function') onStartCase(allCases[idx]);
-            });
-        });
-    }
 
     // ─── My Stats ──────────────────────────────────────────────
     async function renderStatsPanel() {
@@ -1723,15 +1853,30 @@ const UIController = (function() {
     // than showing a plausible-looking zero.
 
     /** Human-readable label for a step id, using the loaded case files. */
+    /**
+     * Resolves a stored step id to its question text.
+     *
+     * Returns `retired: true` when the id is not in the case any more. That
+     * happens whenever a case is re-authored: old attempts in Firestore still
+     * reference step ids that no longer exist, and silently printing the raw id
+     * made the panel look broken. Retired rows are labelled, not hidden — the
+     * attempts were real, they just measure a version of the case that is gone.
+     */
     function stepLabel(caseId, stepId, cases) {
         const c = (cases || []).find(x => x.case_id === caseId);
         if (c) {
             for (const stage of Object.values(c.stages || {})) {
                 const s = (stage.steps || {})[stepId];
-                if (s && s.question) return s.question.split(':')[0].trim();
+                if (s && s.question) {
+                    const q = s.question.split(':')[0].trim();
+                    return { text: q.length > 64 ? q.slice(0, 64) + '…' : q, retired: false };
+                }
             }
         }
-        return stepId.replace(/^step_\d+_/, '').replace(/_/g, ' ');
+        return {
+            text: stepId.replace(/^step_\d+_/, '').replace(/_/g, ' '),
+            retired: true
+        };
     }
 
     async function renderInstructorPanel() {
@@ -1770,15 +1915,19 @@ const UIController = (function() {
         const chart = Object.keys(missed)
             .map(key => {
                 const [caseId, stepId] = key.split('::');
+                const lbl = stepLabel(caseId, stepId, allCases);
                 return {
                     caseId, stepId,
-                    label: stepLabel(caseId, stepId, allCases),
+                    label: lbl.text,
+                    retired: lbl.retired,
                     count: missed[key],
                     rate: pct(missed[key], total)
                 };
             })
             .sort((a, b) => b.rate - a.rate)
-            .slice(0, 8);
+            .slice(0, 10);
+
+        const retiredCount = chart.filter(i => i.retired).length;
 
         // ── DTP classification accuracy ────────────────────────
         const tagged = rows.filter(r => r.dtpTag != null);
@@ -1795,18 +1944,42 @@ const UIController = (function() {
             </div>`;
 
         const bar = (item, tone) => `
-            <div class="mb-2.5">
+            <div class="mb-2.5 ${item.retired ? 'opacity-60' : ''}">
                 <div class="flex items-baseline justify-between gap-2 mb-1">
-                    <p class="text-[.7rem] font-semibold text-slate-200 truncate">${esc(item.label)}</p>
+                    <p class="text-[.7rem] font-semibold text-slate-200 truncate">
+                        ${esc(item.label)}
+                        ${item.retired ? '<span class="ml-1 text-[.55rem] font-bold text-gold-400 align-middle">· ขั้นตอนเก่า</span>' : ''}
+                    </p>
                     <p class="text-[.66rem] font-mono font-bold ${tone} flex-shrink-0">${item.rate}%
                         <span class="text-slate-600 font-sans font-normal">(${item.count}/${total})</span></p>
                 </div>
                 <div class="h-1.5 rounded-full bg-navy-700/70 overflow-hidden">
-                    <div class="h-full rounded-full ${item.rate >= 50 ? 'bg-acuity-500' : item.rate >= 25 ? 'bg-gold-400' : 'bg-teal-400'}"
+                    <div class="h-full rounded-full ${item.retired ? 'bg-navy-500' : item.rate >= 50 ? 'bg-acuity-500' : item.rate >= 25 ? 'bg-gold-400' : 'bg-teal-400'}"
                          style="width:${Math.max(item.rate, 2)}%"></div>
                 </div>
                 <p class="text-[.55rem] text-slate-600 mt-0.5 font-mono">${esc(item.caseId)} · ${esc(item.stepId)}</p>
             </div>`;
+
+        // Percentages from a handful of attempts are arithmetically right but
+        // read as broken (one student who slipped on a step shows as "100%").
+        // Say so rather than letting the reader assume the panel is faulty.
+        const sampleNote = total < 5 ? `
+            <div class="rounded-xl border border-gold-400/35 bg-gold-400/[.07] px-3 py-2 mb-4 flex items-start gap-2">
+                <span class="text-gold-400 text-[.7rem] leading-none mt-0.5">ⓘ</span>
+                <p class="text-[.66rem] text-slate-300 leading-relaxed">
+                    ขนาดตัวอย่างเล็กมาก (${total} ครั้ง) — ค่าร้อยละยังไม่มีความหมายทางสถิติ
+                    ผู้เรียนคนเดียวที่ตอบผิดหนึ่งข้อจะแสดงเป็น 100% ให้ดูจำนวนครั้งในวงเล็บแทน
+                </p>
+            </div>` : '';
+
+        const retiredNote = retiredCount > 0 ? `
+            <div class="rounded-xl border border-navy-600/70 bg-navy-800/50 px-3 py-2 mb-4 flex items-start gap-2">
+                <span class="text-slate-400 text-[.7rem] leading-none mt-0.5">⚑</span>
+                <p class="text-[.66rem] text-slate-400 leading-relaxed">
+                    มี ${retiredCount} ขั้นตอนที่ไม่มีอยู่ในเคสฉบับปัจจุบันแล้ว — เป็นผลจากการส่งก่อนที่เคสจะถูกปรับปรุงใหม่
+                    ข้อมูลนี้ยังถูกต้อง แต่วัดเนื้อหาคนละฉบับกับที่นักศึกษาเล่นอยู่ตอนนี้
+                </p>
+            </div>` : '';
 
         host.innerHTML = `
             <div class="grid grid-cols-2 lg:grid-cols-4 gap-2.5 mb-4">
@@ -1815,6 +1988,9 @@ const UIController = (function() {
                 ${stat('Average Score', avg, '%', 'text-white')}
                 ${stat('Fatal Errors', pct(fatal, total), '%', fatal > 0 ? 'text-acuity-500' : 'text-teal-400')}
             </div>
+
+            ${sampleNote}
+            ${retiredNote}
 
             <div class="panel rounded-2xl p-4 mb-4">
                 <div class="flex items-baseline justify-between mb-3">
@@ -1903,6 +2079,11 @@ const UIController = (function() {
         setPatientReaction,
         setPatientHealth,
         getPatientHealth: () => patientHealth,
+
+        // Daily practice streak
+        renderStreakCard,
+        markStreakActive,
+        getStreak: loadStreak,
 
         // Pharmacy tooling
         calcCockcroftGault,
