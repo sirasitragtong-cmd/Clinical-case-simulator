@@ -1,16 +1,22 @@
 /**
- * Regenerates data/case_001.json from the Principal Clinical Pharmacotherapist
- * dataset (Acute Non-Variceal UGIB, NSAID-induced duodenal ulcer, Forrest Ib).
+ * Regenerates data/case_001.json from the Clinical Content Specialist dataset
+ * (นายวิชัย, 62M — Acute UGIB from gastric antral ulcer, Forrest Ib, H. pylori +).
  *
  * SPOILER POLICY applied throughout:
  *   - Raw clinical data is preserved in full (values, units, reference ranges,
  *     endoscopic findings). None of it is cut — the learner needs it to reason.
  *   - Interpretations of that data are NOT student-facing, because every one of
- *     them is the answer to a question the case then asks. The source document's
- *     "Pharmacotherapist's Note", "Clinical Summary", the lab "Diagnostic Flags
- *     & Insights" column, the vitals "การแปลผลทางคลินิก" column and the CPG
- *     "บทสรุปในเคสนี้ [CORRECT]/[INCORRECT]" column are therefore kept out of the
- *     player-visible content and preserved under `authoring_notes` instead.
+ *     them is the answer to a question the case then asks. The source dataset's
+ *     "[ต่ำ/Hypotension]" / "[สูง/Tachycardia]" vital-sign flags, the lab Status
+ *     column (Low/High/Normal), the "ความสอดคล้องทางคลินิก" line, the note that
+ *     NSAIDs are the main cause, the significance of each negative finding, and
+ *     the Clinical Summary are therefore kept out of player-visible content and
+ *     preserved under `authoring_notes` instead. Steps 1, 3, 4 and 5 ask the
+ *     learner to derive exactly those conclusions.
+ *
+ * MISSING DATA is rendered as "ไม่มีข้อมูล" rather than invented. The dataset
+ * marks occupation, body weight, allergy history and smoking history as absent;
+ * body weight in particular is why the Cockcroft-Gault badge shows "—" for CrCl.
  */
 'use strict';
 const fs = require('fs');
@@ -40,11 +46,11 @@ function seeded(str) {
 /**
  * Shuffles a step's options and re-letters them A–G.
  *
- * Authored in blueprint order, every step had option A correct, the correct
- * answers bunched at the top, and the fatal trap sitting at G. Three free hints:
- * a learner who spotted any of them could score without reading the clinical
- * content at all. The shuffle is seeded from the step id so the ordering is
- * stable across rebuilds (no spurious JSON diffs) but unguessable from position.
+ * Authored in blueprint order the correct answer clusters near the top and the
+ * fatal trap sits at a fixed letter — free hints a learner could score from
+ * without reading the clinical content. The shuffle is seeded from the step id
+ * so ordering is stable across rebuilds (no spurious JSON diffs) but carries no
+ * information.
  */
 function shuffleChoices(stepId, choices) {
     const rand = seeded(stepId);
@@ -57,7 +63,7 @@ function shuffleChoices(stepId, choices) {
 }
 
 /**
- * Builds a 7-option multi-select step.
+ * Builds a multi-select step.
  * `correct` = ids scoring +point_per_correct; every other pick costs
  * point_penalty. There is no select_count: telling the learner how many
  * answers are right is the single largest hint in the whole UI.
@@ -87,100 +93,102 @@ const fat = (id, text, fatal_message) => ({ id, text, is_correct: false, is_fata
 // student is never blocked by vocabulary while reasoning about the case.
 const subjective = [
     h('PATIENT PROFILE (ข้อมูลผู้ป่วย)'),
-    'ชายไทย อายุ 55 ปี · อาชีพพนักงานขับรถบรรทุกส่งสินค้าทางไกล · รูปแบบงาน: ขับรถระยะทางไกล พักผ่อนไม่เป็นเวลา',
-    'น้ำหนัก 68 kg · ส่วนสูง 168 cm · BMI 24.1 kg/m² <span class="ref">(เกณฑ์ปกติชาวเอเชีย 18.5–22.9)</span>',
+    'นายวิชัย · เพศชาย · อายุ 62 ปี',
+    'อาชีพ · น้ำหนัก · ส่วนสูง · BMI — <span class="ref">ไม่มีข้อมูลในเอกสารอ้างอิง</span>',
 
     h('CHIEF COMPLAINT (อาการสำคัญที่มาพบแพทย์)'),
-    '"ถ่ายอุจจาระเป็นสีดำเหนียวเหมือนยางมะตอยมา 2 วัน วันนี้เวียนหัวมาก อาเจียนออกมาเป็นเลือดสด 1 ครั้งก่อนมา รพ."',
+    '"อาเจียนเป็นเลือดสีแดงสด และถ่ายอุจจาระเป็นสีดำเหลว 2 ชั่วโมงก่อนมาโรงพยาบาล"',
 
     h('HISTORY OF PRESENT ILLNESS (ประวัติการเจ็บป่วยปัจจุบัน)'),
-    '<u>14 วันก่อนมา รพ.</u> — ปวดยอกบริเวณคอและไหล่จากการขับรถ ซื้อยาแก้ปวด Ibuprofen (ไอบูโพรเฟน — ยาแก้ปวดกลุ่ม NSAIDs) 400 mg รับประทานเอง ครั้งละ 1 เม็ด หลังอาหาร 3 มื้อ (TID PC — วันละ 3 ครั้ง หลังอาหาร) สม่ำเสมอทุกวัน',
-    '<u>5 วันก่อนมา รพ.</u> — เริ่มปวดแสบร้อนใต้ลิ้นปี่ (epigastric pain — ปวดบริเวณยอดอก/ใต้ลิ้นปี่) ปวดมากช่วงท้องว่างและหลังอาหาร 1–2 ชั่วโมง ซื้อยาขับลมและยาน้ำลดกรดทานเอง อาการไม่ดีขึ้น และยังคงรับประทาน Ibuprofen ต่อเนื่อง',
-    '<u>2 วันก่อนมา รพ.</u> — ถ่ายอุจจาระดำเหนียว กลิ่นเหม็นคาวจัด วันละ 2–3 ครั้ง เริ่มอ่อนเพลีย วิงเวียนศีรษะเวลาลุกเดิน',
-    '<u>3 ชั่วโมงก่อนมา รพ.</u> — หน้ามืด ใจสั่น เหงื่อออก ตัวเย็น อาเจียนเป็นเลือดสดปนลิ่มเลือด ปริมาณประมาณ 1 แก้วน้ำ (~200 mL)',
+    '<u>3 วันก่อนมา รพ.</u> — เริ่มปวดท้องแสบแน่นบริเวณลิ้นปี่ (epigastric pain — ปวดใต้ลิ้นปี่) อาการมักสัมพันธ์กับการรับประทานอาหาร',
+    '<u>1 วันก่อนมา รพ.</u> — สังเกตเห็นอุจจาระมีสีดำคล้ำและเหนียวคล้ายยางมะตอย (melena — อุจจาระดำจากเลือดที่ถูกย่อย)',
+    '<u>2 ชั่วโมงก่อนมา รพ.</u> — คลื่นไส้รุนแรง และอาเจียนออกมาเป็นเลือดสด (hematemesis — อาเจียนเป็นเลือด) 2 ครั้ง ปริมาณรวมประมาณ 2 ชามแกง',
+
+    h('SYMPTOM PROFILE (ลักษณะของอาการ)'),
+    '<u>Onset (การเริ่มต้น)</u> — เกิดขึ้นเฉียบพลัน',
+    '<u>Location (ตำแหน่ง)</u> — ปวดบริเวณใต้ลิ้นปี่ (epigastrium)',
+    '<u>Characteristics (ลักษณะอาการ)</u> — ปวดแสบ (burning pain) และแน่นท้อง',
+    '<u>Aggravating factors (ปัจจัยกระตุ้น)</u> — อาการปวดสัมพันธ์กับการรับประทานอาหาร',
+    '<u>Severity (ความรุนแรง)</u> — pain score 7/10 <span class="ref">(ระดับ 0–10)</span> · มีอาการหน้ามืดขณะเปลี่ยนท่า (syncope / orthostasis — หน้ามืดเป็นลมจากการเปลี่ยนท่า)',
+
+    h('ASSOCIATED SYMPTOMS (อาการร่วม)'),
+    'ใจสั่น กระวนกระวาย และกระหายน้ำมาก (thirsty)',
+    'เวียนศีรษะและหน้ามืด',
 
     h('PAST MEDICAL HISTORY (ประวัติการเจ็บป่วยในอดีต)'),
-    'Hypertension (ความดันโลหิตสูง) — เป็นมา 5 ปี, ขาดยาบ้างเป็นบางครั้ง',
-    'Dyslipidemia (ไขมันในเลือดผิดปกติ) — เป็นมา 5 ปี',
-    'ปฏิเสธประวัติโรคตับแข็ง (cirrhosis) · ปฏิเสธประวัติแผลในทางเดินอาหาร (peptic ulcer) ในอดีต · ปฏิเสธประวัติการผ่าตัด',
+    'มีประวัติเป็นโรคแผลในกระเพาะอาหาร (Peptic Ulcer Disease — PUD) มาก่อน',
+    'ประวัติการผ่าตัดใหญ่ในช่องท้อง — <span class="ref">ไม่มีข้อมูลในเอกสารอ้างอิง</span>',
 
-    h('CURRENT MEDICATIONS (รายการยาที่ใช้อยู่)'),
-    'Amlodipine (แอมโลดิพีน — ยาลดความดันกลุ่ม CCB) 10 mg — 1 เม็ด วันละครั้ง หลังอาหาร — ทานสม่ำเสมอ',
-    'Simvastatin (ซิมวาสแตติน — ยาลดไขมัน) 20 mg — 1 เม็ด ก่อนนอน — ทานสม่ำเสมอ',
-    'Ibuprofen (ไอบูโพรเฟน — NSAIDs) 400 mg — 1 เม็ด วันละ 3 ครั้ง หลังอาหาร — ซื้อทานเอง ต่อเนื่อง 14 วัน (รวม 1,200 mg/วัน)',
-    'ยาขับลม / ยาน้ำลดกรด (antacid) — ทานเมื่อมีอาการ — เริ่มใช้เมื่อ 5 วันก่อน',
+    h('CURRENT MEDICATIONS (ประวัติการใช้ยา)'),
+    'Ibuprofen (ไอบูโพรเฟน — ยาแก้ปวดกลุ่ม NSAIDs) 400 mg — 1 เม็ด หลังอาหาร 3 มื้อ เมื่อมีอาการปวดข้อ',
+    'ระยะเวลา — รับประทานต่อเนื่องมาประมาณ 2 สัปดาห์ เนื่องจากปวดข้อเข่า',
+    'Adherence (ความร่วมมือในการใช้ยา) — รับประทานยาตามสั่ง แต่ไม่ได้รับประทานยาลดกรดควบคู่ด้วย',
 
-    h('ALLERGIES (ประวัติการแพ้ยา)'),
-    'No Known Drug Allergy — NKDA (ไม่มีประวัติแพ้ยาที่ทราบ)',
+    h('ALLERGIES (ประวัติการแพ้ยาและอาหาร)'),
+    '<span class="ref">ไม่มีข้อมูลในเอกสารอ้างอิง</span>',
 
     h('SOCIAL HISTORY (ประวัติส่วนตัวและพฤติกรรม)'),
-    'สูบบุหรี่ 0.5 ซอง/วัน ต่อเนื่องมา 15 ปี',
-    'ดื่มแอลกอฮอล์ — เบียร์ 2–3 ขวด/ครั้ง สัปดาห์ละ 2–3 วัน',
-    'กาแฟกระป๋องวันละ 2–3 กระป๋อง',
-    'ทานอาหารไม่ตรงเวลา ชอบอาหารรสจัด · พักผ่อนไม่เป็นเวลาจากการทำงาน'
+    'ดื่มสุรา — มีประวัติดื่มเป็นประจำ (chronic alcohol abuse — การดื่มสุราเรื้อรัง)',
+    'สูบบุหรี่ — <span class="ref">ไม่มีข้อมูลในเอกสารอ้างอิง</span>',
+    'อาชีพและลักษณะงาน — <span class="ref">ไม่มีข้อมูลในเอกสารอ้างอิง</span>'
 ];
 
 // ── OBJECTIVE ───────────────────────────────────────────────────
 // Every numeric result carries its reference range inline so the learner can
-// judge normal-versus-abnormal without leaving the chart. The interpretation
-// of those numbers is deliberately absent — that is the exercise.
+// judge normal-versus-abnormal without leaving the chart. The dataset's Status
+// column (Low / High / Normal) and its "[ต่ำ/Hypotension]"-style flags are not
+// reproduced — grading each value is the exercise, and Steps 1 and 5 ask for it.
 const objective = [
     h('VITAL SIGNS (สัญญาณชีพ)'),
-    'BP (ความดันโลหิต) 88/55 mmHg <span class="ref">(ปกติ 90/60–140/90)</span>',
+    'BP (ความดันโลหิต) 90/60 mmHg <span class="ref">(ปกติ 90/60–140/90)</span>',
     'HR (อัตราการเต้นหัวใจ) 115 ครั้ง/นาที <span class="ref">(ปกติ 60–100)</span>',
     'RR (อัตราการหายใจ) 22 ครั้ง/นาที <span class="ref">(ปกติ 12–20)</span>',
-    'BT (อุณหภูมิร่างกาย) 36.8 °C <span class="ref">(ปกติ 36.5–37.5)</span>',
-    'SpO₂ (ความอิ่มตัวออกซิเจนในเลือด) 96% ที่อากาศห้อง <span class="ref">(ปกติ ≥ 95)</span>',
-    'GCS (ระดับความรู้สึกตัว) E4V5M6 = 15 <span class="ref">(เต็ม 15)</span>',
+    'Temp (อุณหภูมิร่างกาย) 36.5 °C <span class="ref">(ปกติ 36.5–37.5)</span>',
+    'SpO₂ (ความอิ่มตัวออกซิเจนในเลือด) 96% ที่อากาศห้อง (room air) <span class="ref">(ปกติ ≥ 95)</span>',
 
     h('PHYSICAL EXAMINATION (ผลตรวจร่างกาย)'),
-    '<u>General (ลักษณะทั่วไป)</u> — ผู้ป่วยดูป่วยหนักและวิตกกังวล ซีด เหงื่อออกมาก (diaphoretic) ปลายมือปลายเท้าเย็น',
-    '<u>HEENT (ศีรษะ ตา หู จมูก คอ)</u> — เยื่อบุตาขาวซีดมาก, ตาไม่เหลือง (anicteric sclera — ไม่มีภาวะดีซ่าน), เยื่อบุช่องปากแห้ง',
-    '<u>Cardiovascular (ระบบหัวใจและหลอดเลือด)</u> — หัวใจเต้นเร็ว จังหวะสม่ำเสมอ ไม่มีเสียงฟู่ (no murmurs), ชีพจรส่วนปลายเบา',
-    '<u>Abdomen (หน้าท้อง)</u> — หน้าท้องนุ่ม กดเจ็บเล็กน้อยถึงปานกลางบริเวณใต้ลิ้นปี่ ไม่พบ guarding (กล้ามเนื้อหน้าท้องเกร็ง) และไม่พบ rebound tenderness (เจ็บเมื่อปล่อยมือ)',
-    '<u>Bowel sounds (เสียงการเคลื่อนไหวลำไส้)</u> — hyperactive (เร็วกว่าปกติ), 8 ครั้ง/นาที <span class="ref">(ปกติ 5–30 ครั้ง/นาที)</span>',
-    '<u>Liver / Spleen (ตับและม้าม)</u> — ไม่พบตับหรือม้ามโต, ไม่พบ spider nevi (เส้นเลือดฝอยรูปใยแมงมุม), caput medusae (เส้นเลือดขอดรอบสะดือ) หรือ palmar erythema (ฝ่ามือแดง) ซึ่งเป็นอาการแสดงของโรคตับเรื้อรัง',
-    '<u>Digital rectal exam (ตรวจทางทวารหนัก)</u> — พบอุจจาระดำเหนียว (melena) ติดถุงมือ กลิ่นเหม็นคาวจัด',
+    '<u>General appearance (ลักษณะทั่วไป)</u> — ผู้ป่วยชายดูอ่อนเพลียมาก (lethargic — ซึมอ่อนแรง) สีหน้าวิตกกังวล กระวนกระวาย ซีดอย่างเห็นได้ชัด (marked pallor) ผิวหนังเย็นและมีเหงื่อซึม (cold clammy skin)',
+    '<u>Abdomen (หน้าท้อง)</u> — ท้องนุ่ม (soft) กดเจ็บเล็กน้อยบริเวณใต้ลิ้นปี่ (mild epigastric tenderness) ไม่พบท้องอืด',
+    '<u>Bowel sounds (เสียงการเคลื่อนไหวลำไส้)</u> — hyperactive bowel sounds (เสียงลำไส้เคลื่อนไหวมากกว่าปกติ)',
+    '<u>Rectal examination (ตรวจทางทวารหนัก)</u> — พบอุจจาระสีดำเหนียวคล้ายยางมะตอย (melena) ติดถุงมือ',
+    '<u>Negative findings (สิ่งที่ตรวจไม่พบ)</u> — ไม่พบตัวตาเหลือง (no jaundice — ไม่มีภาวะดีซ่าน) · ไม่พบท้องมาน (no ascites — ไม่มีน้ำในช่องท้อง)',
+    'ไม่พบจุดเลือดออกตามตัว (no petechiae / ecchymosis — จ้ำเลือดใต้ผิวหนัง)',
+    'ไม่พบหน้าท้องแข็งเกร็ง (no guarding — กล้ามเนื้อหน้าท้องเกร็ง) และไม่พบ rebound tenderness (เจ็บเมื่อปล่อยมือ)',
 
     h('LABORATORY — Complete Blood Count / CBC (ความสมบูรณ์ของเม็ดเลือด)'),
-    'Hb (ฮีโมโกลบิน) 6.8 g/dL <span class="ref">(ปกติ 13–17)</span>',
-    'Hct (ความเข้มข้นเลือด) 21% <span class="ref">(ปกติ 39–50)</span>',
-    'WBC (เม็ดเลือดขาว) 11,200 /µL <span class="ref">(ปกติ 4,000–10,000)</span>',
-    'Platelet (เกล็ดเลือด) 220,000 /µL <span class="ref">(ปกติ 150,000–400,000)</span>',
+    'Hb (ฮีโมโกลบิน) 8.5 g/dL <span class="ref">(ปกติ 13.0–18.0 ในเพศชาย)</span>',
+    'Hct (ความเข้มข้นเลือด) 26% <span class="ref">(ปกติ 40–54)</span>',
+    'WBC (เม็ดเลือดขาว) 12,500 cells/mm³ <span class="ref">(ปกติ 4,000–11,000)</span>',
+    'Platelet count (เกล็ดเลือด) 250,000 cells/mm³ <span class="ref">(ปกติ 150,000–450,000)</span>',
 
     h('LABORATORY — Renal Function (การทำงานของไต)'),
     'BUN (ยูเรียไนโตรเจนในเลือด) 35 mg/dL <span class="ref">(ปกติ 7–20)</span>',
-    'Cr (ครีอะตินิน) 1.25 mg/dL <span class="ref">(ปกติ 0.7–1.2)</span>',
-    'BUN/Cr ratio (อัตราส่วน BUN ต่อ Cr) = 28:1 <span class="ref">(ปกติ 10–20:1)</span>',
+    'Cr (ครีอะตินิน) 1.0 mg/dL <span class="ref">(ปกติ 0.6–1.2)</span>',
 
-    h('LABORATORY — Electrolytes (เกลือแร่ในเลือด, mEq/L)'),
-    'Na (โซเดียม) 138 <span class="ref">(ปกติ 135–145)</span> · K (โพแทสเซียม) 3.8 <span class="ref">(ปกติ 3.5–5.0)</span>',
-    'Cl (คลอไรด์) 102 <span class="ref">(ปกติ 98–107)</span> · HCO₃ (ไบคาร์บอเนต) 20 <span class="ref">(ปกติ 22–28)</span>',
+    h('LABORATORY — Coagulation & Liver Function (การแข็งตัวของเลือดและการทำงานของตับ)'),
+    'PT / INR (ค่าการแข็งตัวของเลือด) 1.1 <span class="ref">(ปกติ 0.8–1.2)</span>',
+    'AST / ALT (เอนไซม์ตับ) 28 / 32 U/L <span class="ref">(ปกติ < 40)</span>',
 
-    h('LABORATORY — Liver Function & Coagulation (การทำงานของตับและการแข็งตัวของเลือด)'),
-    'Albumin (อัลบูมิน) 3.8 g/dL <span class="ref">(ปกติ 3.5–5.0)</span>',
-    'PT (เวลาการแข็งตัวของเลือด) 11.5 วินาที <span class="ref">(ปกติ 11–13.5)</span> · INR 1.0 <span class="ref">(ปกติ 0.8–1.2)</span>',
-
-    h('URGENT ENDOSCOPY / EGD (ส่องกล้องทางเดินอาหารส่วนต้นแบบเร่งด่วน)'),
-    'พบแผลเดี่ยวขนาด 2.0 ซม. ลักษณะ punch-out ulcer (แผลขอบชัดเหมือนถูกเจาะ) บริเวณ duodenal bulb (ลำไส้เล็กส่วนต้น)',
-    'มีเลือดซึมออกจากแผลตลอดเวลา (active oozing — เลือดออกแบบซึมต่อเนื่อง)',
-    'ไม่พบหลอดเลือดโป่งพองในหลอดอาหารหรือกระเพาะอาหาร (no varices)',
-    'Forrest classification (การแบ่งระดับแผลเลือดออกจากการส่องกล้อง): Grade Ib'
+    h('DIAGNOSTIC INVESTIGATION — EGD (การส่องกล้องทางเดินอาหารส่วนต้น)'),
+    'Esophagogastroduodenoscopy (EGD) — ส่องกล้องด่วนภายใน 24 ชั่วโมง หลังได้รับสารน้ำทดแทนจนสัญญาณชีพเริ่มคงที่',
+    '<u>Finding (สิ่งที่ตรวจพบ)</u> — แผลเดี่ยว (solitary ulcer) บริเวณ gastric antrum (ส่วนปลายของกระเพาะอาหาร) ขนาดเส้นผ่านศูนย์กลางประมาณ 1.5 ซม.',
+    '<u>Stigmata of hemorrhage (ลักษณะเลือดออกที่ก้นแผล)</u> — Forrest Class Ib (active oozing bleeding — เลือดค่อย ๆ ซึมออกจากฐานแผล)',
+    '<u>Sakita classification (ระยะของแผลตามการส่องกล้อง)</u> — Active Stage (A1) ขอบแผลบวมแดงชัดเจน ฐานแผลมีลิ่มเลือดปกคลุมบางส่วน',
+    '<u>H. pylori test</u> — Rapid Urease Test (RUT — การตรวจหาเชื้อจากชิ้นเนื้อ) ให้ผล Positive'
 ];
 
 // ── VITALS HUD ──────────────────────────────────────────────────
-// Value + reference range only. The source document's "UI Status Flag"
-// column (🚨 CRITICAL LOW / TACHYCARDIA) and its clinical interpretation are
-// omitted: Step 1 asks the learner to identify shock and severe anaemia, and
-// a red "CRITICAL"/"TACHYCARDIA" badge answers that question for them.
+// Value + reference range only. The dataset's status flags (Hypotension /
+// Tachycardia / Tachypnea) are omitted: Step 1 asks the learner to identify
+// shock and severe anaemia, and a red "TACHYCARDIA" badge answers that.
 const vitals = [
-    { label: 'BP',    value: '88/55', unit: 'mmHg',  ref: '90/60–140/90' },
-    { label: 'HR',    value: '115',   unit: 'bpm',   ref: '60–100' },
-    { label: 'RR',    value: '22',    unit: '/min',  ref: '12–20' },
-    { label: 'Temp',  value: '36.8',  unit: '°C',    ref: '36.5–37.5' },
-    { label: 'SpO₂',  value: '96%',   unit: 'RA',    ref: '≥ 95' },
-    { label: 'Hb',    value: '6.8',   unit: 'g/dL',  ref: '13–17' },
-    { label: 'GCS',   value: '15',    unit: 'E4V5M6', ref: '15' }
+    { label: 'BP',   value: '90/60',  unit: 'mmHg',      ref: '90/60–140/90' },
+    { label: 'HR',   value: '115',    unit: 'bpm',       ref: '60–100' },
+    { label: 'RR',   value: '22',     unit: '/min',      ref: '12–20' },
+    { label: 'Temp', value: '36.5',   unit: '°C',        ref: '36.5–37.5' },
+    { label: 'SpO₂', value: '96%',    unit: 'RA',        ref: '≥ 95' },
+    { label: 'Hb',   value: '8.5',    unit: 'g/dL',      ref: '13.0–18.0' },
+    { label: 'Hct',  value: '26',     unit: '%',         ref: '40–54' }
 ];
 
 // ── REFERENCE (ข้อมูลอ้างอิง) ────────────────────────────────────
@@ -191,7 +199,7 @@ const vitals = [
 // for them. It never states the diagnosis for this patient.
 const reference = {
     title: 'ข้อมูลอ้างอิง (Clinical Reference)',
-    note: 'อ้างอิง ACG Guideline 2021, ACG H. pylori 2024, DiPiro และแนวทางเวชปฏิบัติของประเทศไทย พ.ศ. 2557',
+    note: 'อ้างอิงแนวทางเวชปฏิบัติภาวะเลือดออกในทางเดินอาหารส่วนต้นของประเทศไทย พ.ศ. 2557, GI Emergencies, Peptic Ulcer Disease Guideline (Froedtert) และ 2024 ACG Clinical Guideline: Treatment of H. pylori Infection',
     sections: [
         {
             id: 'abbrev',
@@ -204,13 +212,13 @@ const reference = {
                 ['PPI', 'Proton Pump Inhibitor — ยายับยั้งการหลั่งกรดในกระเพาะอาหาร'],
                 ['H2RA', 'Histamine-2 Receptor Antagonist — ยาลดกรดกลุ่มต้านฮิสตามีนชนิดที่ 2'],
                 ['EGD', 'Esophagogastroduodenoscopy — การส่องกล้องทางเดินอาหารส่วนต้น'],
+                ['RUT', 'Rapid Urease Test — การตรวจหาเชื้อ H. pylori จากชิ้นเนื้อขณะส่องกล้อง'],
+                ['GBS', 'Glasgow-Blatchford Score — คะแนนประเมินความจำเป็นในการรักษาแบบเร่งด่วน'],
                 ['Melena', 'อุจจาระดำเหนียวคล้ายยางมะตอย จากเลือดที่ถูกย่อยในทางเดินอาหาร'],
                 ['Hematemesis', 'การอาเจียนเป็นเลือด'],
-                ['MAP', 'Mean Arterial Pressure — ความดันเลือดแดงเฉลี่ย'],
-                ['PRBC', 'Packed Red Blood Cells — เม็ดเลือดแดงเข้มข้นสำหรับให้เลือด'],
-                ['FFP', 'Fresh Frozen Plasma — พลาสมาแช่แข็งสด'],
+                ['Antrum', 'ส่วนปลายของกระเพาะอาหารก่อนต่อกับลำไส้เล็กส่วนต้น'],
+                ['Crystalloid', 'สารน้ำที่ให้ทางหลอดเลือดดำ เช่น NSS หรือ Lactated Ringer\'s'],
                 ['DTP', 'Drug Therapy Problem — ปัญหาจากการใช้ยา'],
-                ['CrCl', 'Creatinine Clearance — ค่าการกำจัดครีอะตินิน ใช้ปรับขนาดยาตามการทำงานของไต'],
                 ['NPO', 'Nil Per Os — งดน้ำและอาหารทางปาก']
             ]
         },
@@ -224,51 +232,64 @@ const reference = {
                 rows: [
                     ['Peptic Ulcer Bleeding (แผลในทางเดินอาหารมีเลือดออก)',
                      'ใช้ NSAIDs หรือแอสไพริน, ปวดใต้ลิ้นปี่, ถ่ายดำ',
-                     'BUN/Cr > 20:1, Hb ต่ำ',
+                     'BUN สูงขึ้นโดยที่ Cr ปกติ, Hb ต่ำ',
                      'พบแผล ulcer พร้อม Forrest stigmata'],
                     ['Variceal Bleeding (เลือดออกจากหลอดเลือดขอด)',
                      'ดื่มสุราเรื้อรัง, มีประวัติตับแข็ง',
-                     'LFT ผิดปกติ, เกล็ดเลือดต่ำ, INR สูง, มีน้ำในช่องท้อง',
+                     'AST/ALT ผิดปกติ, เกล็ดเลือดต่ำ, INR สูง, ตัวตาเหลือง, ท้องมาน',
                      'พบ varices ในหลอดอาหาร'],
                     ['Mallory-Weiss Tear (แผลฉีกรอยต่อหลอดอาหาร)',
                      'อาเจียนรุนแรง (retching) นำมาก่อนอาเจียนเป็นเลือด',
                      'สัญญาณชีพมักคงที่',
                      'พบรอยฉีกที่รอยต่อหลอดอาหารกับกระเพาะ'],
-                    ['Erosive Gastritis / Stress Ulcer (กระเพาะอักเสบจากภาวะเครียดวิกฤต)',
-                     'ผู้ป่วยวิกฤตใน ICU, ติดเชื้อในกระแสเลือด, ใส่เครื่องช่วยหายใจ',
-                     'มีอวัยวะล้มเหลวอื่นร่วม',
-                     'พบแผลตื้นหลายจุดกระจาย']
+                    ['Gastric Perforation (แผลทะลุ)',
+                     'ปวดท้องรุนแรงเฉียบพลัน',
+                     'หน้าท้องแข็งเกร็ง (guarding) และ rebound tenderness',
+                     'พบลมรั่วในช่องท้องจากภาพรังสี']
                 ]
             }
         },
         {
+            id: 'resuscitation',
+            title: 'การกู้ชีพและเป้าหมายการรักษาระยะแรก',
+            icon: '🚑',
+            rows: [
+                ['ลำดับแรกสุด', 'Initial assessment and resuscitation — ประเมินและกู้ชีพก่อนเสมอ เมื่อผู้ป่วยมาด้วย hematemesis หรือ melena'],
+                ['Airway', 'ดูแลระบบทางเดินหายใจเพื่อป้องกันการสำลักเลือดเข้าปอด (aspiration)'],
+                ['สารน้ำที่ใช้', 'Isotonic crystalloid เช่น 0.9% NSS หรือ Lactated Ringer\'s ทางหลอดเลือดดำ'],
+                ['เป้าหมายความดัน', 'Systolic BP ≥ 100 mmHg'],
+                ['เป้าหมายระดับ Hb', 'รักษาให้อยู่ในช่วง 9–10 g/dL ในกรณีเลือดออกรุนแรง'],
+                ['ก่อนทำหัตถการ', 'ต้องทำ risk stratification เพื่อแยกระดับความเร่งด่วนในการส่องกล้อง']
+            ]
+        },
+        {
             id: 'risk',
-            title: 'เกณฑ์แบ่งกลุ่มเสี่ยงและการให้เลือด',
+            title: 'เกณฑ์ประเมินความรุนแรง (Risk Stratification)',
             icon: '📊',
             rows: [
-                ['BUN/Cr ratio', 'ค่ามากกว่า 20:1 เป็นตัวบ่งชี้ของเลือดออกในทางเดินอาหารส่วนต้น เกิดจากการย่อยและดูดซึมโปรตีนจากเลือดในลำไส้เล็ก ร่วมกับภาวะ prerenal azotaemia'],
-                ['Glasgow-Blatchford Score', 'GBS > 1 = กลุ่มเสี่ยงสูง ต้องรับไว้ในโรงพยาบาลและส่องกล้องภายใน 24 ชม. · GBS = 0 = กลุ่มเสี่ยงต่ำ พิจารณาดูแลแบบผู้ป่วยนอกได้'],
-                ['Forrest Ia / Ib', 'เลือดพุ่ง / เลือดซึม — กลุ่มเสี่ยงสูงต่อการเลือดออกซ้ำ ต้องได้ high-dose IV PPI ต่อเนื่อง 72 ชม.'],
-                ['Forrest IIa / IIb / IIc', 'เห็นหลอดเลือดโผล่ / มีลิ่มเลือดเกาะ / มีจุดสีคล้ำ — ความเสี่ยงลดหลั่นลงมาตามลำดับ'],
+                ['Glasgow-Blatchford Score (GBS)', 'ใช้ตัดสินว่าผู้ป่วยจำเป็นต้องได้รับการรักษา (intervention) เช่น ส่องกล้องด่วนหรือให้เลือดหรือไม่ · GBS > 0 ถือว่ามีความเสี่ยงและต้องการการจัดการทางการแพทย์'],
+                ['องค์ประกอบที่ทำให้ GBS สูง', 'BUN สูง, Hb < 13.0 g/dL (เพศชาย), Systolic BP < 110 mmHg, Pulse ≥ 100 ครั้ง/นาที, melena, syncope, ภาวะตับหรือหัวใจล้มเหลว'],
+                ['การให้คะแนน GBS (โดยย่อ)', 'BUN > 25 = 6 คะแนน · Hb < 10 g/dL = 6 คะแนน · SBP 90–99 = 2 คะแนน · Pulse ≥ 100 = 1 คะแนน · melena = 1 คะแนน · syncope = 2 คะแนน'],
+                ['Forrest Ia / Ib', 'เลือดพุ่ง / เลือดซึม — กลุ่มเสี่ยงสูงต่อการเลือดออกซ้ำ ต้องทำ endoscopic hemostasis ทันที'],
+                ['Forrest IIa / IIb / IIc', 'เห็นหลอดเลือดโผล่ / มีลิ่มเลือดเกาะ / มีจุดสีคล้ำ — ความเสี่ยงลดหลั่นลงตามลำดับ · Forrest Ia ถึง IIa จัดเป็นกลุ่มที่ต้องห้ามเลือดผ่านกล้อง'],
                 ['Forrest III', 'ก้นแผลสะอาด — ความเสี่ยงเลือดออกซ้ำต่ำที่สุด'],
-                ['Restrictive transfusion', 'ให้ PRBC เมื่อ Hb < 7 g/dL เป้าหมายหลังให้ 7–9 g/dL — ลดอัตราการเสียชีวิตเมื่อเทียบกับการให้เลือดมากเกินจำเป็น'],
-                ['Liberal transfusion', 'ให้เมื่อ Hb < 8 g/dL เฉพาะผู้ป่วยที่มีโรคหลอดเลือดหัวใจอยู่เดิม']
+                ['อายุ', 'อายุ ≥ 60 ปี จัดเป็นปัจจัยเสี่ยงสูงต่อการเลือดออกซ้ำและการเสียชีวิต']
             ]
         },
         {
             id: 'pharm',
-            title: 'ขนาดยาและแนวทางการรักษา',
+            title: 'ขนาดยาและแนวทางการรักษาด้วยยา',
             icon: '💊',
             rows: [
-                ['High-dose IV PPI', 'Pantoprazole หรือ Omeprazole 80 mg IV bolus ตามด้วย 8 mg/ชม. หยดต่อเนื่อง 72 ชม. — เป้าหมายคือรักษา pH ในกระเพาะให้ ≥ 6.0 เพื่อไม่ให้ลิ่มเลือดสลาย'],
-                ['Fluid resuscitation', 'Isotonic crystalloid (0.9% NSS หรือ Lactated Ringer\'s) 1–2 ลิตร IV bolus เป้าหมาย MAP ≥ 65 mmHg — D5W ไม่ใช้เพราะไม่เพิ่มปริมาตรในหลอดเลือด'],
-                ['Pre-endoscopy prokinetic', 'Erythromycin 250 mg IV ก่อนส่องกล้อง 20–60 นาที เพื่อไล่เลือดค้างในกระเพาะและเพิ่มทัศนวิสัย'],
-                ['Tranexamic acid', 'ปัจจุบัน "ไม่แนะนำ" ใน non-variceal UGIB — ไม่ลดอัตราการเสียชีวิตและเพิ่มความเสี่ยงลิ่มเลือดอุดตัน'],
-                ['Somatostatin / Octreotide', 'ใช้สำหรับเลือดออกจากหลอดเลือดขอด (variceal) ไม่ใช่แผล peptic ulcer'],
-                ['H. pylori eradication', 'Bismuth Quadruple Therapy 14 วัน = PPI (ขนาดมาตรฐาน วันละ 2 ครั้ง) + Bismuth subsalicylate + Metronidazole + Tetracycline'],
-                ['การตรวจ H. pylori', 'UBT และ stool antigen ให้ผลลบปลอมได้ ต้องหยุด PPI ≥ 2 สัปดาห์ และหยุดยาปฏิชีวนะ ≥ 4 สัปดาห์ก่อนตรวจ · serology แยกไม่ได้ระหว่างติดเชื้อในอดีตกับปัจจุบัน'],
-                ['การกลับมาใช้ NSAIDs', 'หยุดทันทีในระยะเลือดออก · หากจำเป็นต้องใช้ต่อ ให้เปลี่ยนเป็น COX-2 selective inhibitor ร่วมกับ PPI ทุกวัน'],
-                ['ผลข้างเคียง PPI ระยะยาว', 'ภาวะแมกนีเซียมต่ำ, ขาดวิตามิน B12, เพิ่มความเสี่ยงติดเชื้อ C. difficile และปอดอักเสบ']
+                ['IV PPI — ชื่อยา', 'Omeprazole หรือ Pantoprazole — เป็นยาหลักสำหรับ non-variceal bleeding'],
+                ['IV PPI — loading dose', '80 mg IV bolus (สำหรับ Omeprazole)'],
+                ['IV PPI — continuous infusion', 'หยดต่อเนื่อง 8 mg/ชั่วโมง นาน 72 ชั่วโมง หลังห้ามเลือดผ่านกล้องสำเร็จ'],
+                ['IV PPI — ทางเลือกอื่น', 'PPI แบบรับประทานขนาด double dose (เช่น 40 mg วันละ 2 ครั้ง) พิจารณาในรายที่ความเสี่ยงต่ำ'],
+                ['PPI — อาการไม่พึงประสงค์', 'ที่พบบ่อยคือ ปวดศีรษะ (headache) และท้องเสีย (diarrhea)'],
+                ['Octreotide / Somatostatin', 'ใช้สำหรับเลือดออกจากหลอดเลือดโป่งพอง (variceal bleeding) เท่านั้น ไม่ใช่แผล peptic ulcer'],
+                ['H. pylori — first-line', 'Standard Triple Therapy: PPI ขนาดมาตรฐาน + Amoxicillin 1 g + Clarithromycin 500 mg รับประทานวันละ 2 ครั้ง'],
+                ['H. pylori — ระยะเวลา', 'ให้ยานาน 14 วัน เพื่อผลการกำจัดเชื้อที่ดีที่สุด'],
+                ['NSAIDs', 'ต้องหยุดยาที่เป็นสาเหตุ (offending agent) ทันทีในระยะที่มีเลือดออก']
             ]
         },
         {
@@ -290,6 +311,7 @@ const reference = {
 };
 
 // ── STAGES ──────────────────────────────────────────────────────
+// The 13 blueprint steps mapped onto the four-stage BLAZE arc.
 const stages = {
     stage_1_data: {
         title: 'DATA (รวบรวมข้อมูล)',
@@ -299,271 +321,265 @@ const stages = {
         }
     },
 
-    stage_2_emergency: {
-        title: 'EMERGENCY RESPONSE & STABILIZATION',
+    stage_2_assessment: {
+        title: 'ASSESSMENT (วิเคราะห์ปัญหา)',
         steps: {
             step_1_problem_list: step(
-                'จากข้อมูลประวัติและการตรวจร่างกายเบื้องต้น จงระบุปัญหาสำคัญของผู้ป่วยรายนี้',
+                'จากข้อมูลประวัติ (S) และผลตรวจร่างกาย/Lab (O) จงระบุรายการปัญหา (Problem List) ของผู้ป่วยรายนี้ในระดับการวินิจฉัย',
                 'shock',
                 [
-                    ok('A', 'Acute Upper GI Bleeding'),
-                    ok('B', 'Hemodynamic Instability (Shock)'),
-                    ok('C', 'Severe Anemia'),
-                    ok('D', 'NSAIDs Overuse (Ibuprofen 1,200 mg/day)'),
-                    no('E', 'Chronic Liver Disease / Cirrhosis'),
-                    no('F', 'Mallory-Weiss Tear'),
-                    no('G', 'Acute Pancreatitis')
+                    ok('A', 'Hypovolemic Shock (ภาวะช็อกจากการเสียเลือด)'),
+                    ok('B', 'Acute Upper GI Bleeding (เลือดออกในทางเดินอาหารส่วนต้นเฉียบพลัน)'),
+                    ok('C', 'NSAID-induced Peptic Ulcer Disease (แผลในกระเพาะจากยากลุ่ม NSAIDs)'),
+                    ok('D', 'H. pylori infection (การติดเชื้อเอชไพโลไร)'),
+                    no('E', 'ปวดเข่าเรื้อรังเป็นปัญหาลำดับแรกที่ต้องจัดการ'),
+                    no('F', 'Hematemesis และ Melena คือรายการปัญหาที่สมบูรณ์แล้ว'),
+                    no('G', 'อายุ 62 ปี และค่า BUN สูง คือรายการปัญหาหลัก')
                 ],
-                'ผู้ป่วยมีสัญญาณชีพไม่คงที่ (BP < 90/60 mmHg) ร่วมกับมีเลือดออกชัดเจน จึงต้องระบุทั้งปัญหาเฉียบพลัน (bleeding/shock) และสาเหตุ (NSAIDs) เพื่อวางแผนการรักษา',
+                'ปัญหาที่คุกคามชีวิตที่สุดคือ hypovolemic shock (BP 90/60, HR 115) ซึ่งมีสาเหตุจาก acute UGIB โดยมีพยาธิสภาพคือ PUD ที่สัมพันธ์กับการใช้ Ibuprofen ร่วมกับการติดเชื้อ H. pylori (RUT positive)',
                 {
-                    correct: 'ถูกต้องทั้งหมด — ปัญหาที่ต้องจัดการคือ acute UGIB, ภาวะ shock, ภาวะซีดรุนแรง และการใช้ NSAIDs ขนาดสูงต่อเนื่องซึ่งเป็นสาเหตุ ส่วน cirrhosis ถูกคัดออกจาก LFT/albumin ปกติ, Mallory-Weiss ถูกคัดออกจากตำแหน่งแผลที่ duodenal bulb และไม่มีประวัติ retching',
-                    partial: 'ตอบถูกบางส่วน — ทบทวนว่าปัญหาใดเป็นภาวะเฉียบพลันที่คุกคามชีวิต และปัญหาใดคือสาเหตุที่ทำให้เกิดแผล',
-                    incorrect: 'ยังไม่ถูกต้อง — พิจารณาทั้งภาวะเลือดออก, ความไม่คงที่ของระบบไหลเวียน, ระดับ Hb และประวัติการใช้ยา'
+                    correct: 'ถูกต้อง — problem list ที่ดีต้องเรียงจากภาวะที่คุกคามชีวิตลงมาหาสาเหตุ: shock → acute UGIB → NSAID-induced PUD → H. pylori infection',
+                    partial: 'ตอบถูกบางส่วน — ทบทวนว่าข้อใดคือ "อาการแสดง" และข้อใดคือ "การวินิจฉัย" ที่ต้องนำมาเขียนใน problem list',
+                    incorrect: 'ยังไม่ถูกต้อง — Hematemesis และ Melena เป็นเพียงอาการและอาการแสดง ไม่ใช่การสรุปปัญหาในระดับการวินิจฉัย'
                 }),
 
-            step_2_etiology: step(
-                'ปัจจัยใดต่อไปนี้ "ส่งเสริม" ให้เกิดความรุนแรงของโรคในผู้ป่วยรายนี้',
+            step_2_drps: step(
+                'เมื่อวิเคราะห์การใช้ยา Ibuprofen 400 mg วันละ 3 ครั้งของผู้ป่วยรายนี้ ข้อใดคือปัญหาจากการใช้ยา (DRPs) ที่ส่งผลโดยตรงต่อการเข้าโรงพยาบาลครั้งนี้',
                 'pain',
                 [
-                    ok('A', 'การใช้ Ibuprofen ต่อเนื่องนาน 14 วัน'),
-                    ok('B', 'พฤติกรรมการสูบบุหรี่'),
-                    ok('C', 'การดื่มแอลกอฮอล์'),
-                    ok('D', 'การทานอาหารไม่ตรงเวลาและรสจัด'),
-                    ok('E', 'การดื่มกาแฟกระป๋องวันละ 2–3 กระป๋อง'),
-                    no('F', 'ประวัติโรคเบาหวาน (Diabetes Mellitus)'),
-                    no('G', 'การใช้ยา Amlodipine')
+                    ok('A', 'Safety — ผู้ป่วยเกิดอาการไม่พึงประสงค์จากยา (Adverse Drug Reaction) นำไปสู่ภาวะเลือดออก'),
+                    no('B', 'Indication — ผู้ป่วยใช้ยาโดยไม่มีข้อบ่งชี้ทางการแพทย์ที่ชัดเจน'),
+                    no('C', 'Effectiveness — ขนาดของ Ibuprofen ต่ำเกินไปทำให้คุมปวดไม่ได้'),
+                    no('D', 'Adherence — ผู้ป่วยลืมรับประทานยาทำให้เกิดแผลในกระเพาะอาหาร'),
+                    no('E', 'Dosage Too High — ขนาดยาสูงเกินขนาดสูงสุดต่อวันของ Ibuprofen'),
+                    no('F', 'Unnecessary Drug Therapy — ยานี้ไม่จำเป็นเลยตั้งแต่ต้น'),
+                    no('G', 'Drug Interaction — เกิดอันตรกิริยากับยาลดกรดที่ผู้ป่วยใช้อยู่')
                 ],
-                'การรักษา PUD ให้ได้ผลดีต้องจัดการทั้งสาเหตุหลัก (NSAIDs) และปัจจัยกระตุ้นทาง lifestyle เพื่อป้องกันการกลับเป็นซ้ำ',
+                'NSAIDs (Ibuprofen) ยับยั้งการสร้าง prostaglandin ซึ่งทำหน้าที่ปกป้องเยื่อบุทางเดินอาหาร ทำให้เกิดแผลและเลือดออกได้ ขนาด 1,200 mg/วัน ถือเป็นขนาดปกติ แต่ผลเสียต่อเยื่อบุทางเดินอาหารไม่ได้ลดลงตามประสิทธิภาพการแก้ปวด',
                 {
-                    correct: 'ถูกต้อง — Ibuprofen ทำลายเยื่อบุโดยตรงและยับยั้ง prostaglandin ส่วนบุหรี่ แอลกอฮอล์ คาเฟอีน และอาหารรสจัด/ไม่ตรงเวลา ล้วนเพิ่มการหลั่งกรดหรือชะลอการหายของแผล ผู้ป่วยไม่มีประวัติเบาหวาน และ amlodipine ไม่ใช่ปัจจัยเสี่ยงของ PUD',
-                    partial: 'ตอบถูกบางส่วน — ทบทวน social history ของผู้ป่วยให้ครบทุกข้อ',
-                    incorrect: 'ยังไม่ถูกต้อง — กลับไปอ่าน social history และ medication history อีกครั้ง'
+                    correct: 'ถูกต้อง — นี่คือ DRP ด้านความปลอดภัย: ผู้ป่วยมีข้อบ่งชี้ในการใช้ยาจริง ใช้ยาถูกขนาด แต่เกิดอาการไม่พึงประสงค์จนต้องเข้าโรงพยาบาล',
+                    partial: 'ตอบถูกบางส่วน — ทบทวนว่าผู้ป่วยมีข้อบ่งชี้ในการใช้ยาหรือไม่ และใช้ยาในขนาดที่เหมาะสมหรือไม่',
+                    incorrect: 'ยังไม่ถูกต้อง — ผู้ป่วยรับประทานยาตามสั่งและมีข้อบ่งชี้ (ปวดข้อเข่า) ปัญหาจึงไม่ได้อยู่ที่ข้อบ่งชี้ ขนาดยา หรือความร่วมมือ'
                 }),
 
-            step_3_resuscitation: step(
-                'ในขณะที่ BP 88/55 mmHg ท่านควรดำเนินการกู้สัญญาณชีพ (resuscitation) ด้วยวิธีใด',
+            step_3_etiology: step(
+                'ปัจจัยใดที่ทำงานร่วมกัน (synergistic effect) จนทำให้เกิดแผล Forrest Ib ในผู้ป่วยรายนี้',
+                'pain',
+                [
+                    ok('A', 'การยับยั้งเอนไซม์ COX จาก Ibuprofen'),
+                    ok('B', 'การทำลายเยื่อบุกระเพาะอาหารโดยตรงจากเชื้อ H. pylori'),
+                    no('C', 'การดื่มสุราเรื้อรังทำให้หลอดเลือดในหลอดอาหารโป่งพอง'),
+                    no('D', 'ภาวะไตเสื่อมทำให้การขับกรดลดลงและเกิดแผลในกระเพาะ'),
+                    no('E', 'ภาวะเกล็ดเลือดต่ำทำให้เลือดหยุดยาก'),
+                    no('F', 'การขาดวิตามินจากการรับประทานอาหารไม่ครบหมู่'),
+                    no('G', 'ภาวะการแข็งตัวของเลือดผิดปกติจากค่า INR ที่สูง')
+                ],
+                'ทั้ง NSAIDs และ H. pylori เป็นปัจจัยเสี่ยงหลักของ PUD โดย NSAIDs ลดกลไกป้องกันเยื่อบุผ่านการยับยั้ง prostaglandin ส่วน H. pylori กระตุ้นการอักเสบจนเกิดแผลลึกถึงชั้นหลอดเลือด',
+                {
+                    correct: 'ถูกต้อง — เป็นการทำงานร่วมกันของสองกลไก: ลดการป้องกันเยื่อบุ และเพิ่มการทำลายเยื่อบุ',
+                    partial: 'ตอบถูกบางส่วน — ผู้ป่วยรายนี้มีปัจจัยก่อโรคมากกว่าหนึ่งอย่างที่เสริมฤทธิ์กัน',
+                    incorrect: 'ยังไม่ถูกต้อง — ทบทวนค่า platelet, INR และ Cr ของผู้ป่วยก่อนเลือกกลไกที่เกี่ยวข้อง'
+                }),
+
+            step_4_risk_factor: step(
+                'ข้อใดคือปัจจัยของผู้ป่วยรายนี้ที่บ่งชี้ว่ามีโอกาส "เลือดออกซ้ำ (rebleeding)" หรือ "เสียชีวิต" สูงตามเกณฑ์ CPG',
                 'shock',
                 [
-                    ok('A', 'ให้ 0.9% Normal Saline 1–2 ลิตร IV bolus'),
-                    ok('B', "ให้ Lactated Ringer's IV bolus"),
-                    ok('C', 'เปิดเส้นเลือดด้วยเข็มขนาดใหญ่ (large bore IV #16–18)'),
-                    no('D', 'ให้ 5% Dextrose in Water (D5W) IV infusion'),
-                    no('E', 'ให้ Dopamine drip เพื่อเพิ่มความดันทันที'),
-                    ok('F', 'สั่งงดน้ำและอาหาร (NPO)'),
-                    fat('G', 'ให้รับประทานยาเม็ดลดกรด PPI ทันที',
-                        'ผู้ป่วยอยู่ในภาวะ shock และมี active bleeding ร่วมกับเพิ่งอาเจียนเป็นเลือด การให้ยาทางปากในจังหวะนี้เสี่ยงต่อการสำลักเข้าปอด และยารูปแบบรับประทานไม่สามารถควบคุมกรดได้ทันในภาวะเลือดออกเฉียบพลัน')
+                    ok('A', 'อายุ 62 ปี (≥ 60 ปี)'),
+                    ok('B', 'Systolic BP 90 mmHg (ภาวะช็อก)'),
+                    ok('C', 'Heart rate 115 ครั้ง/นาที (> 100)'),
+                    ok('D', 'ประวัติการใช้ยากลุ่ม NSAIDs'),
+                    no('E', 'อาการแสบท้องบริเวณลิ้นปี่'),
+                    no('F', 'ค่า WBC สูงเล็กน้อย'),
+                    no('G', 'ค่า AST/ALT ที่อยู่ในเกณฑ์ปกติ')
                 ],
-                'เป้าหมายแรกคือรักษาระดับ MAP ≥ 65 mmHg ด้วย isotonic crystalloids ก่อนดำเนินการรักษาอื่น D5W ไม่เพิ่ม intravascular volume และ vasopressor ต้องรอให้เติมสารน้ำเพียงพอก่อน',
+                'ตามเกณฑ์ความเสี่ยงสูง ได้แก่ อายุ ≥ 60 ปี, มีภาวะช็อก (SBP < 100 mmHg, pulse > 100 ครั้ง/นาที) และมีโรคร่วมหรือใช้ยาที่มีความเสี่ยง',
                 {
-                    correct: 'ถูกต้อง — เปิดเส้นใหญ่, ให้ isotonic crystalloid bolus และงดน้ำงดอาหารเพื่อเตรียมส่องกล้อง',
-                    partial: 'ตอบถูกบางส่วน — ทบทวนว่าสารน้ำชนิดใดเพิ่ม intravascular volume ได้จริง และลำดับก่อนหลังของ vasopressor',
-                    incorrect: 'ยังไม่ถูกต้อง — เริ่มจากการเข้าถึงหลอดเลือดและชนิดของสารน้ำที่เหมาะสมกับภาวะ hypovolemia'
+                    correct: 'ถูกต้อง — ปัจจัยเสี่ยงที่นับได้ตามเกณฑ์คือ อายุ ภาวะช็อก ชีพจรเร็ว และการใช้ยาที่ทำให้เลือดออก',
+                    partial: 'ตอบถูกบางส่วน — ทบทวนเกณฑ์ตัวเลขของ SBP และ pulse ที่ใช้แบ่งกลุ่มเสี่ยง',
+                    incorrect: 'ยังไม่ถูกต้อง — อาการแสบท้องและค่า WBC ที่สูงเล็กน้อยไม่ได้อยู่ในเกณฑ์ทำนายการเลือดออกซ้ำ'
                 }),
 
-            step_4_ppi_acute: step(
-                'ท่านควรสั่งใช้ยา Proton Pump Inhibitor ในรูปแบบใดสำหรับผู้ป่วยรายนี้',
-                'stabilized',
+            step_5_severity: step(
+                'จากข้อมูล BUN 35, Hb 8.5, SBP 90, HR 115, melena และมีอาการหน้ามืด ร่วมกับผลส่องกล้อง ข้อใดสรุประดับความรุนแรงได้ถูกต้อง',
+                'shock',
                 [
-                    ok('A', 'Pantoprazole 80 mg IV bolus'),
-                    ok('B', 'ตามด้วย Pantoprazole 8 mg/hr continuous IV infusion นาน 72 ชม.'),
-                    ok('C', 'Omeprazole 80 mg IV bolus'),
-                    ok('D', 'ตามด้วย Omeprazole 8 mg/hr continuous IV infusion นาน 72 ชม.'),
-                    no('E', 'Omeprazole 40 mg IV ทุก 12 ชม.'),
-                    no('F', 'Famotidine 20 mg IV ทุก 12 ชม.'),
-                    fat('G', 'สั่ง Ibuprofen 400 mg PRN สำหรับอาการปวดท้อง',
-                        'Ibuprofen คือสาเหตุของแผลและเลือดออกในผู้ป่วยรายนี้ การสั่งซ้ำในช่วง active bleeding จะยับยั้ง prostaglandin และการทำงานของเกล็ดเลือดต่อไป ทำให้เลือดออกไม่หยุดและผู้ป่วยเสียชีวิตได้')
+                    ok('A', 'Glasgow-Blatchford Score = 18 จัดอยู่ในกลุ่มความเสี่ยงสูงมาก'),
+                    ok('B', 'Forrest Ib (active oozing) จัดอยู่ในกลุ่มที่ต้องห้ามเลือดผ่านกล้อง'),
+                    no('C', 'GBS = 5 จัดอยู่ในกลุ่มความเสี่ยงปานกลาง'),
+                    no('D', 'Forrest IIa (non-bleeding visible vessel)'),
+                    no('E', 'Rockall Score = 0 จัดอยู่ในกลุ่มความเสี่ยงต่ำ'),
+                    no('F', 'GBS = 0 สามารถดูแลแบบผู้ป่วยนอกได้'),
+                    no('G', 'Forrest III (ก้นแผลสะอาด) ความเสี่ยงเลือดออกซ้ำต่ำ')
                 ],
-                'High-dose IV PPI ช่วยรักษาระดับ intragastric pH > 6.0 ซึ่งจำเป็นต่อความคงตัวของลิ่มเลือดในแผล PUD ส่วน H2RA ไม่มีประสิทธิภาพเทียบเท่าใน UGIB',
+                'คำนวณ GBS: BUN 35 (> 25) = 6, Hb 8.5 (< 10) = 6, SBP 90 = 2, HR 115 = 1, melena = 1, syncope = 2 รวม 18 คะแนน ซึ่งสูงมาก (GBS > 0 ต้องรับไว้ในโรงพยาบาลและส่องกล้องด่วน) ส่วน Forrest Ib คือแผลที่มีเลือดซึม จัดเป็นกลุ่มความเสี่ยงสูง',
                 {
-                    correct: 'ถูกต้อง — bolus ตามด้วย continuous infusion 72 ชม. คือสูตรมาตรฐานสำหรับแผลความเสี่ยงสูง',
-                    partial: 'ตอบถูกบางส่วน — ทบทวนว่าเหตุใดสูตร intermittent จึงยังไม่เหมาะกับแผลกลุ่มความเสี่ยงสูง',
-                    incorrect: 'ยังไม่ถูกต้อง — ทบทวนขนาดยา รูปแบบการบริหาร และระยะเวลาของ high-dose IV PPI'
+                    correct: 'ถูกต้อง — ทั้งคะแนน GBS และระดับ Forrest ชี้ไปทางเดียวกันว่าเป็นกลุ่มเสี่ยงสูงที่ต้องรักษาเร่งด่วน',
+                    partial: 'ตอบถูกบางส่วน — ลองคำนวณ GBS ทีละองค์ประกอบจากตารางเกณฑ์ในข้อมูลอ้างอิง',
+                    incorrect: 'ยังไม่ถูกต้อง — กลับไปดูค่า BUN, Hb, SBP, HR และอาการหน้ามืด แล้วเทียบกับเกณฑ์การให้คะแนน GBS'
                 })
         }
     },
 
-    stage_3_procedural: {
-        title: 'PROCEDURAL OPTIMIZATION',
+    stage_3_plan: {
+        title: 'PLAN (วางแผนการรักษา)',
         steps: {
-            step_5_pre_egd: step(
-                'เพื่อเพิ่มทัศนวิสัยในการส่องกล้องและลดโอกาสต้องส่องกล้องซ้ำ ท่านควรพิจารณาสิ่งใด "ก่อน" ส่งผู้ป่วยทำ EGD',
-                'pain',
-                [
-                    ok('A', 'Erythromycin 250 mg IV drip ใน 20–30 นาที'),
-                    no('B', 'ให้ Metoclopramide 10 mg IV'),
-                    ok('C', 'ล้างกระเพาะด้วย NSS ผ่านสาย NG tube'),
-                    no('D', 'ให้ Tranexamic acid IV'),
-                    ok('E', 'งดน้ำและอาหาร (NPO) อย่างน้อย 6–8 ชม.'),
-                    no('F', 'ให้ Somatostatin 250 mcg IV bolus'),
-                    fat('G', 'สั่งทำ EGD ทันทีโดยที่ BP ยังเป็น 88/55 mmHg',
-                        'ห้ามส่งผู้ป่วยเข้าหัตถการขณะที่ระบบไหลเวียนยังไม่คงที่ การให้ยาระงับความรู้สึกในภาวะ hypovolemic shock เสี่ยงต่อภาวะหยุดหายใจหรือหัวใจหยุดเต้นระหว่างส่องกล้อง ต้องกู้สัญญาณชีพให้ได้ก่อนเสมอ')
-                ],
-                'Erythromycin เป็น motilin agonist ที่ช่วยลดเลือดค้างในกระเพาะ ทำให้เห็นตำแหน่งแผลชัดและลดการทำ second-look endoscopy ส่วน tranexamic acid ปัจจุบันไม่แนะนำใน non-variceal UGIB และ somatostatin ใช้ในกรณี variceal bleed',
-                {
-                    correct: 'ถูกต้อง — prokinetic ที่มีหลักฐานรองรับคือ erythromycin ร่วมกับการล้างกระเพาะและ NPO',
-                    partial: 'ตอบถูกบางส่วน — ทบทวนว่ายาใดมีหลักฐานเฉพาะสำหรับการเพิ่มทัศนวิสัยใน UGIB',
-                    incorrect: 'ยังไม่ถูกต้อง — แยกให้ออกระหว่างยาที่ใช้ใน variceal bleed กับ non-variceal bleed'
-                }),
-
-            step_6_transfusion: step(
-                'จากผล Hb 6.8 g/dL และอาการทางคลินิก ท่านจะเลือกกลยุทธ์การให้เลือดอย่างไร',
+            step_6_current_therapy: step(
+                'ในระยะเฉียบพลันที่มีเลือดออกรุนแรงนี้ ท่านจะจัดการกับยา Ibuprofen ของผู้ป่วยอย่างไร',
                 'shock',
                 [
-                    ok('A', 'ให้ PRBC เพื่อรักษาเป้าหมาย Hb ในช่วง 7–9 g/dL'),
-                    no('B', 'ให้ PRBC จนกว่า Hb จะ > 10 g/dL'),
-                    ok('C', 'เจาะ Hb/Hct ซ้ำทุก 4–6 ชม. หลังให้เลือด'),
-                    ok('D', 'ให้เลือดเมื่อ Hb < 7 g/dL ในผู้ป่วยที่ไม่มีโรคหัวใจ'),
-                    ok('E', 'พิจารณาเป้าหมาย Hb > 8 g/dL หากผู้ป่วยมีประวัติ ischemic heart disease'),
-                    no('F', 'ให้เกล็ดเลือด (platelet) ทันทีเพราะเสียเลือดมาก'),
-                    no('G', 'ให้ Fresh Frozen Plasma ทันทีเพื่อป้องกันการแข็งตัวของเลือดผิดปกติ')
+                    ok('A', 'หยุดการใช้ยาทันที'),
+                    ok('B', 'พิจารณาเลี่ยงไปใช้ยาแก้ปวดกลุ่มอื่นที่ไม่ใช่ NSAIDs ในอนาคต'),
+                    no('C', 'ลดขนาดยาเหลือ 200 mg วันละครั้ง'),
+                    no('D', 'เปลี่ยนเป็น NSAIDs ตัวอื่นที่ระคายกระเพาะน้อยกว่าในขนาดเดิม'),
+                    no('E', 'หยุดยาชั่วคราว 3 วัน แล้วกลับมาใช้ต่อเมื่อเลือดหยุด'),
+                    no('F', 'ให้ใช้ต่อได้แต่เพิ่มยาลดกรดชนิดรับประทานควบคู่'),
+                    fat('G', 'ให้รับประทานต่อได้ แต่ต้องเปลี่ยนเป็นรับประทานหลังอาหารทันทีพร้อมน้ำเยอะ ๆ',
+                        'การรับประทานหลังอาหารลดการระคายเคืองเฉพาะที่ได้บ้าง แต่ไม่ป้องกันการยับยั้ง prostaglandin ในระดับระบบ ซึ่งเป็นกลไกที่ทำให้เกิดแผล การให้ยาต่อในขณะที่มีเลือดออกทำให้แผลไม่หายและเลือดออกรุนแรงขึ้นจนผู้ป่วยเสียชีวิต')
                 ],
-                'Restrictive transfusion strategy (threshold Hb < 7 g/dL) ลดอัตราการเสียชีวิตและลดภาวะแทรกซ้อนจากการให้เลือดมากเกินไป ผู้ป่วยรายนี้มี platelet 220,000 /µL และ INR 1.0 จึงไม่มีข้อบ่งชี้ให้ platelet หรือ FFP',
+                'ต้องหยุดยาที่เป็นสาเหตุของแผล (offending agent) ทันที การให้รับประทานต่อในขณะที่มีเลือดออกจะทำให้แผลไม่หายและเลือดออกรุนแรงขึ้นจนเสียชีวิตได้',
                 {
-                    correct: 'ถูกต้อง — restrictive strategy พร้อมติดตาม Hb ซ้ำ และมีข้อยกเว้นเฉพาะผู้ที่มีโรคหัวใจ',
-                    partial: 'ตอบถูกบางส่วน — ทบทวน threshold และเป้าหมายหลังให้เลือด รวมถึงข้อบ่งชี้ของ platelet และ FFP',
-                    incorrect: 'ยังไม่ถูกต้อง — กลับไปดูค่า platelet และ INR ของผู้ป่วยก่อนตัดสินใจให้ส่วนประกอบของเลือด'
+                    correct: 'ถูกต้อง — หยุดยาต้นเหตุทันที และวางแผนทางเลือกที่ปลอดภัยกว่าสำหรับอาการปวดข้อในระยะยาว',
+                    partial: 'ตอบถูกบางส่วน — การจัดการยาต้นเหตุต้องครอบคลุมทั้งระยะเฉียบพลันและแผนระยะยาว',
+                    incorrect: 'ยังไม่ถูกต้อง — ยาตัวนี้คือสาเหตุของแผลและเลือดออก การลดขนาดหรือเปลี่ยนวิธีรับประทานยังไม่เพียงพอ'
                 }),
 
-            step_7_post_egd: step(
-                'หลังส่องกล้องพบ duodenal ulcer และหยุดเลือดด้วย adrenaline injection ร่วมกับ hemoclip สำเร็จแล้ว ท่านควรวางแผนการใช้ PPI ต่อไปอย่างไร',
+            step_7_new_therapy: step(
+                'ยาชนิดใดคือ first-line ที่มีหลักฐานสนับสนุนสูงสุดในการรักษาแผล PUD ที่มีเลือดออก (non-variceal bleeding) ในผู้ป่วยรายนี้',
                 'stabilized',
                 [
-                    ok('A', 'ให้ high-dose PPI IV infusion ต่อเนื่องจนครบ 72 ชม.'),
-                    no('B', 'เปลี่ยนเป็น PPI รูปแบบรับประทานทันทีหลังทำหัตถการเสร็จ'),
-                    no('C', 'ปรับยาเป็น Pantoprazole 40 mg IV ทุก 12 ชม.'),
-                    ok('D', 'รักษาระดับ intragastric pH > 6.0 อย่างต่อเนื่อง'),
-                    ok('E', 'หลังครบ 72 ชม. เปลี่ยนเป็น oral PPI double dose (bid) นาน 6–8 สัปดาห์'),
-                    no('F', 'ให้ Sucralfate suspension เสริมเพื่อเคลือบแผล'),
-                    fat('G', 'เริ่มให้ Aspirin 300 mg ทันทีเพื่อป้องกันหลอดเลือดหัวใจอุดตัน',
-                        'ผู้ป่วยเพิ่งหยุดเลือดจากแผล Forrest Ib ซึ่งเป็นกลุ่มเสี่ยงสูงต่อการเลือดออกซ้ำที่สุด การเริ่ม antiplatelet ภายใน 24 ชม. แรกโดยไม่มีข้อบ่งชี้เร่งด่วนทางหัวใจ ทำให้เลือดออกซ้ำรุนแรงจนเสียชีวิตได้')
+                    ok('A', 'IV Proton Pump Inhibitor เช่น Omeprazole หรือ Pantoprazole'),
+                    no('B', 'Oral antacid แบบน้ำ 30 mL ทุก 2 ชั่วโมง'),
+                    no('C', 'IV Ranitidine 50 mg ทุก 8 ชั่วโมง'),
+                    no('D', 'IV Octreotide infusion'),
+                    no('E', 'IV Tranexamic acid เพื่อช่วยห้ามเลือด'),
+                    no('F', 'Sucralfate suspension รับประทานเพื่อเคลือบแผล'),
+                    no('G', 'IV Vitamin K เพื่อแก้ไขการแข็งตัวของเลือด')
                 ],
-                'แผลที่มี high-risk stigmata ต้องได้ high-dose PPI IV (bolus 80 mg + infusion 8 mg/hr) นาน 72 ชม. เพราะเป็นช่วงที่มีโอกาสเลือดออกซ้ำสูงที่สุด จากนั้นจึงเปลี่ยนเป็น oral เพื่อสมานแผล',
+                'IV PPI มีประสิทธิภาพสูงสุดในการคงระดับ pH ในกระเพาะอาหารให้ > 6 เพื่อให้ลิ่มเลือดคงตัว ส่วน Octreotide ใช้สำหรับเลือดออกที่มาจากหลอดเลือดโป่งพอง (variceal bleeding) เท่านั้น',
                 {
-                    correct: 'ถูกต้อง — คง IV infusion ครบ 72 ชม. ก่อน แล้วจึงต่อด้วย oral PPI เพื่อสมานแผล',
-                    partial: 'ตอบถูกบางส่วน — ทบทวนว่าเมื่อใดจึงเปลี่ยนจาก IV เป็น oral ได้',
-                    incorrect: 'ยังไม่ถูกต้อง — ทบทวนความสัมพันธ์ระหว่าง Forrest classification กับระยะเวลาของ IV PPI'
+                    correct: 'ถูกต้อง — IV PPI คือยาหลักของ non-variceal bleeding',
+                    partial: 'ตอบถูกบางส่วน — ทบทวนว่ายาใดออกฤทธิ์ได้เร็วและแรงพอที่จะคง pH > 6 ในภาวะเลือดออกเฉียบพลัน',
+                    incorrect: 'ยังไม่ถูกต้อง — แยกให้ออกระหว่างยาที่ใช้ใน variceal bleeding กับ non-variceal bleeding และทบทวนค่า INR ของผู้ป่วย'
                 }),
 
-            step_8_monitoring: step(
-                'ระหว่างที่ผู้ป่วยได้รับ PPI infusion ท่านต้องติดตามสิ่งใดที่บ่งชี้ว่า "การรักษาล้มเหลว" หรือเกิด re-bleeding',
+            step_8_goal: step(
+                'เป้าหมายการจัดการ (goal of therapy) ใน 24 ชั่วโมงแรกสำหรับผู้ป่วยรายนี้คือข้อใด',
                 'stabilized',
                 [
-                    ok('A', 'ความดันโลหิตลดลงและชีพจรเร็วขึ้น'),
-                    ok('B', 'อาเจียนออกมาเป็นเลือดสดอีกครั้ง'),
-                    no('C', 'ถ่ายอุจจาระเป็นยางมะตอยต่อเนื่องหลายวัน'),
-                    ok('D', 'ระดับ Hb/Hct ลดลงมากกว่า 10% จากค่าตั้งต้นหลังให้เลือด'),
-                    ok('E', 'มีอาการเจ็บหน้าอกเฉียบพลัน'),
-                    no('F', 'ติดตามระดับ Magnesium ในเลือดในระยะเฉียบพลันนี้'),
-                    no('G', 'ระดับ BUN กลับมาเป็นปกติอย่างรวดเร็ว')
+                    ok('A', 'Hemodynamic stability — Systolic BP ≥ 100 mmHg'),
+                    ok('B', 'รักษาระดับ Hb ให้อยู่ในช่วง 9–10 g/dL'),
+                    ok('C', 'หยุดเลือดออกจากแผลให้สำเร็จ'),
+                    no('D', 'กำจัดเชื้อ H. pylori ให้หมดภายใน 24 ชั่วโมง'),
+                    no('E', 'ทำให้ค่า BUN กลับมาเป็นปกติภายใน 24 ชั่วโมง'),
+                    no('F', 'ทำให้ผู้ป่วยกลับไปรับประทาน Ibuprofen ได้ตามปกติ'),
+                    no('G', 'ลด pain score ให้เหลือ 0/10 เป็นเป้าหมายอันดับแรก')
                 ],
-                'การติดตามสัญญาณชีพและระดับ Hb สำคัญที่สุดใน 72 ชม. แรก melena สามารถค้างอยู่ในลำไส้ได้หลายวันหลังเลือดหยุดแล้ว จึงไม่ใช่ตัวบ่งชี้ re-bleeding ที่ดีเท่า hematemesis ส่วน BUN ที่ลดลงคือสัญญาณที่ดี ไม่ใช่ความล้มเหลว',
+                'เป้าหมายแรกคือการกู้ชีพ (resuscitation) เพื่อให้สัญญาณชีพคงที่ ส่วนเป้าหมาย Hb สำหรับผู้ป่วยที่มีเลือดออกรุนแรงคือ 9–10 g/dL การกำจัดเชื้อเป็นเป้าหมายระยะยาว ไม่ใช่ของ 24 ชั่วโมงแรก',
                 {
-                    correct: 'ถูกต้อง — สัญญาณชีพ, hematemesis ซ้ำ, Hb ที่ลดลง และอาการเจ็บหน้าอกจากภาวะซีด คือสิ่งที่ต้องเฝ้าระวัง',
-                    partial: 'ตอบถูกบางส่วน — ระวังตัวเลือกที่ดูเหมือนอาการแย่ลงแต่จริง ๆ แล้วเป็นสัญญาณที่ดีขึ้น',
-                    incorrect: 'ยังไม่ถูกต้อง — แยกให้ออกระหว่างอาการที่บ่งชี้เลือดออกซ้ำ กับอาการที่ค้างจากเลือดออกครั้งเดิม'
+                    correct: 'ถูกต้อง — เป้าหมายใน 24 ชั่วโมงแรกคือความคงที่ของระบบไหลเวียน ระดับ Hb ตามเป้า และการห้ามเลือดสำเร็จ',
+                    partial: 'ตอบถูกบางส่วน — แยกให้ออกระหว่างเป้าหมายเฉียบพลันกับเป้าหมายระยะยาว',
+                    incorrect: 'ยังไม่ถูกต้อง — ทบทวนเป้าหมายตัวเลขของ SBP และ Hb ในข้อมูลอ้างอิงหัวข้อการกู้ชีพ'
                 }),
 
-            step_9_hpylori_testing: step(
-                'ท่านควรตรวจหาการติดเชื้อ H. pylori ในผู้ป่วยรายนี้ในช่วงเวลาใดจึงจะได้ผลแม่นยำที่สุด',
+            step_9_therapeutic_plan: step(
+                'จงเลือกแผนการสั่งยา PPI สำหรับผู้ป่วยแผล Forrest Ib รายนี้ หลังทำ endoscopic hemostasis สำเร็จ',
                 'stabilized',
                 [
-                    ok('A', 'ตรวจ Rapid Urease Test จากชิ้นเนื้อระหว่างส่องกล้อง'),
-                    no('B', 'ตรวจ Urea Breath Test ขณะที่ยังได้รับ PPI infusion'),
-                    no('C', 'เจาะเลือดตรวจ H. pylori antibody (serology)'),
-                    ok('D', 'ตรวจ UBT หรือ stool antigen หลังหยุด PPI อย่างน้อย 2 สัปดาห์'),
-                    ok('E', 'ตรวจ UBT หรือ stool antigen หลังหยุดยาปฏิชีวนะอย่างน้อย 4 สัปดาห์'),
-                    ok('F', 'หากผล RUT ระหว่างส่องกล้องเป็นลบ ให้ตรวจซ้ำด้วยวิธีอื่นหลังพ้นระยะเฉียบพลัน'),
-                    no('G', 'ไม่จำเป็นต้องตรวจเพราะมีประวัติใช้ NSAIDs ชัดเจนอยู่แล้ว')
+                    ok('A', 'Omeprazole 80 mg IV bolus ทันที'),
+                    ok('B', 'ตามด้วย continuous infusion 8 mg/ชั่วโมง นาน 72 ชั่วโมง'),
+                    no('C', 'Omeprazole 20 mg รับประทานวันละครั้ง'),
+                    no('D', 'Pantoprazole 40 mg IV push วันละ 2 ครั้ง'),
+                    no('E', 'Omeprazole 80 mg IV bolus ครั้งเดียวแล้วหยุด'),
+                    no('F', 'ให้ยาแบบ on-demand เมื่อผู้ป่วยมีอาการปวดท้อง'),
+                    no('G', 'IV PPI นาน 24 ชั่วโมงแล้วเปลี่ยนเป็นรูปแบบรับประทานทันที')
                 ],
-                'ผู้ป่วย PUD ทุกรายต้องได้รับการตรวจ H. pylori แม้จะมีสาเหตุอื่นร่วมด้วย PPI และยาปฏิชีวนะทำให้เกิดผลลบปลอม ส่วน serology แยกไม่ได้ระหว่างการติดเชื้อในอดีตกับปัจจุบัน',
+                'เป็น high-dose PPI regimen มาตรฐานสำหรับแผลที่มีความเสี่ยงสูง (Forrest I, IIa) เพื่อป้องกันการเลือดออกซ้ำในช่วง 72 ชั่วโมงแรกซึ่งมีโอกาสเลือดออกซ้ำสูงที่สุด',
                 {
-                    correct: 'ถูกต้อง — ตรวจ RUT ระหว่างส่องกล้องก่อน และยืนยันซ้ำหลังหยุดยาตามระยะเวลาที่กำหนด',
-                    partial: 'ตอบถูกบางส่วน — ทบทวนว่ายาชนิดใดรบกวนผลตรวจ และต้องหยุดนานเท่าใด',
-                    incorrect: 'ยังไม่ถูกต้อง — ทบทวนข้อจำกัดของแต่ละวิธีตรวจในภาวะที่มีเลือดออกและกำลังได้รับ PPI'
+                    correct: 'ถูกต้อง — bolus 80 mg ตามด้วย infusion 8 mg/ชม. ครบ 72 ชั่วโมง คือสูตรมาตรฐานของแผลกลุ่มเสี่ยงสูง',
+                    partial: 'ตอบถูกบางส่วน — สูตรมาตรฐานประกอบด้วยสองส่วนเสมอ คือ loading dose และ continuous infusion',
+                    incorrect: 'ยังไม่ถูกต้อง — ทบทวนขนาดยา รูปแบบการบริหาร และระยะเวลาของ high-dose IV PPI ในข้อมูลอ้างอิง'
                 })
         }
     },
 
-    stage_4_longterm: {
-        title: 'LONG-TERM CARE & DISCHARGE',
+    stage_4_monitoring: {
+        title: 'MONITORING & DISCHARGE (ติดตามและวางแผนต่อเนื่อง)',
         steps: {
-            step_10_eradication: step(
-                'หากผลตรวจยืนยันการติดเชื้อ H. pylori ท่านควรเลือกสูตรยาใดจึงเหมาะสมที่สุดตามแนวทางปัจจุบัน',
+            step_10_efficacy_monitoring: step(
+                'พารามิเตอร์ใด "จำเป็น" ที่ต้องติดตามทุก 4–8 ชั่วโมงในช่วงแรก เพื่อประเมินภาวะเลือดออก',
                 'stabilized',
                 [
-                    ok('A', 'Optimized Bismuth Quadruple Therapy นาน 14 วัน'),
-                    no('B', 'Clarithromycin Triple Therapy นาน 7–10 วัน'),
-                    ok('C', 'PPI ขนาดมาตรฐาน รับประทานวันละ 2 ครั้ง (bid)'),
-                    ok('D', 'Bismuth subsalicylate 300–524 mg วันละ 4 ครั้ง (qid)'),
-                    no('E', 'Levofloxacin Triple Therapy นาน 14 วัน'),
-                    ok('F', 'ย้ำเตือนให้ผู้ป่วยรับประทานยาให้ครบ 14 วันอย่างเคร่งครัด'),
-                    fat('G', 'ให้ Ibuprofen ต่อเนื่องเพื่อลดอาการปวดที่อาจเกิดจากผลข้างเคียงของยาปฏิชีวนะ',
-                        'การให้ NSAIDs ระหว่างกำจัดเชื้อในผู้ป่วยที่เพิ่งมีเลือดออกจากแผล จะทำให้แผลกำเริบและเกิดเลือดออกซ้ำรุนแรง — ยาตัวนี้คือสาเหตุเดิมของเคสนี้')
+                    ok('A', 'Vital signs (BP, HR)'),
+                    ok('B', 'Hematocrit (Hct)'),
+                    ok('C', 'ลักษณะและสีของอุจจาระ หรือเลือดที่ออกจากสาย NG'),
+                    no('D', 'Pain score และการเคลื่อนไหวของข้อเข่า'),
+                    no('E', 'ระดับ Amylase ในเลือด'),
+                    no('F', 'ระดับ Magnesium ในเลือดทุก 4–8 ชั่วโมง'),
+                    no('G', 'ผลตรวจ Urea Breath Test ซ้ำทุกวัน')
                 ],
-                'แนวทางปัจจุบันแนะนำ Bismuth Quadruple Therapy 14 วันเป็นทางเลือกแรก และให้หลีกเลี่ยงการใช้ clarithromycin หรือ levofloxacin แบบ empiric หากไม่มีข้อมูลความไวของเชื้อในพื้นที่',
+                'การติดตาม vital signs และ Hct อย่างใกล้ชิดเป็นตัวบ่งชี้ความสำเร็จของการห้ามเลือดและการให้สารน้ำ ส่วนลักษณะอุจจาระและเลือดจากสาย NG บอกได้ว่ายังมีเลือดออกต่อเนื่องหรือไม่',
                 {
-                    correct: 'ถูกต้อง — BQT 14 วัน พร้อมเน้นย้ำความร่วมมือในการใช้ยา',
-                    partial: 'ตอบถูกบางส่วน — ทบทวนส่วนประกอบทั้งสี่ของสูตร quadruple therapy',
-                    incorrect: 'ยังไม่ถูกต้อง — ทบทวนเหตุผลที่สูตร triple therapy ไม่ใช่ทางเลือกแรกอีกต่อไป'
+                    correct: 'ถูกต้อง — ติดตามระบบไหลเวียน ความเข้มข้นของเลือด และหลักฐานของเลือดที่ยังออกอยู่',
+                    partial: 'ตอบถูกบางส่วน — ทบทวนว่าพารามิเตอร์ใดเปลี่ยนแปลงเร็วพอที่จะจับการเลือดออกซ้ำได้ทัน',
+                    incorrect: 'ยังไม่ถูกต้อง — พารามิเตอร์ที่เลือกต้องสะท้อนภาวะเลือดออกโดยตรง ไม่ใช่อาการปวดข้อหรือผลตรวจที่ใช้เวลานาน'
                 }),
 
-            step_11_secondary_prevention: step(
-                'ผู้ป่วยยังต้องจัดการอาการปวดเมื่อยจากการทำงานในอนาคต ท่านจะแนะนำการใช้ยาแก้ปวดอย่างไรเพื่อป้องกันการเกิดแผลซ้ำ',
+            step_11_adr_monitoring: step(
+                'หากผู้ป่วยได้รับ IV PPI ขนาดสูงต่อเนื่อง 72 ชั่วโมง ข้อใดคืออาการไม่พึงประสงค์ (ADR) ที่ควรระวังและพบบ่อยที่สุด',
                 'stabilized',
                 [
-                    ok('A', 'ใช้ Paracetamol เป็นทางเลือกแรกสำหรับอาการปวดเล็กน้อยถึงปานกลาง'),
-                    ok('B', 'หากจำเป็นต้องใช้ NSAIDs ให้เปลี่ยนเป็น selective COX-2 inhibitor'),
-                    ok('C', 'ใช้ PPI ขนาดมาตรฐานควบคู่ทุกวันหากต้องใช้ NSAIDs ระยะยาว'),
-                    no('D', 'กลับไปใช้ Ibuprofen ขนาดเดิมได้ทันทีหลังแผลหาย'),
-                    ok('E', 'หลีกเลี่ยงการใช้ NSAIDs ร่วมกับ corticosteroids หรือ anticoagulants'),
-                    no('F', 'รับประทานยาแก้ปวดหลังอาหารทันทีและดื่มน้ำตามมาก ๆ'),
-                    fat('G', 'แนะนำให้ซื้อยาชุดแก้ปวดมาทานแทนยาแผนปัจจุบัน',
-                        'ยาชุดมักผสม corticosteroids หรือ NSAIDs ขนาดสูงโดยไม่ระบุส่วนประกอบ ในผู้ป่วยที่เพิ่งมีเลือดออกจากแผลในทางเดินอาหาร คำแนะนำนี้ทำให้เกิดเลือดออกซ้ำรุนแรงและเสียชีวิตได้')
+                    ok('A', 'ปวดศีรษะ (headache)'),
+                    ok('B', 'ท้องเสีย (diarrhea)'),
+                    no('C', 'ไตวายเฉียบพลัน'),
+                    no('D', 'ใจสั่นและมือสั่น'),
+                    no('E', 'ภาวะน้ำตาลในเลือดต่ำ'),
+                    no('F', 'ผมร่วงเฉียบพลัน'),
+                    no('G', 'ความดันโลหิตสูงขึ้นอย่างรุนแรง')
                 ],
-                'ในผู้ป่วยเสี่ยงสูงที่เคยมีแผลเลือดออก หากจำเป็นต้องใช้ NSAIDs แนวทางแนะนำ COX-2 selective inhibitor ร่วมกับ PPI เสมอ การทานหลังอาหารลดการระคายเคืองเฉพาะที่ได้บ้าง แต่ไม่ป้องกันการยับยั้ง prostaglandin ในระดับระบบ',
+                'ปวดศีรษะและท้องเสียเป็นอาการข้างเคียงหลักที่รายงานในยากลุ่ม PPI',
                 {
-                    correct: 'ถูกต้อง — paracetamol เป็นทางเลือกแรก และหากเลี่ยง NSAIDs ไม่ได้ต้องใช้ COX-2 selective ร่วมกับ PPI',
-                    partial: 'ตอบถูกบางส่วน — ทบทวนว่ากลไกใดของ NSAIDs ที่การทานหลังอาหารไม่สามารถป้องกันได้',
-                    incorrect: 'ยังไม่ถูกต้อง — ทบทวนลำดับขั้นของยาแก้ปวดในผู้ป่วยที่มีประวัติแผลเลือดออก'
+                    correct: 'ถูกต้อง — เป็นอาการข้างเคียงที่พบบ่อยที่สุดของยากลุ่ม PPI',
+                    partial: 'ตอบถูกบางส่วน — ยากลุ่มนี้มีอาการข้างเคียงที่พบบ่อยมากกว่าหนึ่งอย่าง',
+                    incorrect: 'ยังไม่ถูกต้อง — ทบทวนหัวข้อ PPI — อาการไม่พึงประสงค์ ในข้อมูลอ้างอิง'
                 }),
 
-            step_12_gastroprotection: step(
-                'หลังหยุด PPI แบบฉีดแล้ว ท่านควรวางแผนการใช้ยาลดกรดต่อเนื่องอย่างไร',
-                'stabilized',
-                [
-                    ok('A', 'ให้ oral PPI ต่อเนื่องนาน 4–8 สัปดาห์เพื่อให้แผลหายสมบูรณ์'),
-                    ok('B', 'พิจารณาให้ PPI ต่อเนื่องระยะยาวหากยังมีความเสี่ยงที่เลี่ยงไม่ได้'),
-                    no('C', 'เปลี่ยนเป็นยากลุ่ม H2RA ได้ทันทีหลังออกจากโรงพยาบาล'),
-                    ok('D', 'แนะนำให้รับประทาน PPI ก่อนอาหารเช้า 30–60 นาที'),
-                    no('E', 'หยุดยาลดกรดทันทีเมื่อไม่มีอาการปวดท้อง'),
-                    ok('F', 'ติดตามภาวะขาดวิตามิน B12 หรือ magnesium หากใช้ยาต่อเนื่องนานกว่า 1 ปี'),
-                    no('G', 'ให้รับประทานยาลดกรดเฉพาะเวลามีอาการ (on-demand) ตั้งแต่วันแรกที่กลับบ้าน')
-                ],
-                'Duodenal ulcer ที่มีเลือดออกต้องการการสมานแผลด้วย PPI นาน 4–8 สัปดาห์ และการบริหารยาก่อนอาหารเป็นสิ่งสำคัญต่อประสิทธิภาพ อาการปวดไม่สัมพันธ์กับการหายของแผลเสมอไป',
-                {
-                    correct: 'ถูกต้อง — ให้ต่อเนื่องจนครบกำหนด บริหารก่อนอาหาร และเฝ้าระวังผลข้างเคียงระยะยาว',
-                    partial: 'ตอบถูกบางส่วน — ทบทวนว่าเหตุใดจึงหยุดยาตามอาการไม่ได้',
-                    incorrect: 'ยังไม่ถูกต้อง — ทบทวนระยะเวลาการรักษาและวิธีบริหารยา PPI ที่ถูกต้อง'
-                }),
-
-            step_13_discharge: step(
-                'ท่านควรให้คำแนะนำเพื่อปรับเปลี่ยนพฤติกรรมและการเฝ้าระวังอาการแก่ผู้ป่วยก่อนกลับบ้านอย่างไร',
+            step_12_patient_education: step(
+                'หัวข้อ counseling ใด "วิกฤต" ที่สุดที่ต้องเน้นย้ำกับผู้ป่วยก่อนจำหน่ายออกจากด่านนี้',
                 'recovered',
                 [
-                    ok('A', 'แนะนำให้เลิกสูบบุหรี่อย่างเด็ดขาด'),
-                    ok('B', 'งดแอลกอฮอล์และเครื่องดื่มที่มีคาเฟอีนปริมาณมาก'),
+                    ok('A', 'งดดื่มสุราอย่างเด็ดขาด'),
+                    ok('B', 'ห้ามซื้อยาแก้ปวดกลุ่ม NSAIDs หรือยาชุดมารับประทานเองโดยไม่ปรึกษาแพทย์หรือเภสัชกร'),
                     ok('C', 'สอนให้สังเกตอาการเตือน เช่น ถ่ายดำ หรืออาเจียนเป็นเลือด'),
-                    ok('D', 'แนะนำให้รับประทานอาหารตรงเวลาและเลี่ยงอาหารรสจัด'),
-                    ok('E', 'อธิบายว่าอุจจาระสีดำจากยาธาตุเหล็กหรือ bismuth ไม่ใช่ภาวะเลือดออก'),
-                    no('F', 'ไม่ต้องมาตรวจติดตามผลหากอาการปกติ'),
-                    fat('G', 'บอกผู้ป่วยว่าโรคนี้หายขาดแล้ว กลับไปทำงานและทานยาแก้ปวดได้ตามปกติทุกอย่าง',
-                        'การให้ความมั่นใจที่ผิดพลาด (false reassurance) ทำให้ผู้ป่วยกลับไปใช้ NSAIDs ซ้ำและละเลยอาการเตือน ผู้ป่วยกลับมาด้วยเลือดออกซ้ำและเสียชีวิต')
+                    no('D', 'แนะนำให้เคี้ยวอาหารให้ละเอียด'),
+                    no('E', 'ให้รับประทานยาลดกรดเฉพาะตอนที่มีอาการปวดท้อง'),
+                    no('F', 'แนะนำให้ดื่มนมก่อนรับประทานยาแก้ปวดทุกครั้ง'),
+                    no('G', 'ไม่ต้องมาตรวจติดตามผลหากไม่มีอาการแล้ว')
                 ],
-                'การปรับเปลี่ยนวิถีชีวิต โดยเฉพาะการหยุดบุหรี่และแอลกอฮอล์ ร่วมกับการรับรู้สัญญาณอันตราย เป็นหัวใจของการป้องกันการเจ็บป่วยซ้ำที่รุนแรง ผู้ป่วย PUD UGIB ทุกรายต้องมีนัดติดตามผล',
+                'ปัจจัยกระตุ้นหลักคือ NSAIDs และแอลกอฮอล์ หากไม่หยุดจะเกิดการเลือดออกซ้ำซึ่งอันตรายถึงชีวิต และผู้ป่วยต้องรู้จักอาการเตือนเพื่อกลับมาโรงพยาบาลได้ทัน',
                 {
-                    correct: 'ถูกต้องทั้งหมด — ครอบคลุมทั้งการปรับพฤติกรรม การเฝ้าระวังอาการเตือน และการอธิบายผลข้างเคียงของยาที่อาจทำให้เข้าใจผิด',
-                    partial: 'ตอบถูกบางส่วน — ทบทวน social history ของผู้ป่วยว่ามีพฤติกรรมใดบ้างที่ต้องแก้ไข',
-                    incorrect: 'ยังไม่ถูกต้อง — คำแนะนำก่อนกลับบ้านต้องครอบคลุมทั้งพฤติกรรม อาการเตือน และการนัดติดตาม'
+                    correct: 'ถูกต้อง — ตัดปัจจัยกระตุ้นทั้งสองอย่าง และทำให้ผู้ป่วยรู้ว่าเมื่อใดต้องกลับมาโรงพยาบาล',
+                    partial: 'ตอบถูกบางส่วน — ทบทวน social history และ medication history ว่ามีพฤติกรรมใดบ้างที่ต้องแก้ไข',
+                    incorrect: 'ยังไม่ถูกต้อง — คำแนะนำที่วิกฤตที่สุดต้องมุ่งไปที่สาเหตุที่ทำให้ผู้ป่วยกลับมาเลือดออกซ้ำได้'
+                }),
+
+            step_13_future_plan: step(
+                'หลังจากหยุดเลือดได้สำเร็จและสัญญาณชีพคงที่ แผนถัดไปที่สำคัญที่สุดคืออะไร',
+                'recovered',
+                [
+                    ok('A', 'เริ่ม eradication therapy สำหรับ H. pylori นาน 14 วัน'),
+                    ok('B', 'ใช้สูตร Standard Triple Therapy (PPI + Amoxicillin 1 g + Clarithromycin 500 mg วันละ 2 ครั้ง)'),
+                    ok('C', 'นัดส่องกล้อง EGD ติดตามผลใน 6–8 สัปดาห์'),
+                    no('D', 'ให้รับประทาน PPI ต่อเนื่องไปตลอดชีวิตโดยไม่ต้องตรวจซ้ำ'),
+                    no('E', 'แนะนำให้ผ่าตัดตัดกระเพาะอาหารออกเพื่อป้องกันมะเร็ง'),
+                    no('F', 'ให้ยาปฏิชีวนะกำจัดเชื้อเพียง 7 วันก็เพียงพอ'),
+                    no('G', 'ไม่ต้องกำจัดเชื้อเพราะมีประวัติใช้ NSAIDs ชัดเจนอยู่แล้ว')
+                ],
+                'การกำจัดเชื้อ H. pylori เป็นหัวใจสำคัญในการลดอัตราการเป็นซ้ำของแผล และแผลที่ gastric antrum ต้องมีการส่องกล้องติดตามการหายของแผลเพื่อคัดกรองมะเร็ง',
+                {
+                    correct: 'ถูกต้อง — กำจัดเชื้อครบ 14 วัน แล้วส่องกล้องซ้ำเพื่อยืนยันว่าแผลหายและคัดกรองมะเร็ง',
+                    partial: 'ตอบถูกบางส่วน — แผนระยะยาวประกอบด้วยทั้งการกำจัดเชื้อ สูตรยาที่ถูกต้อง และการติดตามด้วยการส่องกล้อง',
+                    incorrect: 'ยังไม่ถูกต้อง — ทบทวนสูตรและระยะเวลาของ eradication therapy และเหตุผลที่แผลในกระเพาะต้องส่องกล้องซ้ำ'
                 })
         }
     }
@@ -574,63 +590,65 @@ const caseData = {
     case_id: 'case_001',
     // Bump whenever step ids change, so instructor analytics can tell that
     // older attempts measured a different set of questions.
-    case_version: 2,
+    case_version: 3,
     map_title: 'ด่านที่ 1 · ห้องฉุกเฉิน',
-    map_subtitle: 'ชายไทย 55 ปี มาด้วยถ่ายอุจจาระดำ 2 วัน และอาเจียนเป็นเลือดสด 1 ครั้ง',
+    map_subtitle: 'ชายไทย 62 ปี อาเจียนเป็นเลือดสด และถ่ายอุจจาระดำเหลว 2 ชั่วโมงก่อนมาโรงพยาบาล',
     ward: 'Emergency Room',
     // Revealed on the end-of-case screen only.
-    case_title: 'Acute Non-Variceal Upper GI Bleeding — NSAID-induced Duodenal Ulcer (Forrest Ib)',
+    case_title: 'Acute Upper GI Bleeding from Peptic Ulcer Disease — NSAID + H. pylori, Gastric Antral Ulcer (Forrest Ib)',
     difficulty: 'Advanced',
     tags: ['Gastroenterology', 'Critical Care', 'Pharmacotherapy'],
 
     patient: {
-        name: 'ผู้ป่วยชายไทย',
-        age: 55,
+        name: 'นายวิชัย',
+        age: 62,
         sex: 'M',
-        occupation: 'พนักงานขับรถบรรทุกส่งสินค้าทางไกล',
-        chief_complaint: 'ถ่ายอุจจาระดำเหนียว 2 วัน ร่วมกับอาเจียนเป็นเลือดสด 1 ครั้ง และเวียนศีรษะมาก'
+        // The dataset records occupation as absent; nothing is invented here.
+        occupation: null,
+        chief_complaint: 'อาเจียนเป็นเลือดสีแดงสด และถ่ายอุจจาระเป็นสีดำเหลว 2 ชั่วโมงก่อนมาโรงพยาบาล'
         // `acuity` and `status_tags` are intentionally absent: labels such as
         // "HIGH ACUITY" / "Hypovolemic Shock" / "NSAID use" name the answers
-        // to Step 1 and Step 2 before the learner has reasoned to them.
+        // to Step 1 and Step 3 before the learner has reasoned to them.
     },
 
     vitals,
 
     renal: {
-        weight_kg: 68,
-        height_cm: 168,
-        scr_mg_dl: 1.25,
+        // Body weight is not in the source dataset, so Cockcroft-Gault cannot
+        // be computed and the badge shows "—" rather than a number derived
+        // from an invented weight.
+        weight_kg: null,
+        height_cm: null,
+        scr_mg_dl: 1.0,
         bun_mg_dl: 35,
-        // eGFR is deliberately not authored. Only Scr, BUN and weight are real
-        // measurements here; CrCl is computed by the app from them.
         note: null
     },
 
     dtp: {
-        // Attached to the etiology step, where the learner is already reasoning
+        // Attached to the DRPs step, where the learner is already reasoning
         // about what the drug did to this patient.
-        step_id: 'step_2_etiology',
+        step_id: 'step_2_drps',
         correct_ids: [5],
-        rationale: 'Ibuprofen 1,200 mg/วัน ต่อเนื่อง 14 วัน ทำให้เกิดแผลและเลือดออกในทางเดินอาหาร ซึ่งเป็นอาการไม่พึงประสงค์จากยาที่เกิดขึ้นแล้ว (Adverse Drug Reaction)'
+        rationale: 'Ibuprofen 400 mg วันละ 3 ครั้ง ต่อเนื่อง 2 สัปดาห์ ทำให้เกิดแผลและเลือดออกในทางเดินอาหาร ซึ่งเป็นอาการไม่พึงประสงค์จากยาที่เกิดขึ้นแล้ว (Adverse Drug Reaction) ผู้ป่วยมีข้อบ่งชี้ในการใช้ยาและใช้ตามสั่ง ปัญหาจึงอยู่ที่ความปลอดภัย ไม่ใช่ข้อบ่งชี้หรือความร่วมมือ'
     },
 
     monitoring: {
-        regimen: 'High-dose IV PPI (80 mg bolus → 8 mg/hr infusion 72 ชม.) + isotonic crystalloid resuscitation + PRBC transfusion ตาม restrictive strategy',
+        regimen: 'Fluid resuscitation ด้วย isotonic crystalloid → High-dose IV PPI (Omeprazole 80 mg bolus → 8 mg/ชม. นาน 72 ชม.) → Endoscopic hemostasis ภายใน 24 ชม. → H. pylori eradication 14 วัน',
         efficacy: [
-            { param: 'Hematemesis / melena', target: 'ไม่มีการอาเจียนเป็นเลือดซ้ำ อุจจาระกลับเป็นสีปกติ', when: 'ทุกครั้งที่ถ่ายและทุกเวร' },
-            { param: 'Hb / Hct', target: 'คงที่ในช่วง 7–9 g/dL ไม่ลดต่อเนื่อง', when: 'ทุก 4–6 ชม. หลังให้เลือด' },
-            { param: 'BP / HR', target: 'MAP ≥ 65 mmHg, HR < 100 bpm', when: 'ทุก 15–60 นาทีในช่วงแรก' },
-            { param: 'Urine output', target: '≥ 0.5 mL/kg/hr', when: 'ทุกชั่วโมง' },
-            { param: 'BUN / Cr', target: 'BUN ลดลงเข้าสู่เกณฑ์ปกติ', when: 'ทุก 24 ชม.' },
-            { param: 'ผลกำจัดเชื้อ H. pylori', target: 'UBT หรือ stool antigen เป็นลบ', when: 'หลังหยุด PPI 2 สัปดาห์ / หยุดยาปฏิชีวนะ 4 สัปดาห์' }
+            { param: 'Vital signs (BP / HR)', target: 'Systolic BP ≥ 100 mmHg, HR < 100 ครั้ง/นาที', when: 'ทุก 4–8 ชม. ในช่วงแรก' },
+            { param: 'Hematocrit (Hct)', target: 'ไม่ลดลงต่อเนื่อง สอดคล้องกับ Hb 9–10 g/dL', when: 'ทุก 4–8 ชม.' },
+            { param: 'ลักษณะอุจจาระ / เลือดจากสาย NG', target: 'ไม่มีเลือดสดออกซ้ำ อุจจาระกลับเป็นสีปกติ', when: 'ทุกครั้งที่ถ่ายและทุกเวร' },
+            { param: 'Hemoglobin (Hb)', target: 'คงอยู่ในช่วง 9–10 g/dL', when: 'ทุก 4–8 ชม. หลังให้เลือด' },
+            { param: 'BUN', target: 'ลดลงเข้าสู่เกณฑ์ปกติ (7–20 mg/dL)', when: 'ทุก 24 ชม.' },
+            { param: 'ผลกำจัดเชื้อ H. pylori', target: 'ผลตรวจติดตามเป็นลบ', when: 'หลังครบสูตรยา 14 วัน' }
         ],
         safety: [
-            { param: 'อาการปวดท้องรุนแรง / ท้องแข็งเกร็ง', watch: 'สัญญาณของ perforation — รายงานแพทย์ทันที', when: 'ทุกเวร' },
-            { param: 'เจ็บหน้าอก', watch: 'ภาวะหัวใจขาดเลือดจากภาวะซีดรุนแรง', when: 'ทุกเวร' },
-            { param: 'Serum magnesium และวิตามิน B12', watch: 'ผลข้างเคียงของ PPI เมื่อใช้ต่อเนื่องนานกว่า 1 ปี', when: 'ทุก 6–12 เดือน' },
-            { param: 'สัญญาณติดเชื้อทางเดินอาหารและปอด', watch: 'ความเสี่ยง C. difficile และปอดอักเสบเพิ่มขึ้นจาก PPI', when: 'ทุกวันขณะอยู่โรงพยาบาล' },
+            { param: 'ปวดศีรษะ (headache)', watch: 'อาการไม่พึงประสงค์ที่พบบ่อยที่สุดของ PPI', when: 'ทุกเวรขณะได้รับ infusion' },
+            { param: 'ท้องเสีย (diarrhea)', watch: 'อาการไม่พึงประสงค์ที่พบบ่อยของ PPI', when: 'ทุกเวรขณะได้รับ infusion' },
+            { param: 'ปวดท้องรุนแรง / หน้าท้องแข็งเกร็ง', watch: 'สัญญาณของแผลทะลุ (perforation) — รายงานแพทย์ทันที', when: 'ทุกเวร' },
+            { param: 'อาเจียนเป็นเลือดซ้ำ', watch: 'สัญญาณของการเลือดออกซ้ำ (rebleeding)', when: 'ตลอดเวลา' },
             { param: 'ปฏิกิริยาจากการให้เลือด', watch: 'ไข้ หนาวสั่น ผื่น หายใจลำบาก', when: 'ระหว่างและหลังให้เลือด' },
-            { param: 'ผลข้างเคียงของ BQT', watch: 'คลื่นไส้ รสโลหะในปาก อุจจาระสีดำจาก bismuth (ไม่ใช่ melena)', when: 'ตลอด 14 วันที่ได้รับยา' }
+            { param: 'ผลข้างเคียงของสูตรกำจัดเชื้อ', watch: 'คลื่นไส้ รสชาติผิดปกติ ท้องเสีย จากยาปฏิชีวนะ', when: 'ตลอด 14 วันที่ได้รับยา' }
         ]
     },
 
@@ -638,20 +656,24 @@ const caseData = {
     stages,
 
     // Not rendered anywhere in the player UI. Kept so the clinical reasoning
-    // behind the case is not lost from the repository.
+    // behind the case is not lost from the repository — and because every line
+    // below is the answer to a step the learner is about to be asked.
     authoring_notes: {
-        subjective_summary: 'ผู้ป่วยมีความเสี่ยงสูงจากหลายปัจจัยร่วมกัน: Ibuprofen 1,200 mg/วัน นาน 14 วัน, สูบบุหรี่, ดื่มแอลกอฮอล์และกาแฟ, ทานอาหารไม่ตรงเวลา',
-        objective_summary: 'ยืนยัน Acute Non-Variceal UGIB จาก duodenal ulcer ระยะ Forrest Ib ร่วมกับภาวะ shock จากการเสียเลือด ต้องกู้สัญญาณชีพและให้ high-dose IV PPI เร่งด่วน',
-        vitals_interpretation: 'BP 88/55 = critical hypotension (shock); HR 115 = compensatory tachycardia; RR 22 = mild tachypnoea; Hb 6.8 = severe acute blood loss anaemia',
-        lab_interpretation: 'BUN/Cr 28:1 (> 20:1) บ่งชี้ upper GI bleeding จากการย่อยโปรตีนในเลือดร่วมกับ prerenal azotaemia; albumin และ INR ปกติช่วยคัดภาวะตับแข็งและ coagulopathy ออก',
-        forrest_interpretation: 'Forrest Ib = active oozing = กลุ่มเสี่ยงสูงมากต่อการเลือดออกซ้ำ จึงต้อง high-dose IV PPI infusion 72 ชม.',
-        differential_verdicts: {
-            peptic_ulcer_bleeding: 'CORRECT — ตรงตามประวัติ Ibuprofen และส่องกล้องไม่พบ varices',
-            variceal_bleeding: 'INCORRECT — ไม่มีประวัติโรคตับ, LFT/INR ปกติ, ส่องกล้องไม่พบ varices',
-            mallory_weiss: 'INCORRECT — ไม่มีประวัติ retching และแผลอยู่ที่ duodenal bulb',
-            erosive_gastritis: 'INCORRECT — ผู้ป่วยไม่ได้อยู่ในภาวะวิกฤตแบบ ICU stress'
-        },
-        sources: ['ACG Clinical Guideline 2021 (Upper GI and Ulcer Bleeding)', 'ACG H. pylori Guideline 2024', 'DiPiro Pharmacotherapy', 'แนวทางเวชปฏิบัติการดูแลผู้ป่วยเลือดออกในทางเดินอาหารส่วนต้น ประเทศไทย พ.ศ. 2557']
+        subjective_summary: 'ผู้ป่วยชาย 62 ปี ใช้ Ibuprofen 400 mg tid ต่อเนื่อง 2 สัปดาห์โดยไม่มียาป้องกันกระเพาะ ร่วมกับประวัติ PUD เดิมและการดื่มสุราเรื้อรัง',
+        objective_summary: 'Acute UGIB จาก gastric antral ulcer ระยะ Forrest Ib ร่วมกับภาวะช็อกจากการเสียเลือด และ RUT positive',
+        vitals_interpretation: 'BP 90/60 = hypotension; HR 115 = tachycardia; RR 22 = tachypnea; Temp 36.5 และ SpO₂ 96% ปกติ — เข้าได้กับ hypovolemic shock Class II–III',
+        lab_interpretation: 'Hb 8.5 และ Hct 26 = low; WBC 12,500 = high; platelet, Cr, INR, AST/ALT ปกติ; BUN 35 สูงขึ้นจากการย่อยสลายโปรตีนจากเลือดในทางเดินอาหารส่วนต้นร่วมกับ prerenal azotaemia',
+        negative_findings_significance: 'ไม่มีดีซ่านและไม่มีท้องมาน ช่วยลดโอกาสที่เลือดออกจะมาจาก varices จากตับแข็ง; ไม่มี petechiae/ecchymosis ลดโอกาสความผิดปกติของการแข็งตัวของเลือด; ไม่มี guarding/rebound ช่วยคัดกรองว่ายังไม่มีแผลทะลุ',
+        gbs_calculation: 'BUN 35 (> 25) = 6, Hb 8.5 (< 10) = 6, SBP 90 = 2, HR 115 = 1, melena = 1, syncope = 2 → รวม 18 คะแนน',
+        forrest_interpretation: 'Forrest Ib = active oozing = กลุ่มเสี่ยงสูงต่อการเลือดออกซ้ำ ต้องทำ endoscopic hemostasis และให้ high-dose IV PPI 72 ชม.',
+        etiology: 'NSAIDs ยับยั้ง COX ทำให้ prostaglandin ที่ปกป้องเยื่อบุลดลง ร่วมกับ H. pylori ที่ทำลายเยื่อบุโดยตรง เป็น synergistic effect',
+        plan_summary: '(1) Fluid resuscitation แก้ภาวะช็อก (2) High-dose IV PPI 80 mg bolus + 8 mg/hr drip (3) Endoscopic hemostasis ภายใน 24 ชม. เนื่องจาก GBS สูงและแผลเป็น Forrest Ib',
+        sources: [
+            'แนวทางการดูแลรักษาผู้ป่วยภาวะเลือดออกในทางเดินอาหารส่วนต้นในประเทศไทย พ.ศ. 2557',
+            'GI Emergencies',
+            'Peptic Ulcer Disease Guideline — Froedtert',
+            '2024 ACG Clinical Guideline: Treatment of Helicobacter pylori Infection'
+        ]
     }
 };
 
