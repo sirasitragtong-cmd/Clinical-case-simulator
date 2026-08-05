@@ -19,8 +19,43 @@ const GameEngine = (function() {
         maxPossibleScore: 0,
         isGameOver: false,
         isWaitingForNext: false, // Two-Phase lock (post-answer feedback)
-        mistakeHistory: {}      // { stepId: [choiceId, ...] }
+        mistakeHistory: {},     // { stepId: [choiceId, ...] }
+
+        // ── Telemetry ──────────────────────────────────────────
+        // Everything My Stats and the achievement engine need that the
+        // score alone cannot express: which step, how long, how clean.
+        // Recorded per station and shipped with the attempt.
+        startedAtMs: 0,
+        stepShownMs: 0,
+        stepLog: []             // [{ stepId, stageId, earned, possible, hits, misses, perfect, seconds }]
     };
+
+    /** Seconds the learner spent on the station just answered. */
+    function stepElapsed() {
+        if (!state.stepShownMs) return null;
+        return Math.round((Date.now() - state.stepShownMs) / 1000);
+    }
+
+    /**
+     * Appends one station's outcome to the attempt telemetry.
+     *
+     * Kept deliberately small and flat — this array is written into the
+     * Firestore document, so a 15-station case must stay well inside the
+     * 1 MiB limit. No question text, no choice text, ids only.
+     */
+    function logStep(entry) {
+        state.stepLog.push({
+            stepId:   state.currentStepId,
+            stageId:  state.currentStageId,
+            earned:   entry.earned || 0,
+            possible: entry.possible || 0,
+            hits:     entry.hits || 0,
+            misses:   entry.misses || 0,
+            perfect:  Boolean(entry.perfect),
+            fatal:    Boolean(entry.fatal),
+            seconds:  stepElapsed()
+        });
+    }
 
     // ─── Step Sequence Builder ─────────────────────────────────
     // Scans caseJson.stages and flattens every step into a linear array.
@@ -95,6 +130,7 @@ const GameEngine = (function() {
         // Update internal navigation pointers (for evaluateAnswer compatibility)
         state.currentStageId = ref.stageId;
         state.currentStepId = ref.stepId;
+        state.stepShownMs = Date.now();
 
         console.log(`[Engine Flow] Rendering station ${state.currentStepIndex + 1}/${state.stepSequence.length}: ${ref.stageId} → ${ref.stepId} (type: ${stepData.type})`);
 
@@ -149,6 +185,9 @@ const GameEngine = (function() {
         state.isGameOver = false;
         state.isWaitingForNext = false;
         state.mistakeHistory = {};
+        state.startedAtMs = Date.now();
+        state.stepShownMs = 0;
+        state.stepLog = [];
         // A fresh run must not inherit the previous run's DTP tag.
         if (window.UIController && typeof UIController.resetDTPTag === 'function') {
             UIController.resetDTPTag();
@@ -187,6 +226,7 @@ const GameEngine = (function() {
 
         // Fatal Handling
         if (selectedChoice.is_fatal) {
+            logStep({ possible: stepData.point_value || 0, misses: 1, fatal: true });
             state.isGameOver = true;
             handleGameOver(stepData.feedback ? stepData.feedback.fatal_message : "Fatal Error Committed.");
             return;
@@ -207,6 +247,14 @@ const GameEngine = (function() {
             }
             state.mistakeHistory[state.currentStepId].push(selectedChoiceId);
         }
+
+        logStep({
+            earned:   isCorrect ? (stepData.point_value || 0) : 0,
+            possible: stepData.point_value || 0,
+            hits:     isCorrect ? 1 : 0,
+            misses:   isCorrect ? 0 : 1,
+            perfect:  isCorrect
+        });
 
         // Enter Two-Phase lock: wait for user to acknowledge feedback
         state.isWaitingForNext = true;
@@ -238,6 +286,7 @@ const GameEngine = (function() {
         // Fatal guard: any selected fatal choice ends the case immediately.
         const fatalPick = stepData.choices.find(c => c.is_fatal && selected.indexOf(c.id) !== -1);
         if (fatalPick) {
+            logStep({ possible: stepData.point_value || 0, misses: selected.length, fatal: true });
             state.isGameOver = true;
             handleGameOver(
                 fatalPick.fatal_message
@@ -278,6 +327,14 @@ const GameEngine = (function() {
             }
             misses.forEach(id => state.mistakeHistory[state.currentStepId].push(id));
         }
+
+        logStep({
+            earned:   earned,
+            possible: answerKey.length * perCorrect,
+            hits:     hits.length,
+            misses:   misses.length,
+            perfect:  allCorrect
+        });
 
         console.log(`[Score Update] ${hits.length}/${answerKey.length} correct, ${misses.length} wrong (+${gross} −${lost}) → +${earned} → Total: ${state.currentScore}/${state.maxPossibleScore}`);
 
@@ -362,6 +419,34 @@ const GameEngine = (function() {
             // numbers describe a different set of questions.
             caseVersion: (state.caseData && state.caseData.case_version) || 1
         };
+
+        // ── Attempt telemetry ──────────────────────────────────
+        // schemaVersion lets My Stats tell "this attempt had no timing data"
+        // apart from "this attempt took zero seconds". Attempts written before
+        // this version simply have no stepLog, and every panel that reads it
+        // treats the field as unknown rather than as zero.
+        const now = new Date();
+        const graded = state.stepLog.filter(s => s.possible > 0);
+        let streak = 0, bestStreak = 0;
+        graded.forEach(s => {
+            if (s.perfect) { streak += 1; bestStreak = Math.max(bestStreak, streak); }
+            else streak = 0;
+        });
+
+        payload.schemaVersion  = 2;
+        payload.stepLog        = state.stepLog;
+        payload.durationSec    = state.startedAtMs
+            ? Math.round((Date.now() - state.startedAtMs) / 1000) : null;
+        payload.gradedSteps    = graded.length;
+        payload.perfectSteps   = graded.filter(s => s.perfect).length;
+        payload.wrongPicks     = state.stepLog.reduce((n, s) => n + (s.misses || 0), 0);
+        payload.bestStepStreak = bestStreak;
+        // Local wall-clock of the player, kept alongside the server timestamp:
+        // completedAt is authoritative but UTC, and "played at 2 a.m." is a
+        // fact about the learner's own clock, not the server's.
+        payload.localHour      = now.getHours();
+        payload.localDayKey    = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+        payload.localWeekday   = now.getDay();
 
         // Drug Therapy Problem classification, for the instructor analytics.
         // Only attached when the case actually asked for a tag, so an

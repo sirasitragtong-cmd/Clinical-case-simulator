@@ -1739,7 +1739,214 @@ const UIController = (function() {
 
     function pct(a, b) { return b > 0 ? Math.round((a / b) * 100) : 0; }
 
+    // ═══ LEARNER ANALYTICS ═════════════════════════════════════
+    // One derivation, two consumers: the My Stats dashboard and the
+    // achievement engine. Both must agree on every number, so neither
+    // computes anything on its own.
+    //
+    // Attempts written before the telemetry schema (schemaVersion 2) carry
+    // no stepLog, no duration and no local clock. Those attempts are counted
+    // wherever the score alone is enough and skipped — not zero-filled —
+    // wherever they are not. `telemetryRows` is how a panel knows which
+    // denominator it is entitled to use.
+
+    /** Attempt date as a JS Date, preferring the server timestamp. */
+    function attemptDate(r) {
+        if (r.completedAt && r.completedAt.seconds) return new Date(r.completedAt.seconds * 1000);
+        if (r.localDayKey) {
+            const p = String(r.localDayKey).split('-').map(Number);
+            if (p.length === 3) return new Date(p[0], p[1] - 1, p[2]);
+        }
+        return null;
+    }
+
+    function dayKeyOf(r) {
+        if (r.localDayKey) return r.localDayKey;
+        const d = attemptDate(r);
+        return d ? todayKey(d) : null;
+    }
+
+    function median(nums) {
+        if (!nums.length) return 0;
+        const s = nums.slice().sort((a, b) => a - b);
+        const m = Math.floor(s.length / 2);
+        return s.length % 2 ? s[m] : Math.round((s[m - 1] + s[m]) / 2);
+    }
+
+    function fmtDuration(sec) {
+        if (sec == null) return '—';
+        if (sec < 60) return `${sec}s`;
+        const m = Math.floor(sec / 60);
+        if (m < 60) return `${m}m ${sec % 60}s`;
+        return `${Math.floor(m / 60)}h ${m % 60}m`;
+    }
+
+    /**
+     * Everything the dashboard and the badges are allowed to know.
+     * Pure — no DOM, no network — so it can be checked in isolation.
+     */
+    function deriveStats(rows) {
+        const a = rows.map(r => Object.assign({}, r, {
+            p: pct(r.finalScore, r.maxScore),
+            date: attemptDate(r),
+            day: dayKeyOf(r)
+        }));
+
+        // Oldest → newest. getMyAttempts hands back newest first, and every
+        // trend below reads forwards in time.
+        const chrono = a.slice().reverse();
+        const tele   = a.filter(r => Array.isArray(r.stepLog) && r.stepLog.length);
+
+        const pcts     = a.map(r => r.p);
+        const clean    = a.filter(r => !r.isFatal);
+        const finished = clean.filter(r => r.totalSteps > 0 && r.completedSteps >= r.totalSteps);
+
+        // Longest run of consecutive non-fatal attempts, read forwards.
+        let run = 0, safeRun = 0;
+        chrono.forEach(r => { if (r.isFatal) run = 0; else { run++; safeRun = Math.max(safeRun, run); } });
+
+        // Consecutive attempts each scoring better than the one before it.
+        let imp = 0, bestImp = 0;
+        for (let i = 1; i < chrono.length; i++) {
+            if (chrono[i].p > chrono[i - 1].p) { imp++; bestImp = Math.max(bestImp, imp); }
+            else imp = 0;
+        }
+
+        // Recovery: scored below 50% at some point, then above 80% later on.
+        let comeback = false, sawLow = false;
+        chrono.forEach(r => { if (r.p < 50) sawLow = true; else if (sawLow && r.p >= 80) comeback = true; });
+
+        // Per-stage and per-step aggregation, telemetry rows only.
+        const byStage = {}, byStep = {}, hours = new Array(24).fill(0);
+        tele.forEach(r => {
+            r.stepLog.forEach(s => {
+                if (!s.possible) return;
+                const st = byStage[s.stageId] || (byStage[s.stageId] = { earned: 0, possible: 0, seen: 0, perfect: 0 });
+                st.earned += s.earned || 0; st.possible += s.possible;
+                st.seen++; if (s.perfect) st.perfect++;
+
+                const key = `${r.caseId}::${s.stepId}`;
+                const sp = byStep[key] || (byStep[key] = { caseId: r.caseId, stepId: s.stepId, seen: 0, perfect: 0, misses: 0, seconds: 0, timed: 0 });
+                sp.seen++;
+                if (s.perfect) sp.perfect++;
+                sp.misses += s.misses || 0;
+                if (s.seconds != null) { sp.seconds += s.seconds; sp.timed++; }
+            });
+        });
+        a.forEach(r => { if (typeof r.localHour === 'number') hours[r.localHour]++; });
+
+        const timed = a.filter(r => typeof r.durationSec === 'number' && r.durationSec > 0);
+        const streak = loadStreak();
+
+        return {
+            rows: a, chrono, tele,
+            n: a.length,
+            best: pcts.length ? Math.max(...pcts) : 0,
+            worst: pcts.length ? Math.min(...pcts) : 0,
+            avg: pcts.length ? Math.round(pcts.reduce((s, v) => s + v, 0) / pcts.length) : 0,
+            median: median(pcts),
+            latest: a.length ? a[0].p : 0,
+            bestScore: a.length ? Math.max(...a.map(r => r.finalScore)) : 0,
+            totalScore: a.reduce((s, r) => s + (r.finalScore || 0), 0),
+            distinctCases: new Set(a.map(r => r.caseId)).size,
+            fatals: a.filter(r => r.isFatal).length,
+            fatalRate: a.length ? Math.round((a.filter(r => r.isFatal).length / a.length) * 100) : 0,
+            cleanRuns: clean.length,
+            finishedRuns: finished.length,
+            safeRun: safeRun,
+            bestImprovementRun: bestImp,
+            comeback: comeback,
+            distinctDays: new Set(a.map(r => r.day).filter(Boolean)).size,
+            byStage: byStage,
+            byStep: byStep,
+            hours: hours,
+            // Telemetry-only figures. `hasTelemetry` gates every badge and tile
+            // that would otherwise read a missing field as a zero.
+            hasTelemetry: tele.length > 0,
+            telemetryRuns: tele.length,
+            gradedSteps: tele.reduce((s, r) => s + (r.gradedSteps || 0), 0),
+            perfectSteps: tele.reduce((s, r) => s + (r.perfectSteps || 0), 0),
+            wrongPicks: tele.reduce((s, r) => s + (r.wrongPicks || 0), 0),
+            bestStepStreak: tele.reduce((m, r) => Math.max(m, r.bestStepStreak || 0), 0),
+            flawlessRuns: tele.filter(r => !r.isFatal && r.gradedSteps > 0 && r.perfectSteps === r.gradedSteps).length,
+            totalSeconds: timed.reduce((s, r) => s + r.durationSec, 0),
+            avgSeconds: timed.length ? Math.round(timed.reduce((s, r) => s + r.durationSec, 0) / timed.length) : null,
+            fastestGoodRun: (() => {
+                const c = timed.filter(r => !r.isFatal && r.p >= 80);
+                return c.length ? Math.min(...c.map(r => r.durationSec)) : null;
+            })(),
+            dtpAttempts: a.filter(r => r.dtpTag != null).length,
+            dtpCorrect: a.filter(r => r.dtpCorrect === true).length,
+            streakCurrent: streak.current || 0,
+            streakBest: streak.best || 0
+        };
+    }
+
     // ─── My Stats ──────────────────────────────────────────────
+    function statCard(label, value, tone, sub) {
+        return `<div class="panel rounded-xl p-3">
+                    <p class="text-[.55rem] font-bold tracking-widest text-slate-500 uppercase">${esc(label)}</p>
+                    <p class="text-lg font-mono font-extrabold ${tone || 'text-white'} mt-0.5 leading-none">${value}</p>
+                    ${sub ? `<p class="text-[.55rem] text-slate-600 mt-1 leading-tight">${esc(sub)}</p>` : ''}
+                </div>`;
+    }
+
+    function sectionTitle(title, note) {
+        return `<div class="flex items-baseline gap-2 mt-5 mb-2">
+                    <p class="text-[.6rem] font-bold tracking-widest text-slate-500 uppercase">${esc(title)}</p>
+                    ${note ? `<p class="text-[.55rem] text-slate-600">${esc(note)}</p>` : ''}
+                </div>`;
+    }
+
+    /** Score trend as an inline sparkline — no chart library, no network. */
+    function trendChart(chrono) {
+        const pts = chrono.slice(-24);
+        if (pts.length < 2) {
+            return `<div class="panel rounded-xl p-4 text-center">
+                        <p class="text-[.65rem] text-slate-500">ต้องเล่นอย่างน้อย 2 ครั้งจึงจะวาดกราฟแนวโน้มได้</p>
+                    </div>`;
+        }
+        const W = 600, H = 120, PAD = 8;
+        const x = i => PAD + (i * (W - PAD * 2)) / (pts.length - 1);
+        const y = v => H - PAD - (v / 100) * (H - PAD * 2);
+        const line = pts.map((r, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)},${y(r.p).toFixed(1)}`).join(' ');
+        const area = `${line} L${x(pts.length - 1).toFixed(1)},${H - PAD} L${x(0).toFixed(1)},${H - PAD} Z`;
+        const dots = pts.map((r, i) =>
+            `<circle cx="${x(i).toFixed(1)}" cy="${y(r.p).toFixed(1)}" r="${r.isFatal ? 4 : 3}"
+                     fill="${r.isFatal ? '#FF6B6B' : '#48E5C2'}"><title>${r.p}%${r.isFatal ? ' — FATAL' : ''}</title></circle>`).join('');
+
+        return `<div class="panel rounded-xl p-3">
+                    <svg viewBox="0 0 ${W} ${H}" class="w-full h-28" preserveAspectRatio="none" role="img"
+                         aria-label="แนวโน้มคะแนน ${pts.length} ครั้งล่าสุด">
+                        <defs><linearGradient id="trendFill" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stop-color="#48E5C2" stop-opacity=".28"/>
+                            <stop offset="100%" stop-color="#48E5C2" stop-opacity="0"/>
+                        </linearGradient></defs>
+                        ${[25, 50, 75].map(v => `<line x1="${PAD}" x2="${W - PAD}" y1="${y(v)}" y2="${y(v)}" stroke="#1E293B" stroke-width="1"/>`).join('')}
+                        <line x1="${PAD}" x2="${W - PAD}" y1="${y(80)}" y2="${y(80)}" stroke="#F4C542" stroke-width="1" stroke-dasharray="4 4" opacity=".55"/>
+                        <path d="${area}" fill="url(#trendFill)"/>
+                        <path d="${line}" fill="none" stroke="#48E5C2" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
+                        ${dots}
+                    </svg>
+                    <p class="text-[.55rem] text-slate-600 mt-1">เส้นประ = เกณฑ์ 80% · จุดแดง = จบด้วย Fatal · เก่า → ใหม่</p>
+                </div>`;
+    }
+
+    /** Horizontal bar list, used for stage accuracy and the hour histogram. */
+    function barRows(items) {
+        const top = Math.max(1, ...items.map(i => i.value));
+        return `<div class="flex flex-col gap-1.5">
+            ${items.map(i => `
+                <div class="panel rounded-lg p-2.5 flex items-center gap-3">
+                    <span class="text-[.65rem] text-slate-300 w-32 sm:w-44 flex-shrink-0 truncate">${esc(i.label)}</span>
+                    <div class="flex-1 h-2 rounded-full bg-navy-700 overflow-hidden">
+                        <div class="h-full rounded-full" style="width:${Math.round((i.value / top) * 100)}%; background:${i.color || '#48E5C2'};"></div>
+                    </div>
+                    <span class="text-[.65rem] font-mono ${i.tone || 'text-slate-400'} flex-shrink-0 w-20 text-right">${esc(i.right)}</span>
+                </div>`).join('')}
+        </div>`;
+    }
+
     async function renderStatsPanel() {
         const host = byId('stats-body');
         if (!host) return;
@@ -1751,40 +1958,123 @@ const UIController = (function() {
             return;
         }
 
-        const rows = res.rows;
-        const best = Math.max(...rows.map(r => pct(r.finalScore, r.maxScore)));
-        const avg  = Math.round(rows.reduce((s, r) => s + pct(r.finalScore, r.maxScore), 0) / rows.length);
-        const distinct = new Set(rows.map(r => r.caseId)).size;
-        const fatals = rows.filter(r => r.isFatal).length;
+        const s = deriveStats(res.rows);
 
-        const card = (label, value, tone) => `
-            <div class="panel rounded-xl p-3">
-                <p class="text-[.58rem] font-bold tracking-widest text-slate-500 uppercase">${label}</p>
-                <p class="text-lg font-mono font-extrabold ${tone || 'text-white'} mt-0.5">${value}</p>
+        // ── Overview ──
+        const overview = `
+            <div class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-2">
+                ${statCard('Attempts', s.n, 'text-white', `${s.distinctDays} วันที่เล่น`)}
+                ${statCard('Best', s.best + '%', 'text-teal-400', `${s.bestScore} คะแนน`)}
+                ${statCard('Average', s.avg + '%', 'text-gold-400', `มัธยฐาน ${s.median}%`)}
+                ${statCard('Latest', s.latest + '%', s.latest >= s.avg ? 'text-teal-400' : 'text-slate-300',
+                           s.latest >= s.avg ? 'สูงกว่าค่าเฉลี่ยตัวเอง' : 'ต่ำกว่าค่าเฉลี่ยตัวเอง')}
+                ${statCard('Cases', s.distinctCases, 'text-white', `จบครบด่าน ${s.finishedRuns} ครั้ง`)}
+                ${statCard('Fatal', s.fatals, s.fatals ? 'text-acuity-500' : 'text-white', `${s.fatalRate}% ของการเล่น`)}
+            </div>
+            <div class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-2 mt-2">
+                ${statCard('Safe Run', s.safeRun, 'text-teal-400', 'ไม่เจอ Fatal ติดกัน')}
+                ${statCard('Streak', s.streakCurrent + ' วัน', 'text-gold-400', `สถิติสูงสุด ${s.streakBest} วัน`)}
+                ${statCard('ข้อที่ตอบ', s.hasTelemetry ? s.gradedSteps : '—', 'text-white',
+                           s.hasTelemetry ? `ถูกครบข้อ ${s.perfectSteps} ข้อ` : 'ยังไม่มีข้อมูลรายข้อ')}
+                ${statCard('ตอบผิดสะสม', s.hasTelemetry ? s.wrongPicks : '—',
+                           s.wrongPicks ? 'text-acuity-500' : 'text-white', 'ตัวเลือกที่เลือกผิด')}
+                ${statCard('เวลารวม', s.totalSeconds ? fmtDuration(s.totalSeconds) : '—', 'text-white',
+                           s.avgSeconds ? `เฉลี่ย ${fmtDuration(s.avgSeconds)}/ครั้ง` : 'ยังไม่มีข้อมูลเวลา')}
+                ${statCard('DTP', s.dtpAttempts ? `${s.dtpCorrect}/${s.dtpAttempts}` : '—', 'text-teal-400', 'ระบุปัญหาถูกต้อง')}
+            </div>`;
+
+        // ── Stage accuracy ──
+        const stageRows = Object.keys(s.byStage).map(id => {
+            const st = s.byStage[id];
+            const acc = pct(st.earned, st.possible);
+            return {
+                label: id.replace(/_/g, ' '),
+                value: acc,
+                right: `${acc}%`,
+                color: acc >= 80 ? '#48E5C2' : acc >= 60 ? '#F4C542' : '#FF6B6B',
+                tone: acc >= 80 ? 'text-teal-400' : acc >= 60 ? 'text-gold-400' : 'text-acuity-500'
+            };
+        });
+
+        // ── Weakest steps ──
+        const weak = Object.values(s.byStep)
+            .map(sp => {
+                const lbl = stepLabel(sp.caseId, sp.stepId, allCases);
+                const acc = pct(sp.perfect, sp.seen);
+                return {
+                    label: lbl.retired ? `${sp.stepId} (ข้อที่ถูกยกเลิก)` : lbl.text,
+                    value: 100 - acc,
+                    right: `${acc}% · ผิด ${sp.misses}`,
+                    color: '#FF6B6B',
+                    tone: 'text-acuity-500',
+                    acc: acc,
+                    seen: sp.seen
+                };
+            })
+            .filter(w => w.acc < 100)
+            .sort((x, y) => y.value - x.value || y.seen - x.seen)
+            .slice(0, 6);
+
+        // ── Time of day ──
+        const hourRows = s.hours
+            .map((c, h) => ({ h, c }))
+            .filter(x => x.c > 0)
+            .sort((x, y) => y.c - x.c)
+            .slice(0, 6)
+            .map(x => ({
+                label: `${String(x.h).padStart(2, '0')}:00 – ${String(x.h).padStart(2, '0')}:59`,
+                value: x.c,
+                right: `${x.c} ครั้ง`,
+                color: '#8B7BE8',
+                tone: 'text-slate-300'
+            }));
+
+        // ── Per-case breakdown ──
+        const caseIds = Array.from(new Set(s.rows.map(r => r.caseId)));
+        const caseRows = caseIds.map(id => {
+            const rs = s.rows.filter(r => r.caseId === id);
+            const bp = Math.max(...rs.map(r => r.p));
+            return {
+                label: id,
+                value: bp,
+                right: `${rs.length} ครั้ง · ดีสุด ${bp}%`,
+                color: bp >= 80 ? '#48E5C2' : '#F4C542',
+                tone: bp >= 80 ? 'text-teal-400' : 'text-gold-400'
+            };
+        });
+
+        const noTelemetryNote = s.hasTelemetry ? '' : `
+            <div class="panel rounded-xl p-3 border-gold-400/30 mt-3">
+                <p class="text-[.65rem] text-gold-400 font-bold mb-1">ยังไม่มีข้อมูลเชิงลึกรายข้อ</p>
+                <p class="text-[.6rem] text-slate-400 leading-relaxed">
+                    การวิเคราะห์รายข้อ รายด่าน เวลาที่ใช้ และช่วงเวลาที่เล่น เริ่มเก็บตั้งแต่รุ่นนี้เป็นต้นไป
+                    ผลการเล่นเดิมยังนับรวมในคะแนนทุกช่อง แต่ไม่มีข้อมูลรายข้อให้วิเคราะห์ — เล่นอีกครั้งแล้วส่วนนี้จะขึ้นมาเอง
+                </p>
             </div>`;
 
         host.innerHTML = `
-            <div class="grid grid-cols-2 md:grid-cols-5 gap-2 mb-4">
-                ${card('Attempts', rows.length)}
-                ${card('Best', best + '%', 'text-teal-400')}
-                ${card('Average', avg + '%', 'text-gold-400')}
-                ${card('Cases', distinct)}
-                ${card('Fatal', fatals, fatals ? 'text-acuity-500' : 'text-white')}
-            </div>
-            <p class="text-[.6rem] font-bold tracking-widest text-slate-500 uppercase mb-2">ประวัติล่าสุด</p>
+            ${overview}
+            ${sectionTitle('แนวโน้มคะแนน', `${Math.min(s.chrono.length, 24)} ครั้งล่าสุด`)}
+            ${trendChart(s.chrono)}
+            ${noTelemetryNote}
+            ${stageRows.length ? sectionTitle('ความแม่นยำรายด่าน', 'คะแนนที่ได้ ÷ คะแนนเต็มของด่านนั้น') + barRows(stageRows) : ''}
+            ${weak.length ? sectionTitle('ข้อที่ควรทบทวน', 'เรียงจากอัตราตอบถูกครบข้อต่ำสุด') + barRows(weak) : ''}
+            ${caseRows.length > 1 ? sectionTitle('แยกตามเคส') + barRows(caseRows) : ''}
+            ${hourRows.length ? sectionTitle('ช่วงเวลาที่เล่นบ่อย', 'ตามนาฬิกาเครื่องคุณ') + barRows(hourRows) : ''}
+            ${sectionTitle('ประวัติล่าสุด')}
             <div class="flex flex-col gap-1.5">
-                ${rows.slice(0, 12).map(r => {
-                    const p = pct(r.finalScore, r.maxScore);
-                    const when = r.completedAt && r.completedAt.seconds
-                        ? new Date(r.completedAt.seconds * 1000).toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' })
+                ${s.rows.slice(0, 15).map(r => {
+                    const when = r.date
+                        ? r.date.toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' })
                         : '—';
                     return `
                         <div class="panel rounded-lg p-2.5 flex items-center gap-3">
                             <span class="tag-pill !text-[.6rem] flex-shrink-0">${esc(r.caseId || '')}</span>
                             <span class="text-[.65rem] text-slate-500 flex-shrink-0 hidden sm:block">${esc(when)}</span>
                             <span class="text-[.65rem] text-slate-400 ml-auto">${r.completedSteps || 0}/${r.totalSteps || 0} steps</span>
+                            ${r.durationSec ? `<span class="text-[.6rem] font-mono text-slate-600 hidden sm:block">${esc(fmtDuration(r.durationSec))}</span>` : ''}
                             ${r.isFatal ? '<span class="tag-pill !bg-acuity-500/12 !text-acuity-500 !border-acuity-500/35 !text-[.58rem]">FATAL</span>' : ''}
-                            <span class="text-[.72rem] font-mono font-bold ${p >= 85 ? 'text-teal-400' : p >= 60 ? 'text-gold-400' : 'text-slate-400'} flex-shrink-0 w-20 text-right">
+                            <span class="text-[.72rem] font-mono font-bold ${r.p >= 85 ? 'text-teal-400' : r.p >= 60 ? 'text-gold-400' : 'text-slate-400'} flex-shrink-0 w-20 text-right">
                                 ${r.finalScore}/${r.maxScore}
                             </span>
                         </div>`;
@@ -1825,14 +2115,122 @@ const UIController = (function() {
     }
 
     // ─── Achievements ──────────────────────────────────────────
+    // Every badge is a predicate over deriveStats() — the same numbers the
+    // My Stats dashboard shows, so a badge can never claim something the
+    // dashboard contradicts.
+    //
+    //   cat   grouping header
+    //   test  s => bool, the unlock condition
+    //   prog  s => [current, target] for the "almost there" bar (optional).
+    //         Only for badges that count towards a threshold; a badge with
+    //         nothing meaningful to count simply omits it.
+    //
+    // Badges marked `tele` need per-step telemetry, which only exists on
+    // attempts recorded from build 2026-08-05 onward. They stay locked on
+    // older history rather than unlocking on a zero.
+
+    const AC_CATS = {
+        volume:   { name: 'ก้าวแรกและความต่อเนื่อง', icon: '🚀' },
+        accuracy: { name: 'ความแม่นยำ',              icon: '🎯' },
+        safety:   { name: 'ความปลอดภัยผู้ป่วย',       icon: '🛡' },
+        mastery:  { name: 'ความเชี่ยวชาญรายข้อ',      icon: '🧠' },
+        habit:    { name: 'วินัยและเวลา',             icon: '⏱' },
+        growth:   { name: 'การพัฒนาตนเอง',           icon: '📈' }
+    };
+
     const ACHIEVEMENTS = [
-        { id: 'first',    icon: '🩺', name: 'First Case',      desc: 'เล่นจบเคสแรก',                     test: r => r.length >= 1 },
-        { id: 'perfect',  icon: '💯', name: 'Perfect Score',   desc: 'ทำคะแนนเต็มในเคสใดก็ได้',           test: r => r.some(a => !a.isFatal && a.maxScore > 0 && a.finalScore === a.maxScore) },
-        { id: 'sharp',    icon: '🎯', name: 'Sharp Shooter',   desc: 'ทำคะแนนถึง 80% ขึ้นไป',            test: r => r.some(a => pct(a.finalScore, a.maxScore) >= 80) },
-        { id: 'noharm',   icon: '🛡', name: 'Do No Harm',      desc: 'เล่นจบ 3 ครั้งโดยไม่เจอ Fatal',     test: r => r.filter(a => !a.isFatal).length >= 3 },
-        { id: 'explorer', icon: '📚', name: 'Case Explorer',   desc: 'เล่นครบ 2 เคสที่แตกต่างกัน',        test: r => new Set(r.map(a => a.caseId)).size >= 2 },
-        { id: 'marathon', icon: '🔥', name: 'Marathon',        desc: 'เล่นสะสมครบ 5 ครั้ง',              test: r => r.length >= 5 }
+        // ── ก้าวแรกและความต่อเนื่อง ──
+        { id: 'first',     cat: 'volume', icon: '🩺', name: 'First Case',        desc: 'เล่นจบเคสแรก',                   test: s => s.n >= 1,  prog: s => [s.n, 1] },
+        { id: 'v3',        cat: 'volume', icon: '📋', name: 'Ward Round',        desc: 'เล่นสะสม 3 ครั้ง',                test: s => s.n >= 3,  prog: s => [s.n, 3] },
+        { id: 'v5',        cat: 'volume', icon: '🔥', name: 'Marathon',          desc: 'เล่นสะสม 5 ครั้ง',                test: s => s.n >= 5,  prog: s => [s.n, 5] },
+        { id: 'v10',       cat: 'volume', icon: '💪', name: 'Resident',          desc: 'เล่นสะสม 10 ครั้ง',               test: s => s.n >= 10, prog: s => [s.n, 10] },
+        { id: 'v20',       cat: 'volume', icon: '🏥', name: 'Chief Resident',    desc: 'เล่นสะสม 20 ครั้ง',               test: s => s.n >= 20, prog: s => [s.n, 20] },
+        { id: 'v35',       cat: 'volume', icon: '🎓', name: 'Senior Clinician',  desc: 'เล่นสะสม 35 ครั้ง',               test: s => s.n >= 35, prog: s => [s.n, 35] },
+        { id: 'v50',       cat: 'volume', icon: '👑', name: 'Attending',         desc: 'เล่นสะสม 50 ครั้ง',               test: s => s.n >= 50, prog: s => [s.n, 50] },
+        { id: 'd3',        cat: 'volume', icon: '📆', name: 'Three Days In',     desc: 'เล่นใน 3 วันที่ต่างกัน',           test: s => s.distinctDays >= 3,  prog: s => [s.distinctDays, 3] },
+        { id: 'd7',        cat: 'volume', icon: '🗓', name: 'Weekly Rotation',   desc: 'เล่นใน 7 วันที่ต่างกัน',           test: s => s.distinctDays >= 7,  prog: s => [s.distinctDays, 7] },
+        { id: 'd14',       cat: 'volume', icon: '📅', name: 'Full Rotation',     desc: 'เล่นใน 14 วันที่ต่างกัน',          test: s => s.distinctDays >= 14, prog: s => [s.distinctDays, 14] },
+
+        // ── ความแม่นยำ ──
+        { id: 'a50',       cat: 'accuracy', icon: '🌱', name: 'Passing Grade',    desc: 'ทำคะแนนถึง 50%',              test: s => s.best >= 50,  prog: s => [s.best, 50] },
+        { id: 'a70',       cat: 'accuracy', icon: '📘', name: 'Proficient',       desc: 'ทำคะแนนถึง 70%',              test: s => s.best >= 70,  prog: s => [s.best, 70] },
+        { id: 'a80',       cat: 'accuracy', icon: '🎯', name: 'Sharp Shooter',    desc: 'ทำคะแนนถึง 80%',              test: s => s.best >= 80,  prog: s => [s.best, 80] },
+        { id: 'a85',       cat: 'accuracy', icon: '⭐', name: 'Distinction',      desc: 'ทำคะแนนถึง 85%',              test: s => s.best >= 85,  prog: s => [s.best, 85] },
+        { id: 'a90',       cat: 'accuracy', icon: '🌟', name: 'Honours',          desc: 'ทำคะแนนถึง 90%',              test: s => s.best >= 90,  prog: s => [s.best, 90] },
+        { id: 'a95',       cat: 'accuracy', icon: '💎', name: 'Near Perfect',     desc: 'ทำคะแนนถึง 95%',              test: s => s.best >= 95,  prog: s => [s.best, 95] },
+        { id: 'a100',      cat: 'accuracy', icon: '💯', name: 'Perfect Score',    desc: 'ทำคะแนนเต็มโดยไม่เจอ Fatal',    test: s => s.rows.some(r => !r.isFatal && r.maxScore > 0 && r.finalScore === r.maxScore) },
+        { id: 'avg70',     cat: 'accuracy', icon: '📊', name: 'Consistent',       desc: 'คะแนนเฉลี่ยสะสมถึง 70%',        test: s => s.n >= 3 && s.avg >= 70, prog: s => [s.avg, 70] },
+        { id: 'avg85',     cat: 'accuracy', icon: '🏆', name: 'Reliably Excellent', desc: 'คะแนนเฉลี่ยสะสมถึง 85% (อย่างน้อย 5 ครั้ง)', test: s => s.n >= 5 && s.avg >= 85, prog: s => [s.avg, 85] },
+
+        // ── ความปลอดภัยผู้ป่วย ──
+        { id: 'clean1',    cat: 'safety', icon: '✅', name: 'No Harm Done',       desc: 'เล่นจบโดยไม่เจอ Fatal 1 ครั้ง',   test: s => s.cleanRuns >= 1,  prog: s => [s.cleanRuns, 1] },
+        { id: 'safe3',     cat: 'safety', icon: '🛡', name: 'Do No Harm',         desc: 'ไม่เจอ Fatal ติดต่อกัน 3 ครั้ง',   test: s => s.safeRun >= 3,   prog: s => [s.safeRun, 3] },
+        { id: 'safe5',     cat: 'safety', icon: '🩹', name: 'Steady Hands',       desc: 'ไม่เจอ Fatal ติดต่อกัน 5 ครั้ง',   test: s => s.safeRun >= 5,   prog: s => [s.safeRun, 5] },
+        { id: 'safe10',    cat: 'safety', icon: '🕊', name: 'Safety Culture',     desc: 'ไม่เจอ Fatal ติดต่อกัน 10 ครั้ง',  test: s => s.safeRun >= 10,  prog: s => [s.safeRun, 10] },
+        { id: 'safe20',    cat: 'safety', icon: '🏅', name: 'Zero Harm Streak',   desc: 'ไม่เจอ Fatal ติดต่อกัน 20 ครั้ง',  test: s => s.safeRun >= 20,  prog: s => [s.safeRun, 20] },
+        { id: 'nofatal10', cat: 'safety', icon: '🧿', name: 'Spotless Record',    desc: 'เล่น 10 ครั้งโดยไม่เคยเจอ Fatal เลย', test: s => s.n >= 10 && s.fatals === 0, prog: s => [s.fatals === 0 ? s.n : 0, 10] },
+        { id: 'fin5',      cat: 'safety', icon: '🏁', name: 'Full Workup',        desc: 'เล่นจบครบทุกสถานี 5 ครั้ง',       test: s => s.finishedRuns >= 5,  prog: s => [s.finishedRuns, 5] },
+        { id: 'fin15',     cat: 'safety', icon: '🗿', name: 'Complete Clinician', desc: 'เล่นจบครบทุกสถานี 15 ครั้ง',      test: s => s.finishedRuns >= 15, prog: s => [s.finishedRuns, 15] },
+
+        // ── ความเชี่ยวชาญรายข้อ (ต้องใช้ข้อมูลรายข้อ) ──
+        { id: 'p1',        cat: 'mastery', tele: true, icon: '🎖', name: 'First Perfect Step', desc: 'ตอบถูกครบทุกตัวเลือกใน 1 ข้อ',  test: s => s.perfectSteps >= 1,   prog: s => [s.perfectSteps, 1] },
+        { id: 'p25',       cat: 'mastery', tele: true, icon: '🧩', name: 'Pattern Recognition', desc: 'ตอบถูกครบข้อสะสม 25 ข้อ',      test: s => s.perfectSteps >= 25,  prog: s => [s.perfectSteps, 25] },
+        { id: 'p100',      cat: 'mastery', tele: true, icon: '🧠', name: 'Clinical Reasoning',  desc: 'ตอบถูกครบข้อสะสม 100 ข้อ',     test: s => s.perfectSteps >= 100, prog: s => [s.perfectSteps, 100] },
+        { id: 'p250',      cat: 'mastery', tele: true, icon: '🦉', name: 'Deep Knowledge',      desc: 'ตอบถูกครบข้อสะสม 250 ข้อ',     test: s => s.perfectSteps >= 250, prog: s => [s.perfectSteps, 250] },
+        { id: 'st5',       cat: 'mastery', tele: true, icon: '⚡', name: 'On a Roll',           desc: 'ตอบถูกครบข้อติดกัน 5 ข้อ',      test: s => s.bestStepStreak >= 5,  prog: s => [s.bestStepStreak, 5] },
+        { id: 'st10',      cat: 'mastery', tele: true, icon: '🌀', name: 'In the Zone',         desc: 'ตอบถูกครบข้อติดกัน 10 ข้อ',     test: s => s.bestStepStreak >= 10, prog: s => [s.bestStepStreak, 10] },
+        { id: 'st13',      cat: 'mastery', tele: true, icon: '🔱', name: 'Unbroken Chain',      desc: 'ตอบถูกครบข้อติดกัน 13 ข้อ',     test: s => s.bestStepStreak >= 13, prog: s => [s.bestStepStreak, 13] },
+        { id: 'flaw1',     cat: 'mastery', tele: true, icon: '🕯', name: 'Flawless Run',        desc: 'เล่นจบ 1 ครั้งโดยถูกครบทุกข้อ',  test: s => s.flawlessRuns >= 1, prog: s => [s.flawlessRuns, 1] },
+        { id: 'flaw3',     cat: 'mastery', tele: true, icon: '👑', name: 'Triple Flawless',     desc: 'เล่นจบแบบถูกครบทุกข้อ 3 ครั้ง',  test: s => s.flawlessRuns >= 3, prog: s => [s.flawlessRuns, 3] },
+        { id: 'g500',      cat: 'mastery', tele: true, icon: '📚', name: 'Five Hundred Calls',  desc: 'ตอบคำถามสะสม 500 ข้อ',        test: s => s.gradedSteps >= 500, prog: s => [s.gradedSteps, 500] },
+
+        // ── วินัยและเวลา ──
+        { id: 'sc2',       cat: 'habit', icon: '🔥', name: 'Back Tomorrow',   desc: 'เล่นต่อเนื่อง 2 วันติด',            test: s => s.streakBest >= 2,  prog: s => [s.streakBest, 2] },
+        { id: 'sc3',       cat: 'habit', icon: '🔥', name: 'Three Day Streak', desc: 'เล่นต่อเนื่อง 3 วันติด',           test: s => s.streakBest >= 3,  prog: s => [s.streakBest, 3] },
+        { id: 'sc7',       cat: 'habit', icon: '🌤', name: 'Seven Day Streak', desc: 'เล่นต่อเนื่อง 7 วันติด',           test: s => s.streakBest >= 7,  prog: s => [s.streakBest, 7] },
+        { id: 'sc14',      cat: 'habit', icon: '🌗', name: 'Fortnight',        desc: 'เล่นต่อเนื่อง 14 วันติด',          test: s => s.streakBest >= 14, prog: s => [s.streakBest, 14] },
+        { id: 'sc30',      cat: 'habit', icon: '🌕', name: 'Month of Rounds',  desc: 'เล่นต่อเนื่อง 30 วันติด',          test: s => s.streakBest >= 30, prog: s => [s.streakBest, 30] },
+        { id: 't1h',       cat: 'habit', tele: true, icon: '⏱', name: 'One Hour In',  desc: 'ใช้เวลาฝึกสะสมครบ 1 ชั่วโมง', test: s => s.totalSeconds >= 3600, prog: s => [Math.round(s.totalSeconds / 60), 60] },
+        { id: 'night',     cat: 'habit', tele: true, icon: '🦇', name: 'Night Shift',  desc: 'เล่นในช่วง 00:00–04:59',     test: s => s.hours.slice(0, 5).some(c => c > 0) },
+
+        // ── การพัฒนาตนเอง ──
+        { id: 'imp2',      cat: 'growth', icon: '📈', name: 'Getting Better',   desc: 'ทำคะแนนดีขึ้นติดกัน 2 ครั้ง',      test: s => s.bestImprovementRun >= 2, prog: s => [s.bestImprovementRun, 2] },
+        { id: 'imp4',      cat: 'growth', icon: '🚀', name: 'Steep Curve',      desc: 'ทำคะแนนดีขึ้นติดกัน 4 ครั้ง',      test: s => s.bestImprovementRun >= 4, prog: s => [s.bestImprovementRun, 4] },
+        { id: 'comeback',  cat: 'growth', icon: '🔄', name: 'Comeback',         desc: 'เคยได้ต่ำกว่า 50% แล้วกลับมาได้ถึง 80%', test: s => s.comeback },
+        { id: 'explorer',  cat: 'growth', icon: '🗺', name: 'Case Explorer',    desc: 'เล่นครบ 2 เคสที่ต่างกัน',          test: s => s.distinctCases >= 2, prog: s => [s.distinctCases, 2] },
+        { id: 'dtp1',      cat: 'growth', icon: '🔍', name: 'DTP Spotter',      desc: 'ระบุ Drug Therapy Problem ถูกต้อง 1 ครั้ง', test: s => s.dtpCorrect >= 1, prog: s => [s.dtpCorrect, 1] },
+        { id: 'dtp3',      cat: 'growth', icon: '💊', name: 'DTP Specialist',   desc: 'ระบุ Drug Therapy Problem ถูกต้อง 3 ครั้ง', test: s => s.dtpCorrect >= 3, prog: s => [s.dtpCorrect, 3] }
     ];
+
+    function achievementCard(a, s, on) {
+        // The "almost there" bar. Shown only while locked and only once the
+        // learner is actually on the board — a 0% bar tells them nothing.
+        let bar = '';
+        if (!on && typeof a.prog === 'function') {
+            const [cur, target] = a.prog(s);
+            if (cur > 0 && target > 0) {
+                bar = `<div class="mt-1.5 flex items-center gap-2">
+                           <div class="flex-1 h-1 rounded-full bg-navy-700 overflow-hidden">
+                               <div class="h-full rounded-full bg-slate-500" style="width:${Math.min(100, Math.round((cur / target) * 100))}%"></div>
+                           </div>
+                           <span class="text-[.5rem] font-mono text-slate-600 flex-shrink-0">${cur}/${target}</span>
+                       </div>`;
+            }
+        }
+        const needsData = !on && a.tele && !s.hasTelemetry;
+        return `
+            <div class="panel rounded-xl p-3 flex items-start gap-3 ${on ? '!border-gold-400/40' : 'opacity-60'}">
+                <div class="w-10 h-10 rounded-xl grid place-items-center text-xl flex-shrink-0
+                            ${on ? 'bg-gold-400/15 border border-gold-400/40' : 'bg-navy-700 border border-navy-600 grayscale'}">
+                    ${on ? a.icon : '🔒'}
+                </div>
+                <div class="min-w-0 flex-1">
+                    <p class="text-xs font-bold ${on ? 'text-white' : 'text-slate-500'} truncate">${esc(a.name)}</p>
+                    <p class="text-[.65rem] text-slate-500 leading-snug">${esc(a.desc)}</p>
+                    ${needsData ? '<p class="text-[.5rem] text-slate-600 mt-1">ต้องใช้ข้อมูลรายข้อ — เริ่มเก็บตั้งแต่รุ่นนี้</p>' : bar}
+                </div>
+            </div>`;
+    }
 
     async function renderAchievementsPanel() {
         const host = byId('achievements-body');
@@ -1845,11 +2243,22 @@ const UIController = (function() {
             return;
         }
 
-        const rows = res.rows;
-        const unlocked = ACHIEVEMENTS.filter(a => a.test(rows)).length;
+        const s = deriveStats(res.rows);
+        const state = ACHIEVEMENTS.map(a => ({ a: a, on: Boolean(a.test(s)) }));
+        const unlocked = state.filter(x => x.on).length;
+
+        const groups = Object.keys(AC_CATS).map(cat => {
+            const items = state.filter(x => x.a.cat === cat);
+            const got = items.filter(x => x.on).length;
+            return `
+                ${sectionTitle(`${AC_CATS[cat].icon} ${AC_CATS[cat].name}`, `${got}/${items.length}`)}
+                <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-2">
+                    ${items.map(x => achievementCard(x.a, s, x.on)).join('')}
+                </div>`;
+        }).join('');
 
         host.innerHTML = `
-            <div class="panel rounded-xl p-3 mb-3 flex items-center gap-3">
+            <div class="panel rounded-xl p-3 flex items-center gap-3">
                 <span class="text-[.6rem] font-bold tracking-widest text-slate-500 uppercase flex-shrink-0">Unlocked</span>
                 <div class="flex-1 h-2 rounded-full bg-navy-700 overflow-hidden">
                     <div class="h-full rounded-full transition-all duration-500"
@@ -1857,22 +2266,7 @@ const UIController = (function() {
                 </div>
                 <span class="text-xs font-mono font-bold text-teal-400 flex-shrink-0">${unlocked}/${ACHIEVEMENTS.length}</span>
             </div>
-            <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-2">
-                ${ACHIEVEMENTS.map(a => {
-                    const on = a.test(rows);
-                    return `
-                        <div class="panel rounded-xl p-3 flex items-center gap-3 ${on ? '!border-gold-400/40' : 'opacity-55'}">
-                            <div class="w-10 h-10 rounded-xl grid place-items-center text-xl flex-shrink-0
-                                        ${on ? 'bg-gold-400/15 border border-gold-400/40' : 'bg-navy-700 border border-navy-600 grayscale'}">
-                                ${on ? a.icon : '🔒'}
-                            </div>
-                            <div class="min-w-0">
-                                <p class="text-xs font-bold ${on ? 'text-white' : 'text-slate-500'} truncate">${a.name}</p>
-                                <p class="text-[.65rem] text-slate-500 leading-snug">${a.desc}</p>
-                            </div>
-                        </div>`;
-                }).join('')}
-            </div>`;
+            ${groups}`;
     }
 
     // ═══ INSTRUCTOR ANALYTICS ══════════════════════════════════

@@ -174,6 +174,17 @@
                 completedAt: firebase.firestore.FieldValue.serverTimestamp()
             };
 
+            // Optional analytics fields. Copied only when the engine actually
+            // supplied them, so a field is either a real measurement or absent
+            // — never a zero standing in for "we did not record this".
+            [
+                'caseVersion', 'schemaVersion', 'stepLog', 'durationSec',
+                'gradedSteps', 'perfectSteps', 'wrongPicks', 'bestStepStreak',
+                'localHour', 'localDayKey', 'localWeekday', 'dtpTag', 'dtpCorrect'
+            ].forEach(k => {
+                if (attemptData[k] !== undefined) payload[k] = attemptData[k];
+            });
+
             try {
                 const docRef = await db.collection('user_attempts').add(payload);
                 console.log('[DB Service] Case attempt successfully saved to Firestore with ID:', docRef.id);
@@ -299,6 +310,7 @@
                         isFatal: Boolean(a.isFatal),
                         dtpTag: a.dtpTag != null ? a.dtpTag : null,
                         dtpCorrect: a.dtpCorrect != null ? a.dtpCorrect : null,
+                        caseVersion: a.caseVersion || null,
                         mistakeHistory: a.mistakeHistory || {},
                         completedAt: a.completedAt || null
                     };
