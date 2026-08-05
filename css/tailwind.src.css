@@ -320,3 +320,19 @@ body {
 @media (prefers-reduced-motion: reduce) {
     .pa-chest, .pa-eyelid, .pa-sweat, .pa-tail { animation: none !important; }
 }
+
+/* ── Locked SOAP tab ───────────────────────────────────────────
+   The Monitoring tab is empty until the learner commits to a plan.
+   Dimming it marks that emptiness as deliberate, so an empty panel
+   is never mistaken for a failed render. */
+.soap-tab.is-locked-tab { opacity: .55; }
+.soap-tab.tab-just-unlocked {
+    animation: tabUnlock 1.6s ease-out 2;
+}
+@keyframes tabUnlock {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(45, 212, 191, 0); }
+    50%      { box-shadow: 0 0 0 3px rgba(45, 212, 191, .55); }
+}
+@media (prefers-reduced-motion: reduce) {
+    .soap-tab.tab-just-unlocked { animation: none; }
+}

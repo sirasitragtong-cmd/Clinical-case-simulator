@@ -273,6 +273,17 @@ const UIController = (function() {
             t.classList.toggle('font-bold', on);
             t.classList.toggle('text-slate-400', !on);
             t.classList.toggle('font-semibold', !on);
+
+            // The Monitoring tab is the only one that can be empty by design.
+            // Without a marker on the tab itself an empty panel reads as a
+            // broken feature, so the lock state is shown before it is opened.
+            if (t.dataset.soap !== 'monitoring') return;
+            if (!t.dataset.baseLabel) t.dataset.baseLabel = t.textContent.trim().replace(/^\S+\s*/, '');
+            t.textContent = (monitoringUnlocked ? '🎯 ' : '🔒 ') + t.dataset.baseLabel;
+            t.title = monitoringUnlocked
+                ? 'กรอบการติดตามผล — เปิดใช้งานแล้ว'
+                : 'ยังล็อกอยู่ — จะเปิดเมื่อท่านส่งคำตอบข้อแรกของด่าน Monitoring';
+            t.classList.toggle('is-locked-tab', !monitoringUnlocked && !on);
         });
     }
 
@@ -507,11 +518,25 @@ const UIController = (function() {
         const m = data && data.monitoring;
 
         if (!monitoringUnlocked) {
-            return `<div class="rounded-xl border border-navy-600/70 bg-navy-850/70 p-4 text-center">
-                        <p class="text-xl mb-1.5">🔒</p>
-                        <p class="text-[.72rem] font-bold text-slate-300 mb-1">ยังไม่เปิดใช้งาน</p>
-                        <p class="text-[.66rem] text-slate-500 leading-relaxed">
-                            กรอบการติดตามผลจะเปิดให้ดูหลังจากท่านวางแผนการติดตามด้วยตนเองแล้ว
+            const hasFramework = !!(m && (m.regimen || (m.efficacy || []).length || (m.safety || []).length));
+            return `<div class="rounded-xl border border-navy-600/70 bg-navy-850/70 p-4">
+                        <div class="text-center">
+                            <p class="text-xl mb-1.5">🔒</p>
+                            <p class="text-[.72rem] font-bold text-slate-300 mb-1">ยังไม่เปิดใช้งาน</p>
+                        </div>
+                        <p class="text-[.66rem] text-slate-400 leading-relaxed mt-1">
+                            แท็บนี้เก็บ <strong class="text-slate-200">กรอบการติดตามผล (Monitoring Framework)</strong>
+                            ซึ่งเป็นเฉลยของด่าน Monitoring โดยตรง จึงถูกล็อกไว้จนกว่าท่านจะวางแผนการติดตามด้วยตนเองก่อน
+                        </p>
+                        <p class="text-[.62rem] text-slate-500 leading-relaxed mt-2 pt-2 border-t border-navy-600/60">
+                            🔓 จะเปิดอัตโนมัติทันทีที่ท่านส่งคำตอบข้อแรกของด่าน
+                            <span class="text-slate-300 font-semibold">MONITORING</span> —
+                            ${hasFramework
+                                ? 'เคสนี้มีข้อมูลกรอบการติดตามพร้อมแสดงแล้ว'
+                                : 'แต่เคสนี้ยังไม่ได้เขียนกรอบการติดตามไว้ จึงจะขึ้นข้อความแจ้งแทน'}
+                        </p>
+                        <p class="text-[.6rem] text-slate-600 leading-relaxed mt-2">
+                            ระหว่างนี้ใช้แท็บ Subj / Obj / อ้างอิง ได้ตามปกติ — นี่ไม่ใช่ข้อผิดพลาด
                         </p>
                     </div>`;
         }
@@ -902,10 +927,16 @@ const UIController = (function() {
 
         // The learner has now committed to a monitoring plan, so the reference
         // framework is reinforcement rather than a hint.
-        if (String(state_currentStepId()).indexOf('monitoring') !== -1) {
+        if (String(state_currentStepId()).indexOf('monitoring') !== -1 && !monitoringUnlocked) {
             monitoringUnlocked = true;
             syncSoapTabs();
-            if (soapTab === 'monitoring') renderPatientChart(activeCase);
+            // Flag the tab so the learner notices something they could not
+            // see before is now available, instead of having to re-check.
+            document.querySelectorAll('.soap-tab[data-soap="monitoring"]').forEach(t => {
+                t.classList.add('tab-just-unlocked');
+                setTimeout(() => t.classList.remove('tab-just-unlocked'), 3400);
+            });
+            renderPatientChart(activeCase);
         }
 
         // Condition tracks how well the plan was executed.
