@@ -2500,7 +2500,68 @@ const UIController = (function() {
         }
     }
 
+    // ═══ SCAN-TO-OPEN QR ═══════════════════════════════════════
+
+    /**
+     * The address a scanned code should land on. Hard-coded rather than read
+     * from location.href on purpose: the same bundle is opened from
+     * localhost during development and from a file:// copy on a lecturer's
+     * laptop, and a QR pointing at either of those is useless to a student
+     * holding a phone. The URL is printed under the code so anyone can
+     * check that the two agree.
+     */
+    const PUBLIC_URL = 'https://sirasitragtong-cmd.github.io/Clinical-case-simulator/';
+
+    /**
+     * Paints every .qr-card placeholder. Called once at startup — the cards
+     * live in the persistent shell, not in per-step markup, so they survive
+     * every stage and panel change without being re-rendered.
+     */
+    function renderQRCards() {
+        const cards = document.querySelectorAll('.qr-card');
+        if (!cards.length) return;
+
+        let svg = null;
+        try {
+            if (window.QRCode) {
+                svg = window.QRCode.toSVG(PUBLIC_URL, {
+                    dark: '#0B1220',
+                    light: '#FFFFFF',
+                    label: 'QR code สำหรับเปิด Clinical Case Simulator'
+                });
+            }
+        } catch (err) {
+            console.error('[QR] encode failed:', err);
+        }
+
+        cards.forEach(card => {
+            const small = card.dataset.qrSize === 'sm';
+
+            // No fabricated placeholder image: if encoding failed the card
+            // says so and still shows the address, which is the part that
+            // actually matters.
+            if (!svg) {
+                card.innerHTML = `
+                    <p class="text-[.6rem] font-bold tracking-widest text-slate-500 uppercase mb-1">Scan to open</p>
+                    <p class="text-[.62rem] text-slate-400 leading-relaxed">
+                        สร้าง QR ไม่สำเร็จ — เปิดผ่านลิงก์นี้แทนได้
+                    </p>
+                    <p class="text-[.58rem] font-mono text-teal-400 break-all mt-1">${esc(PUBLIC_URL)}</p>`;
+                return;
+            }
+
+            card.innerHTML = `
+                <p class="text-[.6rem] font-bold tracking-widest text-slate-500 uppercase mb-2">Scan to open</p>
+                <div class="mx-auto rounded-lg bg-white p-1.5 ${small ? 'max-w-[7.5rem]' : 'max-w-[9.5rem]'}">${svg}</div>
+                <p class="text-[.62rem] text-slate-400 leading-relaxed text-center mt-2">
+                    สแกนเพื่อเปิดเว็บนี้บนมือถือ
+                </p>
+                <p class="text-[.55rem] font-mono text-slate-600 break-all text-center mt-1">${esc(PUBLIC_URL)}</p>`;
+        });
+    }
+
     initEventListeners();
+    renderQRCards();
 
     return {
         boot,

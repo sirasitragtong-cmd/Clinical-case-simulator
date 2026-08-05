@@ -19,17 +19,18 @@
  */
 'use strict';
 
-const CACHE_NAME = 'pharmsim-202608050848';
+const CACHE_NAME = 'pharmsim-202608050908';
 
 const PRECACHE_URLS = [
     './',
     './index.html',
-    './css/style.min.css?v=202608050848',
-    './js/firebase-service.js?v=202608050848',
-    './js/ui-controller.js?v=202608050848',
-    './js/game-engine.js?v=202608050848',
-    './data/case_001.json?v=202608050848',
-    './manifest.json?v=202608050848',
+    './css/style.min.css?v=202608050908',
+    './js/qrcode.js?v=202608050908',
+    './js/firebase-service.js?v=202608050908',
+    './js/ui-controller.js?v=202608050908',
+    './js/game-engine.js?v=202608050908',
+    './data/case_001.json?v=202608050908',
+    './manifest.json?v=202608050908',
     './icons/icon-192.png',
     './icons/icon-512.png',
 ];

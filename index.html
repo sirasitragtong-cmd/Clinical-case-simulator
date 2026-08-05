@@ -8,7 +8,7 @@
     <title>Clinical Case Simulator — Medical RPG</title>
 
     <!-- PWA — installable on iPad for clinical rotations -->
-    <link rel="manifest" href="./manifest.json?v=202608050848" />
+    <link rel="manifest" href="./manifest.json?v=202608050908" />
     <link rel="apple-touch-icon" href="./icons/icon-192.png" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
@@ -26,7 +26,7 @@
 
     <!-- Compiled production stylesheet (node build.js). Replaces the
          cdn.tailwindcss.com in-browser compiler and its production warning. -->
-    <link rel="stylesheet" href="./css/style.min.css?v=202608050848" />
+    <link rel="stylesheet" href="./css/style.min.css?v=202608050908" />
 </head>
 <body>
 
@@ -191,7 +191,11 @@
         <a class="nav-link" data-panel="achievements">🎖 Achievements</a>
         <a class="nav-link" data-panel="instructor">🎓 Instructor View</a>
 
-        <div class="mt-auto panel rounded-xl p-3">
+        <!-- Scan-to-open card. Filled in by renderQRCards() so the sidebar
+             and the in-case copy can never drift apart. -->
+        <div class="qr-card mt-auto panel rounded-xl p-3" data-qr-size="lg"></div>
+
+        <div class="panel rounded-xl p-3 mt-2">
           <p class="text-[.6rem] font-bold tracking-widest text-slate-500 uppercase mb-1.5">Session</p>
           <p id="sidebar-user-name" class="text-[.72rem] font-bold text-white truncate">—</p>
           <p id="sidebar-user-mode" class="text-[.62rem] text-slate-500">—</p>
@@ -410,6 +414,10 @@
             <p class="text-[.6rem] font-bold tracking-widest text-slate-500 uppercase mb-1.5">Clinical Narrative</p>
             <p id="case-narrative" class="text-[.72rem] text-slate-400 leading-relaxed">—</p>
             <div id="narrative-meta" class="flex flex-wrap gap-1.5 mt-3"></div>
+
+            <!-- Same card as the sidebar's, present on every stage because
+                 this column is part of the shared case shell. -->
+            <div class="qr-card rounded-xl border border-navy-700/60 bg-navy-850/60 p-3 mt-3" data-qr-size="sm"></div>
           </div>
         </section>
 
@@ -475,9 +483,10 @@
 <!-- ═══════════════════════════════════════════════════════════════
      SCRIPTS
      ═══════════════════════════════════════════════════════════════ -->
-<script src="./js/firebase-service.js?v=202608050848"></script>
-<script src="./js/ui-controller.js?v=202608050848"></script>
-<script src="./js/game-engine.js?v=202608050848"></script>
+<script src="./js/qrcode.js?v=202608050908"></script>
+<script src="./js/firebase-service.js?v=202608050908"></script>
+<script src="./js/ui-controller.js?v=202608050908"></script>
+<script src="./js/game-engine.js?v=202608050908"></script>
 
 <script>
 (function() {
@@ -486,7 +495,7 @@
     // Case registry. Stage 1 only for now — later stages get added here as
     // they are authored, and the campaign map unlocks them in order.
     const CASE_FILES = [
-        './data/case_001.json?v=202608050848'
+        './data/case_001.json?v=202608050908'
     ];
 
     const btnLogin       = document.getElementById('btn-google-login');
