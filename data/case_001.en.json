@@ -1,0 +1,1239 @@
+{
+  "case_id": "case_001",
+  "case_version": 3,
+  "language": "en",
+  "translation_status": "needs_clinical_review",
+  "translation_note": "English edition of data/case_001.json. Every id, answer key, point value and fatal flag is identical to the Thai original — only the human-readable prose differs. Any change to the clinical content must be made in both files or they will grade differently.",
+  "map_title": "Stage 1 · Emergency Room",
+  "map_subtitle": "62-year-old Thai man with fresh haematemesis and black tarry stools starting 2 hours before arrival",
+  "ward": "Emergency Room",
+  "case_title": "Acute Upper GI Bleeding from Peptic Ulcer Disease — NSAID + H. pylori, Gastric Antral Ulcer (Forrest Ib)",
+  "difficulty": "Advanced",
+  "tags": [
+    "Gastroenterology",
+    "Critical Care",
+    "Pharmacotherapy"
+  ],
+  "patient": {
+    "name": "Mr. Wichai",
+    "age": 62,
+    "sex": "M",
+    "occupation": null,
+    "chief_complaint": "Vomiting bright red blood and passing black tarry stools, starting 2 hours before arrival at hospital"
+  },
+  "vitals": [
+    {
+      "label": "BP",
+      "value": "90/60",
+      "unit": "mmHg",
+      "ref": "90/60–140/90"
+    },
+    {
+      "label": "HR",
+      "value": "115",
+      "unit": "bpm",
+      "ref": "60–100"
+    },
+    {
+      "label": "RR",
+      "value": "22",
+      "unit": "/min",
+      "ref": "12–20"
+    },
+    {
+      "label": "Temp",
+      "value": "36.5",
+      "unit": "°C",
+      "ref": "36.5–37.5"
+    },
+    {
+      "label": "SpO₂",
+      "value": "96%",
+      "unit": "RA",
+      "ref": "≥ 95"
+    },
+    {
+      "label": "Hb",
+      "value": "8.5",
+      "unit": "g/dL",
+      "ref": "13.0–18.0"
+    },
+    {
+      "label": "Hct",
+      "value": "26",
+      "unit": "%",
+      "ref": "40–54"
+    }
+  ],
+  "renal": {
+    "weight_kg": null,
+    "height_cm": null,
+    "scr_mg_dl": 1,
+    "bun_mg_dl": 35,
+    "note": null
+  },
+  "dtp": {
+    "step_id": "step_2_drps",
+    "correct_ids": [
+      5
+    ],
+    "rationale": "Ibuprofen 400 mg three times daily for two continuous weeks caused gastrointestinal ulceration and bleeding — an adverse drug reaction that has already occurred. The patient had a valid indication and took the drug as prescribed, so the problem lies in safety, not in indication or adherence."
+  },
+  "monitoring": {
+    "regimen": "Fluid resuscitation with isotonic crystalloid → high-dose IV PPI (omeprazole 80 mg bolus → 8 mg/hour for 72 hours) → endoscopic haemostasis within 24 hours → 14-day H. pylori eradication",
+    "efficacy": [
+      {
+        "param": "Vital signs (BP / HR)",
+        "target": "Systolic BP ≥ 100 mmHg, HR < 100 bpm",
+        "when": "Every 4–8 hours initially"
+      },
+      {
+        "param": "Haematocrit (Hct)",
+        "target": "No continuing fall; consistent with Hb 9–10 g/dL",
+        "when": "Every 4–8 hours"
+      },
+      {
+        "param": "Stool appearance / NG tube output",
+        "target": "No recurrence of fresh blood; stool returns to normal colour",
+        "when": "At every bowel movement and every shift"
+      },
+      {
+        "param": "Haemoglobin (Hb)",
+        "target": "Maintained in the 9–10 g/dL range",
+        "when": "Every 4–8 hours after transfusion"
+      },
+      {
+        "param": "BUN",
+        "target": "Falling back into the normal range (7–20 mg/dL)",
+        "when": "Every 24 hours"
+      },
+      {
+        "param": "H. pylori eradication result",
+        "target": "Negative follow-up test",
+        "when": "After the 14-day regimen is completed"
+      }
+    ],
+    "safety": [
+      {
+        "param": "Headache",
+        "watch": "The most frequently reported adverse effect of PPIs",
+        "when": "Every shift while the infusion is running"
+      },
+      {
+        "param": "Diarrhoea",
+        "watch": "A common adverse effect of PPIs",
+        "when": "Every shift while the infusion is running"
+      },
+      {
+        "param": "Severe abdominal pain / abdominal rigidity",
+        "watch": "A sign of perforation — report to the physician immediately",
+        "when": "Every shift"
+      },
+      {
+        "param": "Recurrent haematemesis",
+        "watch": "A sign of rebleeding",
+        "when": "Continuously"
+      },
+      {
+        "param": "Transfusion reactions",
+        "watch": "Fever, chills, rash, difficulty breathing",
+        "when": "During and after transfusion"
+      },
+      {
+        "param": "Adverse effects of the eradication regimen",
+        "watch": "Nausea, taste disturbance and diarrhoea from the antibiotics",
+        "when": "Throughout the 14 days of therapy"
+      }
+    ]
+  },
+  "reference": {
+    "title": "Clinical Reference",
+    "note": "Based on the Thai clinical practice guideline for upper gastrointestinal bleeding (2014), GI Emergencies, the Peptic Ulcer Disease Guideline (Froedtert) and the 2024 ACG Clinical Guideline: Treatment of H. pylori Infection",
+    "sections": [
+      {
+        "id": "abbrev",
+        "title": "Abbreviations and terms used in this case",
+        "icon": "🔤",
+        "rows": [
+          [
+            "UGIB",
+            "Upper Gastrointestinal Bleeding — bleeding from the upper digestive tract"
+          ],
+          [
+            "PUD",
+            "Peptic Ulcer Disease — ulceration of the stomach and duodenum"
+          ],
+          [
+            "NSAIDs",
+            "Non-Steroidal Anti-Inflammatory Drugs"
+          ],
+          [
+            "PPI",
+            "Proton Pump Inhibitor — suppresses gastric acid secretion"
+          ],
+          [
+            "H2RA",
+            "Histamine-2 Receptor Antagonist — acid suppression by H2 blockade"
+          ],
+          [
+            "EGD",
+            "Esophagogastroduodenoscopy — endoscopy of the upper digestive tract"
+          ],
+          [
+            "RUT",
+            "Rapid Urease Test — detects H. pylori from a biopsy taken at endoscopy"
+          ],
+          [
+            "GBS",
+            "Glasgow-Blatchford Score — predicts the need for urgent intervention"
+          ],
+          [
+            "Melena",
+            "Black, sticky, tar-like stool from blood digested in the gut"
+          ],
+          [
+            "Hematemesis",
+            "Vomiting blood"
+          ],
+          [
+            "Antrum",
+            "The distal part of the stomach, just before the duodenum"
+          ],
+          [
+            "Crystalloid",
+            "An intravenous fluid such as normal saline or Lactated Ringer's"
+          ],
+          [
+            "DTP",
+            "Drug Therapy Problem"
+          ],
+          [
+            "NPO",
+            "Nil Per Os — nothing by mouth"
+          ]
+        ]
+      },
+      {
+        "id": "differential",
+        "title": "Differential Diagnosis",
+        "icon": "🧭",
+        "note": "Criteria for telling these conditions apart — this does not state which one this patient has",
+        "table": {
+          "columns": [
+            "Condition",
+            "History and presenting features",
+            "Laboratory / examination findings",
+            "Endoscopic findings"
+          ],
+          "rows": [
+            [
+              "Peptic Ulcer Bleeding",
+              "NSAID or aspirin use, epigastric pain, black stools",
+              "Raised BUN with a normal creatinine, low Hb",
+              "An ulcer with Forrest stigmata"
+            ],
+            [
+              "Variceal Bleeding",
+              "Chronic alcohol use, known cirrhosis",
+              "Abnormal AST/ALT, low platelets, raised INR, jaundice, ascites",
+              "Varices in the oesophagus"
+            ],
+            [
+              "Mallory-Weiss Tear",
+              "Violent retching preceding the haematemesis",
+              "Vital signs usually stable",
+              "A tear at the gastro-oesophageal junction"
+            ],
+            [
+              "Gastric Perforation",
+              "Sudden, severe abdominal pain",
+              "Abdominal guarding and rebound tenderness",
+              "Free air under the diaphragm on imaging"
+            ]
+          ]
+        }
+      },
+      {
+        "id": "resuscitation",
+        "title": "Resuscitation and early treatment goals",
+        "icon": "🚑",
+        "rows": [
+          [
+            "First priority",
+            "Initial assessment and resuscitation — always come first when a patient presents with haematemesis or melena"
+          ],
+          [
+            "Airway",
+            "Protect the airway to prevent aspiration of blood into the lungs"
+          ],
+          [
+            "Fluid of choice",
+            "Isotonic crystalloid such as 0.9% saline or Lactated Ringer's, intravenously"
+          ],
+          [
+            "Blood pressure target",
+            "Systolic BP ≥ 100 mmHg"
+          ],
+          [
+            "Haemoglobin target",
+            "Maintain 9–10 g/dL in severe bleeding"
+          ],
+          [
+            "Before the procedure",
+            "Risk stratification is required to decide how urgently endoscopy is needed"
+          ]
+        ]
+      },
+      {
+        "id": "risk",
+        "title": "Risk Stratification",
+        "icon": "📊",
+        "rows": [
+          [
+            "Glasgow-Blatchford Score (GBS)",
+            "Used to decide whether the patient needs intervention such as urgent endoscopy or transfusion · a GBS above 0 indicates risk and a need for medical management"
+          ],
+          [
+            "Components that raise the GBS",
+            "Raised BUN, Hb < 13.0 g/dL (men), systolic BP < 110 mmHg, pulse ≥ 100 bpm, melena, syncope, hepatic or cardiac failure"
+          ],
+          [
+            "GBS scoring (abbreviated)",
+            "BUN > 25 = 6 points · Hb < 10 g/dL = 6 points · SBP 90–99 = 2 points · pulse ≥ 100 = 1 point · melena = 1 point · syncope = 2 points"
+          ],
+          [
+            "Forrest Ia / Ib",
+            "Spurting / oozing bleeding — high risk of rebleeding, requires immediate endoscopic haemostasis"
+          ],
+          [
+            "Forrest IIa / IIb / IIc",
+            "Visible vessel / adherent clot / flat pigmented spot — risk falls in that order · Forrest Ia through IIa are the group requiring endoscopic haemostasis"
+          ],
+          [
+            "Forrest III",
+            "Clean ulcer base — the lowest risk of rebleeding"
+          ],
+          [
+            "Age",
+            "Age ≥ 60 is a high-risk factor for both rebleeding and death"
+          ]
+        ]
+      },
+      {
+        "id": "pharm",
+        "title": "Drug doses and pharmacological management",
+        "icon": "💊",
+        "rows": [
+          [
+            "IV PPI — agent",
+            "Omeprazole or pantoprazole — the mainstay for non-variceal bleeding"
+          ],
+          [
+            "IV PPI — loading dose",
+            "80 mg IV bolus (for omeprazole)"
+          ],
+          [
+            "IV PPI — continuous infusion",
+            "8 mg/hour for 72 hours after successful endoscopic haemostasis"
+          ],
+          [
+            "IV PPI — alternative",
+            "Double-dose oral PPI (for example 40 mg twice daily) may be considered in low-risk patients"
+          ],
+          [
+            "PPI — adverse effects",
+            "Most commonly headache and diarrhoea"
+          ],
+          [
+            "Octreotide / Somatostatin",
+            "For variceal bleeding only, not for peptic ulcer bleeding"
+          ],
+          [
+            "H. pylori — first line",
+            "Standard triple therapy: standard-dose PPI + amoxicillin 1 g + clarithromycin 500 mg, all twice daily by mouth"
+          ],
+          [
+            "H. pylori — duration",
+            "14 days, for the best eradication rate"
+          ],
+          [
+            "NSAIDs",
+            "The offending agent must be stopped immediately while bleeding is active"
+          ]
+        ]
+      },
+      {
+        "id": "dtp",
+        "title": "Drug Therapy Problem categories",
+        "icon": "🏷",
+        "note": "Classification framework from Pharmaceutical Care Practice",
+        "rows": [
+          [
+            "1. Unnecessary Drug Therapy",
+            "A drug is being taken without a valid indication"
+          ],
+          [
+            "2. Needs Additional Drug Therapy",
+            "There is an indication, but no drug has been given"
+          ],
+          [
+            "3. Ineffective Drug",
+            "The drug given does not work for this condition"
+          ],
+          [
+            "4. Dosage Too Low",
+            "The dose is too low to be effective"
+          ],
+          [
+            "5. Adverse Drug Reaction",
+            "An adverse reaction to the drug has occurred"
+          ],
+          [
+            "6. Dosage Too High",
+            "The dose is high enough to risk toxicity"
+          ],
+          [
+            "7. Non-adherence",
+            "The patient is not taking the drug as prescribed"
+          ]
+        ]
+      }
+    ]
+  },
+  "stages": {
+    "stage_1_data": {
+      "title": "DATA (gather the information)",
+      "steps": {
+        "step_1_subjective_data": {
+          "type": "info",
+          "chart_tab": "subjective",
+          "content": [
+            "<strong>PATIENT PROFILE</strong>",
+            "Mr. Wichai · male · 62 years old",
+            "Occupation · weight · height · BMI — <span class=\"ref\">not recorded in the source document</span>",
+            "<strong>CHIEF COMPLAINT</strong>",
+            "\"Vomiting bright red blood and passing black tarry stools, starting 2 hours before arrival at hospital\"",
+            "<strong>HISTORY OF PRESENT ILLNESS</strong>",
+            "<u>3 days before admission</u> — onset of burning, gnawing pain in the epigastrium, usually related to meals",
+            "<u>1 day before admission</u> — noticed dark, sticky, tar-like stools (melena — black stool from digested blood)",
+            "<u>2 hours before admission</u> — severe nausea followed by two episodes of vomiting fresh blood (hematemesis), roughly two soup bowls in total",
+            "<strong>SYMPTOM PROFILE</strong>",
+            "<u>Onset</u> — sudden",
+            "<u>Location</u> — epigastrium",
+            "<u>Characteristics</u> — burning pain with a feeling of fullness",
+            "<u>Aggravating factors</u> — the pain is related to eating",
+            "<u>Severity</u> — pain score 7/10 <span class=\"ref\">(scale 0–10)</span> · light-headedness on standing (syncope / orthostasis)",
+            "<strong>ASSOCIATED SYMPTOMS</strong>",
+            "Palpitations, restlessness and marked thirst",
+            "Dizziness and light-headedness",
+            "<strong>PAST MEDICAL HISTORY</strong>",
+            "Known Peptic Ulcer Disease (PUD)",
+            "History of major abdominal surgery — <span class=\"ref\">not recorded in the source document</span>",
+            "<strong>CURRENT MEDICATIONS</strong>",
+            "Ibuprofen (an NSAID analgesic) 400 mg — one tablet after each of three meals, taken for joint pain",
+            "Duration — taken continuously for about 2 weeks for knee pain",
+            "Adherence — takes the drug as prescribed, but without any co-prescribed acid suppression",
+            "<strong>ALLERGIES</strong>",
+            "<span class=\"ref\">not recorded in the source document</span>",
+            "<strong>SOCIAL HISTORY</strong>",
+            "Alcohol — regular use (chronic alcohol abuse)",
+            "Smoking — <span class=\"ref\">not recorded in the source document</span>",
+            "Occupation and nature of work — <span class=\"ref\">not recorded in the source document</span>"
+          ]
+        },
+        "step_2_objective_data": {
+          "type": "info",
+          "chart_tab": "objective",
+          "content": [
+            "<strong>VITAL SIGNS</strong>",
+            "BP (blood pressure) 90/60 mmHg <span class=\"ref\">(normal 90/60–140/90)</span>",
+            "HR (heart rate) 115 bpm <span class=\"ref\">(normal 60–100)</span>",
+            "RR (respiratory rate) 22 /min <span class=\"ref\">(normal 12–20)</span>",
+            "Temp (body temperature) 36.5 °C <span class=\"ref\">(normal 36.5–37.5)</span>",
+            "SpO₂ (oxygen saturation) 96% on room air <span class=\"ref\">(normal ≥ 95)</span>",
+            "<strong>PHYSICAL EXAMINATION</strong>",
+            "<u>General appearance</u> — the patient is markedly fatigued and lethargic, anxious and restless, with obvious pallor and cold clammy skin",
+            "<u>Abdomen</u> — soft, with mild epigastric tenderness; no distension",
+            "<u>Bowel sounds</u> — hyperactive",
+            "<u>Rectal examination</u> — black, sticky, tar-like stool (melena) on the glove",
+            "<u>Negative findings</u> — no jaundice · no ascites",
+            "No petechiae or ecchymoses",
+            "No guarding and no rebound tenderness",
+            "<strong>LABORATORY — Complete Blood Count (CBC)</strong>",
+            "Hb (haemoglobin) 8.5 g/dL <span class=\"ref\">(normal 13.0–18.0 in men)</span>",
+            "Hct (haematocrit) 26% <span class=\"ref\">(normal 40–54)</span>",
+            "WBC (white blood cells) 12,500 cells/mm³ <span class=\"ref\">(normal 4,000–11,000)</span>",
+            "Platelet count 250,000 cells/mm³ <span class=\"ref\">(normal 150,000–450,000)</span>",
+            "<strong>LABORATORY — Renal Function</strong>",
+            "BUN (blood urea nitrogen) 35 mg/dL <span class=\"ref\">(normal 7–20)</span>",
+            "Cr (creatinine) 1.0 mg/dL <span class=\"ref\">(normal 0.6–1.2)</span>",
+            "<strong>LABORATORY — Coagulation &amp; Liver Function</strong>",
+            "PT / INR 1.1 <span class=\"ref\">(normal 0.8–1.2)</span>",
+            "AST / ALT (liver enzymes) 28 / 32 U/L <span class=\"ref\">(normal &lt; 40)</span>",
+            "<strong>DIAGNOSTIC INVESTIGATION — EGD (upper GI endoscopy)</strong>",
+            "Esophagogastroduodenoscopy (EGD) — performed urgently within 24 hours, after fluid replacement had begun to stabilise the vital signs",
+            "<u>Finding</u> — a solitary ulcer in the gastric antrum, approximately 1.5 cm in diameter",
+            "<u>Stigmata of haemorrhage</u> — Forrest Class Ib (active oozing bleeding from the ulcer base)",
+            "<u>Sakita classification</u> — Active Stage (A1); the ulcer margin is clearly swollen and red, with clot partially covering the base",
+            "<u>H. pylori test</u> — Rapid Urease Test (RUT, from biopsy) Positive"
+          ]
+        }
+      }
+    },
+    "stage_2_assessment": {
+      "title": "ASSESSMENT (analyse the problems)",
+      "steps": {
+        "step_1_problem_list": {
+          "type": "mcq_multi",
+          "question": "From the history (S) and the examination and laboratory findings (O), identify this patient's problem list at the level of diagnosis",
+          "patient_state": "shock",
+          "point_per_correct": 100,
+          "point_penalty": 50,
+          "point_value": 400,
+          "choices": [
+            {
+              "id": "A",
+              "text": "Age 62 and a raised BUN are the principal problems",
+              "is_correct": false
+            },
+            {
+              "id": "B",
+              "text": "H. pylori infection",
+              "is_correct": true
+            },
+            {
+              "id": "C",
+              "text": "Haematemesis and melena constitute a complete problem list",
+              "is_correct": false
+            },
+            {
+              "id": "D",
+              "text": "Chronic knee pain is the first problem to address",
+              "is_correct": false
+            },
+            {
+              "id": "E",
+              "text": "Hypovolaemic shock (from blood loss)",
+              "is_correct": true
+            },
+            {
+              "id": "F",
+              "text": "Acute upper gastrointestinal bleeding",
+              "is_correct": true
+            },
+            {
+              "id": "G",
+              "text": "NSAID-induced peptic ulcer disease",
+              "is_correct": true
+            }
+          ],
+          "correct_answers": [
+            "B",
+            "E",
+            "F",
+            "G"
+          ],
+          "clinical_rationale": "The most life-threatening problem is hypovolaemic shock (BP 90/60, HR 115), caused by acute UGIB. The underlying pathology is peptic ulcer disease related to ibuprofen use together with H. pylori infection (RUT positive).",
+          "feedback": {
+            "correct": "Correct — a good problem list runs from the most life-threatening condition down to its cause: shock → acute UGIB → NSAID-induced PUD → H. pylori infection",
+            "partial": "Partly correct — review which options are \"signs and symptoms\" and which are \"diagnoses\" that belong on a problem list",
+            "incorrect": "Not correct — haematemesis and melena are only symptoms and signs, not a statement of the problem at the level of diagnosis"
+          }
+        },
+        "step_2_drps": {
+          "type": "mcq_multi",
+          "question": "Analysing this patient's use of ibuprofen 400 mg three times daily, which drug therapy problem contributed directly to this admission?",
+          "patient_state": "pain",
+          "point_per_correct": 100,
+          "point_penalty": 50,
+          "point_value": 100,
+          "choices": [
+            {
+              "id": "A",
+              "text": "Effectiveness — the ibuprofen dose is too low to control the pain",
+              "is_correct": false
+            },
+            {
+              "id": "B",
+              "text": "Drug interaction — an interaction with the antacid the patient is taking",
+              "is_correct": false
+            },
+            {
+              "id": "C",
+              "text": "Adherence — the patient forgot doses, which caused the gastric ulcer",
+              "is_correct": false
+            },
+            {
+              "id": "D",
+              "text": "Unnecessary drug therapy — this drug was never needed at all",
+              "is_correct": false
+            },
+            {
+              "id": "E",
+              "text": "Indication — the patient is taking the drug without a clear medical indication",
+              "is_correct": false
+            },
+            {
+              "id": "F",
+              "text": "Safety — the patient has had an adverse drug reaction that led to the bleeding",
+              "is_correct": true
+            },
+            {
+              "id": "G",
+              "text": "Dosage too high — the dose exceeds the maximum daily dose of ibuprofen",
+              "is_correct": false
+            }
+          ],
+          "correct_answers": [
+            "F"
+          ],
+          "clinical_rationale": "NSAIDs such as ibuprofen inhibit prostaglandin synthesis, which protects the gastrointestinal mucosa, and can therefore cause ulceration and bleeding. A dose of 1,200 mg/day is a normal dose, but the harm to the mucosa is not reduced in proportion to the analgesic benefit.",
+          "feedback": {
+            "correct": "Correct — this is a safety DTP: the patient had a genuine indication and took the correct dose, but suffered an adverse reaction severe enough to require admission",
+            "partial": "Partly correct — reconsider whether the patient had an indication for the drug, and whether the dose was appropriate",
+            "incorrect": "Not correct — the patient took the drug as prescribed and had an indication for it (knee pain), so the problem is not indication, dose or adherence"
+          }
+        },
+        "step_3_etiology": {
+          "type": "mcq_multi",
+          "question": "Which factors acted together (a synergistic effect) to produce the Forrest Ib ulcer in this patient?",
+          "patient_state": "pain",
+          "point_per_correct": 100,
+          "point_penalty": 50,
+          "point_value": 200,
+          "choices": [
+            {
+              "id": "A",
+              "text": "Renal impairment reduced acid excretion and caused the gastric ulcer",
+              "is_correct": false
+            },
+            {
+              "id": "B",
+              "text": "A coagulation defect indicated by a raised INR",
+              "is_correct": false
+            },
+            {
+              "id": "C",
+              "text": "Inhibition of COX enzymes by ibuprofen",
+              "is_correct": true
+            },
+            {
+              "id": "D",
+              "text": "Thrombocytopenia preventing the bleeding from stopping",
+              "is_correct": false
+            },
+            {
+              "id": "E",
+              "text": "Chronic alcohol use causing oesophageal varices",
+              "is_correct": false
+            },
+            {
+              "id": "F",
+              "text": "Direct damage to the gastric mucosa by H. pylori",
+              "is_correct": true
+            },
+            {
+              "id": "G",
+              "text": "Vitamin deficiency from an unbalanced diet",
+              "is_correct": false
+            }
+          ],
+          "correct_answers": [
+            "C",
+            "F"
+          ],
+          "clinical_rationale": "Both NSAIDs and H. pylori are major risk factors for peptic ulcer disease. NSAIDs weaken mucosal defence by inhibiting prostaglandin synthesis, while H. pylori drives inflammation until the ulcer erodes down to a blood vessel.",
+          "feedback": {
+            "correct": "Correct — two mechanisms working together: reduced mucosal protection, and increased mucosal damage",
+            "partial": "Partly correct — this patient has more than one contributing factor, and they reinforce each other",
+            "incorrect": "Not correct — check the patient's platelet count, INR and creatinine before choosing a mechanism"
+          }
+        },
+        "step_4_risk_factor": {
+          "type": "mcq_multi",
+          "question": "Which of this patient's features indicate a high risk of rebleeding or death according to the guideline criteria?",
+          "patient_state": "shock",
+          "point_per_correct": 100,
+          "point_penalty": 50,
+          "point_value": 400,
+          "choices": [
+            {
+              "id": "A",
+              "text": "Age 62 (≥ 60 years)",
+              "is_correct": true
+            },
+            {
+              "id": "B",
+              "text": "AST/ALT within the normal range",
+              "is_correct": false
+            },
+            {
+              "id": "C",
+              "text": "A mildly raised white cell count",
+              "is_correct": false
+            },
+            {
+              "id": "D",
+              "text": "Systolic BP 90 mmHg (shock)",
+              "is_correct": true
+            },
+            {
+              "id": "E",
+              "text": "A history of NSAID use",
+              "is_correct": true
+            },
+            {
+              "id": "F",
+              "text": "Burning epigastric pain",
+              "is_correct": false
+            },
+            {
+              "id": "G",
+              "text": "Heart rate 115 bpm (> 100)",
+              "is_correct": true
+            }
+          ],
+          "correct_answers": [
+            "A",
+            "D",
+            "E",
+            "G"
+          ],
+          "clinical_rationale": "The recognised high-risk criteria are age ≥ 60, the presence of shock (SBP < 100 mmHg, pulse > 100 bpm), and comorbidities or medications that carry bleeding risk.",
+          "feedback": {
+            "correct": "Correct — the factors that count under the criteria are age, shock, tachycardia and use of a drug that causes bleeding",
+            "partial": "Partly correct — review the numerical thresholds for SBP and pulse used to define the risk groups",
+            "incorrect": "Not correct — burning epigastric pain and a mildly raised white cell count are not among the criteria that predict rebleeding"
+          }
+        },
+        "step_5_severity": {
+          "type": "mcq_multi",
+          "question": "Given BUN 35, Hb 8.5, SBP 90, HR 115, melena and light-headedness, together with the endoscopy findings, which statements about severity are correct?",
+          "patient_state": "shock",
+          "point_per_correct": 100,
+          "point_penalty": 50,
+          "point_value": 200,
+          "choices": [
+            {
+              "id": "A",
+              "text": "Forrest Ib (active oozing) falls in the group requiring endoscopic haemostasis",
+              "is_correct": true
+            },
+            {
+              "id": "B",
+              "text": "Forrest IIa (non-bleeding visible vessel)",
+              "is_correct": false
+            },
+            {
+              "id": "C",
+              "text": "GBS = 0, so the patient can be managed as an outpatient",
+              "is_correct": false
+            },
+            {
+              "id": "D",
+              "text": "Glasgow-Blatchford Score = 18, placing the patient in the very high risk group",
+              "is_correct": true
+            },
+            {
+              "id": "E",
+              "text": "Rockall Score = 0, placing the patient in the low risk group",
+              "is_correct": false
+            },
+            {
+              "id": "F",
+              "text": "Forrest III (clean ulcer base), low risk of rebleeding",
+              "is_correct": false
+            },
+            {
+              "id": "G",
+              "text": "GBS = 5, placing the patient in the moderate risk group",
+              "is_correct": false
+            }
+          ],
+          "correct_answers": [
+            "A",
+            "D"
+          ],
+          "clinical_rationale": "Calculating the GBS: BUN 35 (> 25) = 6, Hb 8.5 (< 10) = 6, SBP 90 = 2, HR 115 = 1, melena = 1, syncope = 2, giving a total of 18 — very high (any GBS above 0 warrants admission and urgent endoscopy). Forrest Ib is an actively oozing ulcer and is classed as high risk.",
+          "feedback": {
+            "correct": "Correct — the GBS and the Forrest class point the same way: a high-risk patient needing urgent treatment",
+            "partial": "Partly correct — work the GBS out component by component from the scoring table in the reference",
+            "incorrect": "Not correct — go back to the BUN, Hb, SBP, HR and the light-headedness, and compare them with the GBS scoring criteria"
+          }
+        }
+      }
+    },
+    "stage_3_plan": {
+      "title": "PLAN (plan the treatment)",
+      "steps": {
+        "step_6_current_therapy": {
+          "type": "mcq_multi",
+          "question": "During this acute phase of severe bleeding, how will you manage the patient's ibuprofen?",
+          "patient_state": "shock",
+          "point_per_correct": 100,
+          "point_penalty": 50,
+          "point_value": 200,
+          "choices": [
+            {
+              "id": "A",
+              "text": "Switch to a different NSAID that is less irritating to the stomach, at the same dose",
+              "is_correct": false
+            },
+            {
+              "id": "B",
+              "text": "Reduce the dose to 200 mg once daily",
+              "is_correct": false
+            },
+            {
+              "id": "C",
+              "text": "Continue it, but add an oral acid-suppressing drug alongside",
+              "is_correct": false
+            },
+            {
+              "id": "D",
+              "text": "Stop the drug immediately",
+              "is_correct": true
+            },
+            {
+              "id": "E",
+              "text": "Plan to move to a non-NSAID analgesic in future",
+              "is_correct": true
+            },
+            {
+              "id": "F",
+              "text": "Hold it for 3 days, then restart once the bleeding has stopped",
+              "is_correct": false
+            },
+            {
+              "id": "G",
+              "text": "Continue it, but take it immediately after food with plenty of water",
+              "is_correct": false,
+              "is_fatal": true,
+              "fatal_message": "Taking the drug after food reduces local irritation to some extent, but it does not prevent systemic prostaglandin inhibition, which is the mechanism that causes the ulcer. Continuing the drug during active bleeding prevented the ulcer from healing, the bleeding worsened, and the patient died."
+            }
+          ],
+          "correct_answers": [
+            "D",
+            "E"
+          ],
+          "clinical_rationale": "The offending agent must be stopped immediately. Continuing it during active bleeding prevents the ulcer from healing and can worsen the bleeding to the point of death.",
+          "feedback": {
+            "correct": "Correct — stop the causative drug at once, and plan a safer alternative for the joint pain in the longer term",
+            "partial": "Partly correct — managing the causative drug has to cover both the acute phase and the long-term plan",
+            "incorrect": "Not correct — this drug is the cause of the ulcer and the bleeding; reducing the dose or changing how it is taken is not enough"
+          }
+        },
+        "step_7_new_therapy": {
+          "type": "mcq_multi",
+          "question": "Which drug is the first-line agent with the strongest evidence for bleeding peptic ulcer (non-variceal bleeding) in this patient?",
+          "patient_state": "stabilized",
+          "point_per_correct": 100,
+          "point_penalty": 50,
+          "point_value": 100,
+          "choices": [
+            {
+              "id": "A",
+              "text": "Oral liquid antacid 30 mL every 2 hours",
+              "is_correct": false
+            },
+            {
+              "id": "B",
+              "text": "IV vitamin K to correct coagulation",
+              "is_correct": false
+            },
+            {
+              "id": "C",
+              "text": "IV ranitidine 50 mg every 8 hours",
+              "is_correct": false
+            },
+            {
+              "id": "D",
+              "text": "Oral sucralfate suspension to coat the ulcer",
+              "is_correct": false
+            },
+            {
+              "id": "E",
+              "text": "IV octreotide infusion",
+              "is_correct": false
+            },
+            {
+              "id": "F",
+              "text": "IV tranexamic acid to help stop the bleeding",
+              "is_correct": false
+            },
+            {
+              "id": "G",
+              "text": "IV proton pump inhibitor such as omeprazole or pantoprazole",
+              "is_correct": true
+            }
+          ],
+          "correct_answers": [
+            "G"
+          ],
+          "clinical_rationale": "IV PPIs are the most effective way to hold the gastric pH above 6 so that clot remains stable. Octreotide is used only for variceal bleeding.",
+          "feedback": {
+            "correct": "Correct — IV PPI is the mainstay of non-variceal bleeding",
+            "partial": "Partly correct — consider which drug acts quickly and powerfully enough to hold pH above 6 during acute bleeding",
+            "incorrect": "Not correct — distinguish the drugs used for variceal bleeding from those for non-variceal bleeding, and check the patient's INR"
+          }
+        },
+        "step_8_goal": {
+          "type": "mcq_multi",
+          "question": "What are the goals of therapy for the first 24 hours in this patient?",
+          "patient_state": "stabilized",
+          "point_per_correct": 100,
+          "point_penalty": 50,
+          "point_value": 300,
+          "choices": [
+            {
+              "id": "A",
+              "text": "Reducing the pain score to 0/10 is the first priority",
+              "is_correct": false
+            },
+            {
+              "id": "B",
+              "text": "Maintain haemoglobin in the 9–10 g/dL range",
+              "is_correct": true
+            },
+            {
+              "id": "C",
+              "text": "Return the BUN to normal within 24 hours",
+              "is_correct": false
+            },
+            {
+              "id": "D",
+              "text": "Haemodynamic stability — systolic BP ≥ 100 mmHg",
+              "is_correct": true
+            },
+            {
+              "id": "E",
+              "text": "Get the patient back onto ibuprofen as usual",
+              "is_correct": false
+            },
+            {
+              "id": "F",
+              "text": "Eradicate H. pylori completely within 24 hours",
+              "is_correct": false
+            },
+            {
+              "id": "G",
+              "text": "Achieve haemostasis at the ulcer",
+              "is_correct": true
+            }
+          ],
+          "correct_answers": [
+            "B",
+            "D",
+            "G"
+          ],
+          "clinical_rationale": "The first goal is resuscitation to stabilise the vital signs. The haemoglobin target in severe bleeding is 9–10 g/dL. Eradication is a long-term goal, not a goal for the first 24 hours.",
+          "feedback": {
+            "correct": "Correct — the first 24 hours are about circulatory stability, reaching the haemoglobin target, and successful haemostasis",
+            "partial": "Partly correct — separate the acute goals from the long-term ones",
+            "incorrect": "Not correct — review the numerical targets for SBP and Hb in the resuscitation section of the reference"
+          }
+        },
+        "step_9_therapeutic_plan": {
+          "type": "mcq_multi",
+          "question": "Choose the PPI prescribing plan for this Forrest Ib ulcer after successful endoscopic haemostasis",
+          "patient_state": "stabilized",
+          "point_per_correct": 100,
+          "point_penalty": 50,
+          "point_value": 200,
+          "choices": [
+            {
+              "id": "A",
+              "text": "Pantoprazole 40 mg IV push twice daily",
+              "is_correct": false
+            },
+            {
+              "id": "B",
+              "text": "IV PPI for 24 hours, then switch straight to the oral form",
+              "is_correct": false
+            },
+            {
+              "id": "C",
+              "text": "Omeprazole 80 mg IV bolus once, then stop",
+              "is_correct": false
+            },
+            {
+              "id": "D",
+              "text": "Omeprazole 80 mg IV bolus immediately",
+              "is_correct": true
+            },
+            {
+              "id": "E",
+              "text": "Give the drug on demand whenever the patient has abdominal pain",
+              "is_correct": false
+            },
+            {
+              "id": "F",
+              "text": "Omeprazole 20 mg orally once daily",
+              "is_correct": false
+            },
+            {
+              "id": "G",
+              "text": "Followed by a continuous infusion of 8 mg/hour for 72 hours",
+              "is_correct": true
+            }
+          ],
+          "correct_answers": [
+            "D",
+            "G"
+          ],
+          "clinical_rationale": "This is the standard high-dose PPI regimen for high-risk ulcers (Forrest I and IIa), given to prevent rebleeding during the first 72 hours, when the risk of rebleeding is highest.",
+          "feedback": {
+            "correct": "Correct — an 80 mg bolus followed by an 8 mg/hour infusion for a full 72 hours is the standard regimen for high-risk ulcers",
+            "partial": "Partly correct — the standard regimen always has two parts: a loading dose and a continuous infusion",
+            "incorrect": "Not correct — review the dose, route and duration of high-dose IV PPI in the reference"
+          }
+        }
+      }
+    },
+    "stage_4_monitoring": {
+      "title": "MONITORING & DISCHARGE (follow-up and continuing care)",
+      "steps": {
+        "step_10_efficacy_monitoring": {
+          "type": "mcq_multi",
+          "question": "Which parameters must be monitored every 4–8 hours in the early phase to assess the bleeding?",
+          "patient_state": "stabilized",
+          "point_per_correct": 100,
+          "point_penalty": 50,
+          "point_value": 300,
+          "choices": [
+            {
+              "id": "A",
+              "text": "The appearance and colour of the stool, or blood from the NG tube",
+              "is_correct": true
+            },
+            {
+              "id": "B",
+              "text": "Vital signs (BP, HR)",
+              "is_correct": true
+            },
+            {
+              "id": "C",
+              "text": "Serum magnesium every 4–8 hours",
+              "is_correct": false
+            },
+            {
+              "id": "D",
+              "text": "Pain score and knee range of movement",
+              "is_correct": false
+            },
+            {
+              "id": "E",
+              "text": "Haematocrit (Hct)",
+              "is_correct": true
+            },
+            {
+              "id": "F",
+              "text": "A repeat urea breath test every day",
+              "is_correct": false
+            },
+            {
+              "id": "G",
+              "text": "Serum amylase",
+              "is_correct": false
+            }
+          ],
+          "correct_answers": [
+            "A",
+            "B",
+            "E"
+          ],
+          "clinical_rationale": "Close monitoring of the vital signs and haematocrit shows whether haemostasis and fluid replacement are working, while stool appearance and NG tube output show whether bleeding is continuing.",
+          "feedback": {
+            "correct": "Correct — monitor the circulation, the blood concentration, and the evidence of ongoing bleeding",
+            "partial": "Partly correct — consider which parameters change quickly enough to catch rebleeding in time",
+            "incorrect": "Not correct — the chosen parameters must reflect the bleeding directly, not joint pain or slow-turnaround tests"
+          }
+        },
+        "step_11_adr_monitoring": {
+          "type": "mcq_multi",
+          "question": "If the patient receives high-dose IV PPI continuously for 72 hours, which adverse effects are the most common and should be watched for?",
+          "patient_state": "stabilized",
+          "point_per_correct": 100,
+          "point_penalty": 50,
+          "point_value": 200,
+          "choices": [
+            {
+              "id": "A",
+              "text": "Acute kidney injury",
+              "is_correct": false
+            },
+            {
+              "id": "B",
+              "text": "Sudden hair loss",
+              "is_correct": false
+            },
+            {
+              "id": "C",
+              "text": "Headache",
+              "is_correct": true
+            },
+            {
+              "id": "D",
+              "text": "A severe rise in blood pressure",
+              "is_correct": false
+            },
+            {
+              "id": "E",
+              "text": "Diarrhoea",
+              "is_correct": true
+            },
+            {
+              "id": "F",
+              "text": "Hypoglycaemia",
+              "is_correct": false
+            },
+            {
+              "id": "G",
+              "text": "Palpitations and tremor",
+              "is_correct": false
+            }
+          ],
+          "correct_answers": [
+            "C",
+            "E"
+          ],
+          "clinical_rationale": "Headache and diarrhoea are the principal adverse effects reported with PPIs.",
+          "feedback": {
+            "correct": "Correct — these are the most commonly reported adverse effects of PPIs",
+            "partial": "Partly correct — this drug class has more than one common adverse effect",
+            "incorrect": "Not correct — review the \"PPI — adverse effects\" entry in the reference"
+          }
+        },
+        "step_12_patient_education": {
+          "type": "mcq_multi",
+          "question": "Which counselling points are the most critical to emphasise to the patient before discharge from this stage?",
+          "patient_state": "recovered",
+          "point_per_correct": 100,
+          "point_penalty": 50,
+          "point_value": 300,
+          "choices": [
+            {
+              "id": "A",
+              "text": "Do not buy NSAID painkillers or pre-packed drug sets to take without consulting a doctor or pharmacist",
+              "is_correct": true
+            },
+            {
+              "id": "B",
+              "text": "Drink milk before every dose of painkiller",
+              "is_correct": false
+            },
+            {
+              "id": "C",
+              "text": "Chew food thoroughly",
+              "is_correct": false
+            },
+            {
+              "id": "D",
+              "text": "Take the acid-suppressing drug only when the stomach hurts",
+              "is_correct": false
+            },
+            {
+              "id": "E",
+              "text": "Teach the patient to recognise warning signs such as black stools or vomiting blood",
+              "is_correct": true
+            },
+            {
+              "id": "F",
+              "text": "Stop drinking alcohol completely",
+              "is_correct": true
+            },
+            {
+              "id": "G",
+              "text": "No follow-up appointment is needed once the symptoms have gone",
+              "is_correct": false
+            }
+          ],
+          "correct_answers": [
+            "A",
+            "E",
+            "F"
+          ],
+          "clinical_rationale": "The main precipitating factors are NSAIDs and alcohol; if they are not stopped, life-threatening rebleeding will follow. The patient also needs to recognise the warning signs so they can return to hospital in time.",
+          "feedback": {
+            "correct": "Correct — remove both precipitating factors, and make sure the patient knows when to come back to hospital",
+            "partial": "Partly correct — review the social history and medication history for the behaviours that need to change",
+            "incorrect": "Not correct — the most critical advice has to address whatever could make the patient bleed again"
+          }
+        },
+        "step_13_future_plan": {
+          "type": "mcq_multi",
+          "question": "Once bleeding has been controlled and the vital signs are stable, what is the most important next plan?",
+          "patient_state": "recovered",
+          "point_per_correct": 100,
+          "point_penalty": 50,
+          "point_value": 300,
+          "choices": [
+            {
+              "id": "A",
+              "text": "Eradication is unnecessary because the NSAID history alone explains the ulcer",
+              "is_correct": false
+            },
+            {
+              "id": "B",
+              "text": "Continue a PPI for life without any repeat testing",
+              "is_correct": false
+            },
+            {
+              "id": "C",
+              "text": "Seven days of eradication antibiotics is sufficient",
+              "is_correct": false
+            },
+            {
+              "id": "D",
+              "text": "Arrange a follow-up EGD in 6–8 weeks",
+              "is_correct": true
+            },
+            {
+              "id": "E",
+              "text": "Use standard triple therapy (PPI + amoxicillin 1 g + clarithromycin 500 mg, twice daily)",
+              "is_correct": true
+            },
+            {
+              "id": "F",
+              "text": "Recommend gastrectomy to prevent cancer",
+              "is_correct": false
+            },
+            {
+              "id": "G",
+              "text": "Start H. pylori eradication therapy for 14 days",
+              "is_correct": true
+            }
+          ],
+          "correct_answers": [
+            "D",
+            "E",
+            "G"
+          ],
+          "clinical_rationale": "Eradicating H. pylori is central to reducing ulcer recurrence, and a gastric antral ulcer needs follow-up endoscopy to confirm healing and to screen for malignancy.",
+          "feedback": {
+            "correct": "Correct — complete the 14-day eradication course, then repeat endoscopy to confirm healing and screen for malignancy",
+            "partial": "Partly correct — the long-term plan includes eradication, the right regimen, and endoscopic follow-up",
+            "incorrect": "Not correct — review the regimen and duration of eradication therapy, and why a gastric ulcer needs repeat endoscopy"
+          }
+        }
+      }
+    }
+  },
+  "authoring_notes": {
+    "subjective_summary": "62-year-old man taking ibuprofen 400 mg three times daily for two weeks with no gastroprotection, on a background of known PUD and chronic alcohol use",
+    "objective_summary": "Acute UGIB from a Forrest Ib gastric antral ulcer with hypovolaemic shock from blood loss, and a positive RUT",
+    "vitals_interpretation": "BP 90/60 = hypotension; HR 115 = tachycardia; RR 22 = tachypnoea; Temp 36.5 and SpO₂ 96% normal — consistent with Class II–III hypovolaemic shock",
+    "lab_interpretation": "Hb 8.5 and Hct 26 = low; WBC 12,500 = high; platelets, Cr, INR and AST/ALT normal; BUN 35 raised by digestion of blood protein in the upper gut together with prerenal azotaemia",
+    "negative_findings_significance": "The absence of jaundice and ascites argues against variceal bleeding from cirrhosis; the absence of petechiae or ecchymoses argues against a coagulation disorder; the absence of guarding or rebound tenderness helps rule out perforation",
+    "gbs_calculation": "BUN 35 (> 25) = 6, Hb 8.5 (< 10) = 6, SBP 90 = 2, HR 115 = 1, melena = 1, syncope = 2 → total 18 points",
+    "forrest_interpretation": "Forrest Ib = active oozing = high risk of rebleeding; requires endoscopic haemostasis and 72 hours of high-dose IV PPI",
+    "etiology": "NSAIDs inhibit COX, reducing the prostaglandins that protect the mucosa, while H. pylori damages the mucosa directly — a synergistic effect",
+    "plan_summary": "(1) Fluid resuscitation to correct the shock (2) High-dose IV PPI, 80 mg bolus + 8 mg/hour infusion (3) Endoscopic haemostasis within 24 hours, given the high GBS and the Forrest Ib ulcer",
+    "sources": [
+      "Thai clinical practice guideline for the management of upper gastrointestinal bleeding, 2014",
+      "GI Emergencies",
+      "Peptic Ulcer Disease Guideline — Froedtert",
+      "2024 ACG Clinical Guideline: Treatment of Helicobacter pylori Infection"
+    ]
+  }
+}

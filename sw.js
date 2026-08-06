@@ -19,18 +19,23 @@
  */
 'use strict';
 
-const CACHE_NAME = 'pharmsim-202608050908';
+const CACHE_NAME = 'pharmsim-202608060958';
 
 const PRECACHE_URLS = [
     './',
     './index.html',
-    './css/style.min.css?v=202608050908',
-    './js/qrcode.js?v=202608050908',
-    './js/firebase-service.js?v=202608050908',
-    './js/ui-controller.js?v=202608050908',
-    './js/game-engine.js?v=202608050908',
-    './data/case_001.json?v=202608050908',
-    './manifest.json?v=202608050908',
+    './css/style.min.css?v=202608060958',
+    './js/i18n.js?v=202608060958',
+    './js/qrcode.js?v=202608060958',
+    './js/firebase-service.js?v=202608060958',
+    './js/ui-controller.js?v=202608060958',
+    './js/game-engine.js?v=202608060958',
+    // Both language editions are precached. Which one a visitor needs is not
+    // known at install time, and a student who switches to English on a ward
+    // with no signal must not find the case missing.
+    './data/case_001.json?v=202608060958',
+    './data/case_001.en.json?v=202608060958',
+    './manifest.json?v=202608060958',
     './icons/icon-192.png',
     './icons/icon-512.png',
 ];

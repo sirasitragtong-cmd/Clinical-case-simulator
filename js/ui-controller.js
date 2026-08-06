@@ -58,16 +58,30 @@ const UIController = (function() {
      * do not renumber them.
      */
     const DTP_CATEGORIES = [
-        { id: 1, short: 'Unnecessary Drug Therapy',      th: 'ได้รับยาโดยไม่จำเป็น' },
-        { id: 2, short: 'Needs Additional Drug Therapy', th: 'ต้องการยาเพิ่ม' },
-        { id: 3, short: 'Ineffective Drug',              th: 'ยาไม่ได้ผล' },
-        { id: 4, short: 'Dosage Too Low',                th: 'ขนาดยาต่ำเกินไป' },
-        { id: 5, short: 'Adverse Drug Reaction',         th: 'อาการไม่พึงประสงค์จากยา' },
-        { id: 6, short: 'Dosage Too High',               th: 'ขนาดยาสูงเกินไป' },
-        { id: 7, short: 'Non-adherence',                 th: 'ไม่ให้ความร่วมมือในการใช้ยา' }
+        { id: 1, short: 'Unnecessary Drug Therapy' },
+        { id: 2, short: 'Needs Additional Drug Therapy' },
+        { id: 3, short: 'Ineffective Drug' },
+        { id: 4, short: 'Dosage Too Low' },
+        { id: 5, short: 'Adverse Drug Reaction' },
+        { id: 6, short: 'Dosage Too High' },
+        { id: 7, short: 'Non-adherence' }
     ];
 
+    /**
+     * The second line under each DTP chip is a Thai gloss of the English term,
+     * which is what makes the chip readable to a Thai student. In English there
+     * is nothing left to gloss — repeating the same words twice would just be
+     * noise — so the line is dropped rather than duplicated.
+     */
+    function dtpGloss(c) {
+        return I18n.isThai() ? I18n.t('dtp.' + c.id) : '';
+    }
+
     // ─── Helpers ───────────────────────────────────────────────
+    // Named `tr`, not `t`: several callbacks in this file already bind `t` to
+    // a tab or tag element, and a shadowed translator fails silently.
+    const tr = function(key, vars) { return window.I18n.t(key, vars); };
+
     function esc(str) {
         return String(str == null ? '' : str)
             .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -280,9 +294,7 @@ const UIController = (function() {
             if (t.dataset.soap !== 'monitoring') return;
             if (!t.dataset.baseLabel) t.dataset.baseLabel = t.textContent.trim().replace(/^\S+\s*/, '');
             t.textContent = (monitoringUnlocked ? '🎯 ' : '🔒 ') + t.dataset.baseLabel;
-            t.title = monitoringUnlocked
-                ? 'กรอบการติดตามผล — เปิดใช้งานแล้ว'
-                : 'ยังล็อกอยู่ — จะเปิดเมื่อท่านส่งคำตอบข้อแรกของด่าน Monitoring';
+            t.title = tr(monitoringUnlocked ? 'soap.monUnlocked' : 'soap.monLockedTip');
             t.classList.toggle('is-locked-tab', !monitoringUnlocked && !on);
         });
     }
@@ -344,7 +356,7 @@ const UIController = (function() {
         const p = caseData.patient || {};
 
         setText('case-narrative',
-            `${p.name || 'ผู้ป่วย'} อายุ ${p.age || '—'} ปี` +
+            tr('narrative.line', { name: p.name || tr('common.patient'), age: p.age || '—' }) +
             (p.occupation ? ` (${p.occupation})` : '') +
             (p.chief_complaint ? ` — ${p.chief_complaint}` : ''));
 
@@ -367,10 +379,7 @@ const UIController = (function() {
     // patient chart itself stays raw data.
     function renderReferenceBlock(ref) {
         if (!ref || !Array.isArray(ref.sections) || ref.sections.length === 0) {
-            return `<p class="text-[.7rem] text-slate-500 leading-relaxed">
-                        เคสนี้ยังไม่มีข้อมูลอ้างอิง — เพิ่มฟิลด์
-                        <code class="text-teal-400">reference</code> ใน case JSON เพื่อแสดงที่นี่
-                    </p>`;
+            return `<p class="text-[.7rem] text-slate-500 leading-relaxed">${tr('ref.none')}</p>`;
         }
 
         const rowList = rows => `
@@ -409,7 +418,7 @@ const UIController = (function() {
         return `
             <div class="flex flex-col gap-2">
                 <div>
-                    <p class="text-xs font-extrabold text-white">${esc(ref.title || 'ข้อมูลอ้างอิง')}</p>
+                    <p class="text-xs font-extrabold text-white">${esc(ref.title || tr('ref.title'))}</p>
                     ${ref.note ? `<p class="text-[.6rem] text-slate-500 mt-0.5 leading-relaxed">${esc(ref.note)}</p>` : ''}
                 </div>
                 ${sections}
@@ -492,7 +501,7 @@ const UIController = (function() {
                 </div>
 
                 <p class="text-[.58rem] text-slate-500 mt-1.5 leading-relaxed">
-                    น้ำหนัก ${r.weight_kg != null ? r.weight_kg : '—'} kg · คำนวณด้วยสูตร Cockcroft-Gault
+                    ${tr('renal.weightNote', { kg: r.weight_kg != null ? r.weight_kg : '—' })}
                 </p>
 
                 ${impaired ? `
@@ -501,7 +510,7 @@ const UIController = (function() {
                     <div>
                         <p class="text-[.66rem] font-bold text-gold-400 leading-tight">Renal Dose Adjustment Required</p>
                         <p class="text-[.58rem] text-slate-400 leading-relaxed mt-0.5">
-                            ตรวจสอบขนาดยาทุกตัวที่ขับออกทางไตก่อนสั่งจ่าย
+                            ${tr('renal.adjustNote')}
                         </p>
                     </div>
                 </div>` : ''}
@@ -522,29 +531,25 @@ const UIController = (function() {
             return `<div class="rounded-xl border border-navy-600/70 bg-navy-850/70 p-4">
                         <div class="text-center">
                             <p class="text-xl mb-1.5">🔒</p>
-                            <p class="text-[.72rem] font-bold text-slate-300 mb-1">ยังไม่เปิดใช้งาน</p>
+                            <p class="text-[.72rem] font-bold text-slate-300 mb-1">${tr('mon.lockedTitle')}</p>
                         </div>
                         <p class="text-[.66rem] text-slate-400 leading-relaxed mt-1">
-                            แท็บนี้เก็บ <strong class="text-slate-200">กรอบการติดตามผล (Monitoring Framework)</strong>
-                            ซึ่งเป็นเฉลยของด่าน Monitoring โดยตรง จึงถูกล็อกไว้จนกว่าท่านจะวางแผนการติดตามด้วยตนเองก่อน
+                            ${tr('mon.lockedBody')}
                         </p>
                         <p class="text-[.62rem] text-slate-500 leading-relaxed mt-2 pt-2 border-t border-navy-600/60">
-                            🔓 จะเปิดอัตโนมัติทันทีที่ท่านส่งคำตอบข้อแรกของด่าน
-                            <span class="text-slate-300 font-semibold">MONITORING</span> —
-                            ${hasFramework
-                                ? 'เคสนี้มีข้อมูลกรอบการติดตามพร้อมแสดงแล้ว'
-                                : 'แต่เคสนี้ยังไม่ได้เขียนกรอบการติดตามไว้ จึงจะขึ้นข้อความแจ้งแทน'}
+                            ${tr('mon.lockedOpens')}
+                            <span class="text-slate-300 font-semibold">MONITORING</span>
+                            ${tr('mon.lockedStage')}
+                            ${tr(hasFramework ? 'mon.hasFramework' : 'mon.noFramework')}
                         </p>
                         <p class="text-[.6rem] text-slate-600 leading-relaxed mt-2">
-                            ระหว่างนี้ใช้แท็บ Subj / Obj / อ้างอิง ได้ตามปกติ — นี่ไม่ใช่ข้อผิดพลาด
+                            ${tr('mon.notABug')}
                         </p>
                     </div>`;
         }
 
         if (!m) {
-            return `<p class="text-slate-500 text-[.72rem] leading-relaxed">
-                        ยังไม่มีกรอบการติดตามสำหรับเคสนี้
-                    </p>`;
+            return `<p class="text-slate-500 text-[.72rem] leading-relaxed">${tr('mon.empty')}</p>`;
         }
 
         const row = (r, accent) => `
@@ -598,7 +603,7 @@ const UIController = (function() {
                            text-[.64rem] leading-tight text-slate-300 transition"
                     data-dtp-id="${c.id}" aria-pressed="false">
                 <span class="font-bold text-slate-500 mr-1">${c.id}.</span>${esc(c.short)}
-                <span class="block text-[.56rem] text-slate-500 mt-0.5">${esc(c.th)}</span>
+                ${dtpGloss(c) ? `<span class="block text-[.56rem] text-slate-500 mt-0.5">${esc(dtpGloss(c))}</span>` : ''}
             </button>`).join('');
 
         return `
@@ -608,7 +613,7 @@ const UIController = (function() {
                     <p class="text-[.6rem] font-bold tracking-widest text-gold-400 uppercase">Drug Therapy Problem</p>
                 </div>
                 <p class="text-[.66rem] text-slate-400 leading-relaxed mb-2">
-                    จำแนกประเภทของปัญหาจากการใช้ยาก่อน แล้วจึงเลือกคำตอบด้านล่าง
+                    ${tr('dtp.instruction')}
                 </p>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-1.5">${chips}</div>
                 <div id="dtp-verdict"></div>
@@ -650,8 +655,8 @@ const UIController = (function() {
         host.innerHTML = `
             <div class="mt-2 rounded-lg border ${ok ? 'border-teal-400/45 bg-teal-400/10' : 'border-acuity-500/45 bg-acuity-500/10'} px-2 py-1.5">
                 <p class="text-[.66rem] font-bold ${ok ? 'text-teal-400' : 'text-acuity-500'} leading-tight">
-                    ${ok ? '✓ จำแนก DTP ถูกต้อง' : '✕ จำแนก DTP ยังไม่ตรง'}
-                    <span class="font-normal text-slate-400">— เฉลย: ${esc(names.join(' + ') || '—')}</span>
+                    ${tr(ok ? 'dtp.correct' : 'dtp.wrong')}
+                    <span class="font-normal text-slate-400">— ${tr('common.answerKey')}: ${esc(names.join(' + ') || '—')}</span>
                 </p>
                 ${dtp.rationale ? `<p class="text-[.6rem] text-slate-400 leading-relaxed mt-1">${esc(dtp.rationale)}</p>` : ''}
             </div>`;
@@ -664,7 +669,7 @@ const UIController = (function() {
         if (!data || soapHosts.length === 0) return;
 
         const p = data.patient || {};
-        const nameLine = `${p.name || 'ผู้ป่วย'}${p.age ? `, ${p.age}${p.sex || ''}` : ''}`;
+        const nameLine = `${p.name || tr('common.patient')}${p.age ? `, ${p.age}${p.sex || ''}` : ''}`;
         setText('patient-name', nameLine);
         setText('patient-name-mobile', nameLine);
         setText('patient-cc', p.chief_complaint || data.case_title || '');
@@ -684,10 +689,10 @@ const UIController = (function() {
 
         let html;
         if (soapTab === 'subjective') {
-            html = contentBlock(infoSteps[0], 'ไม่มีข้อมูล Subjective');
+            html = contentBlock(infoSteps[0], tr('soap.noSubjective'));
         } else if (soapTab === 'objective') {
             // Renal/PK parameters are objective data, so they lead the tab.
-            html = renderRenalBadge(data) + contentBlock(infoSteps[1], 'ไม่มีข้อมูล Objective');
+            html = renderRenalBadge(data) + contentBlock(infoSteps[1], tr('soap.noObjective'));
         } else if (soapTab === 'monitoring') {
             html = renderMonitoringBlock(data);
         } else {
@@ -739,24 +744,23 @@ const UIController = (function() {
         syncSoapTabs();
         renderPatientChart(activeCase);
 
-        const label = tab === 'objective' ? 'Objective — ผลตรวจร่างกายและแล็บ'
-                                          : 'Subjective — ประวัติจากผู้ป่วย';
+        const label = tr(tab === 'objective' ? 'info.objective' : 'info.subjective');
 
         gameArea.innerHTML = `
             <div class="animate-fade-in flex flex-col items-center justify-center text-center gap-3 py-8 px-2">
                 <div class="w-14 h-14 rounded-2xl grid place-items-center text-2xl border border-teal-400/35 bg-teal-400/10">📋</div>
-                <span class="tag-pill !bg-teal-400/12 !text-teal-400 !border-teal-400/35">รวบรวมข้อมูล</span>
+                <span class="tag-pill !bg-teal-400/12 !text-teal-400 !border-teal-400/35">${tr('info.tag')}</span>
                 <p class="text-sm font-bold text-white leading-relaxed">${esc(label)}</p>
                 <p class="text-[.72rem] text-slate-400 leading-relaxed max-w-[16rem]">
-                    เปิดแฟ้มผู้ป่วยเพื่ออ่านข้อมูลให้ครบก่อน แล้วจึงดำเนินการต่อ
+                    ${tr('info.body')}
                 </p>
                 <button id="btn-open-chart" class="md:hidden px-4 py-2.5 rounded-xl text-xs font-bold text-teal-400 bg-teal-400/10 border border-teal-400/35">
-                    📄 เปิดแฟ้มผู้ป่วย
+                    ${tr('info.openChart')}
                 </button>
-                <p class="hidden md:block text-[.68rem] text-slate-600">← ดูแฟ้มผู้ป่วยที่คอลัมน์ซ้าย</p>
+                <p class="hidden md:block text-[.68rem] text-slate-600">${tr('info.chartHint')}</p>
 
                 <div class="submit-dock">
-                    <button class="next-step-btn primary-btn w-full">อ่านเข้าใจแล้ว / ถัดไป →</button>
+                    <button class="next-step-btn primary-btn w-full">${tr('info.next')}</button>
                 </div>
             </div>`;
 
@@ -785,7 +789,7 @@ const UIController = (function() {
                 <div>
                     <p class="text-[.6rem] font-bold tracking-widest text-teal-400 uppercase mb-1.5">Clinical Decision</p>
                     <h3 class="text-sm font-bold text-white leading-relaxed">${esc(stepData.question)}</h3>
-                    <p class="text-[.68rem] text-slate-500 mt-1.5">ⓘ เลือก 1 คำตอบที่เหมาะสมที่สุด</p>
+                    <p class="text-[.68rem] text-slate-500 mt-1.5">${tr('mcq.singleHint')}</p>
                 </div>
                 <div class="flex flex-col gap-2">${choices}</div>
                 <div id="feedback-area"></div>
@@ -823,7 +827,7 @@ const UIController = (function() {
                     <p class="text-[.6rem] font-bold tracking-widest text-teal-400 uppercase mb-1.5">Clinical Decision</p>
                     <h3 class="text-sm font-bold text-white leading-relaxed">${esc(stepData.question)}</h3>
                     <p class="text-[.68rem] text-slate-500 mt-1.5">
-                        ⓘ เลือกได้มากกว่าหนึ่งข้อ — ตอบผิดมีการหักคะแนน
+                        ${tr('mcq.multiHint')}
                     </p>
                 </div>
 
@@ -834,7 +838,7 @@ const UIController = (function() {
 
                 <div class="submit-dock">
                     <p class="text-[.7rem] text-slate-400 mb-2">
-                        เลือกแล้ว <strong id="multi-count" class="text-white">0</strong> ข้อ
+                        ${tr('mcq.selectedCount')}
                     </p>
                     <button class="submit-decision-btn primary-btn w-full" disabled>Submit Clinical Decision</button>
                 </div>
@@ -875,7 +879,7 @@ const UIController = (function() {
         // The label must not vary with how close the selection is to the
         // answer key — a "✓" that appears at the right count would be a tell.
         submit.textContent = needsTag
-            ? '🏷 เลือกประเภท DTP ก่อน'
+            ? tr('dtp.needTag')
             : 'Submit Clinical Decision';
     }
 
@@ -892,8 +896,8 @@ const UIController = (function() {
         adjustPatientHealth(isCorrect ? 8 : -12, isCorrect ? 'improving' : 'pain');
 
         const tone = isCorrect
-            ? { cls: 'border-teal-400/50 bg-teal-400/10', text: 'text-teal-400', icon: '✓', title: 'ถูกต้อง!' }
-            : { cls: 'border-acuity-500/50 bg-acuity-500/10', text: 'text-acuity-500', icon: '✕', title: 'ยังไม่ถูกต้อง' };
+            ? { cls: 'border-teal-400/50 bg-teal-400/10', text: 'text-teal-400', icon: '✓', title: tr('fb.correct') }
+            : { cls: 'border-acuity-500/50 bg-acuity-500/10', text: 'text-acuity-500', icon: '✕', title: tr('fb.incorrect') };
 
         feedbackArea.innerHTML = `
             <div class="rounded-xl border ${tone.cls} p-3 animate-slide-up">
@@ -902,7 +906,7 @@ const UIController = (function() {
                     <h4 class="text-xs font-extrabold ${tone.text}">${tone.title}</h4>
                 </div>
                 <p class="text-[.72rem] text-slate-300 leading-relaxed">${esc(feedbackMessage)}</p>
-                <button class="next-step-btn primary-btn w-full mt-3">ขั้นตอนถัดไป →</button>
+                <button class="next-step-btn primary-btn w-full mt-3">${tr('fb.next')}</button>
             </div>`;
         feedbackArea.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
@@ -948,10 +952,10 @@ const UIController = (function() {
         if (!feedbackArea) return;
 
         const tone = result.allCorrect
-            ? { cls: 'border-teal-400/50 bg-teal-400/10', text: 'text-teal-400', icon: '✓', title: 'ถูกต้องทั้งหมด!' }
+            ? { cls: 'border-teal-400/50 bg-teal-400/10', text: 'text-teal-400', icon: '✓', title: tr('fb.allCorrect') }
             : result.earned > 0
-                ? { cls: 'border-gold-400/50 bg-gold-400/10', text: 'text-gold-400', icon: '◐', title: 'ถูกบางส่วน' }
-                : { cls: 'border-acuity-500/50 bg-acuity-500/10', text: 'text-acuity-500', icon: '✕', title: 'ยังไม่ถูกต้อง' };
+                ? { cls: 'border-gold-400/50 bg-gold-400/10', text: 'text-gold-400', icon: '◐', title: tr('fb.partial') }
+                : { cls: 'border-acuity-500/50 bg-acuity-500/10', text: 'text-acuity-500', icon: '✕', title: tr('fb.incorrect') };
 
         feedbackArea.innerHTML = `
             <div class="rounded-xl border ${tone.cls} p-3 animate-slide-up">
@@ -963,10 +967,10 @@ const UIController = (function() {
                     </span>
                 </div>
                 <p class="text-[.7rem] text-slate-400 mb-1.5">
-                    ตอบถูก ${result.hits.length} จาก ${result.answerKey.length} ข้อ
-                    · เฉลย: <strong class="text-teal-400">${result.answerKey.join(', ')}</strong>
+                    ${tr('fb.hits', { hits: result.hits.length, total: result.answerKey.length })}
+                    · ${tr('common.answerKey')}: <strong class="text-teal-400">${result.answerKey.join(', ')}</strong>
                     ${result.misses && result.misses.length
-                        ? `· ตอบผิด <strong class="text-acuity-500">${result.misses.length}</strong> ข้อ (−${result.lost || 0})`
+                        ? tr('fb.misses', { n: result.misses.length, lost: result.lost || 0 })
                         : ''}
                 </p>
                 <p class="text-[.72rem] text-slate-300 leading-relaxed">${esc(result.message || '')}</p>
@@ -975,7 +979,7 @@ const UIController = (function() {
                     <p class="text-[.56rem] font-bold tracking-widest text-slate-500 uppercase mb-1">Clinical Rationale</p>
                     <p class="text-[.68rem] text-slate-400 leading-relaxed">${esc(result.rationale)}</p>
                 </div>` : ''}
-                <button class="next-step-btn primary-btn w-full mt-3">ขั้นตอนถัดไป →</button>
+                <button class="next-step-btn primary-btn w-full mt-3">${tr('fb.next')}</button>
             </div>`;
         feedbackArea.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
@@ -1003,11 +1007,11 @@ const UIController = (function() {
                         ${opts.score}<span class="text-slate-600 text-sm">/${opts.maxScore}</span>
                         <span class="text-xs text-slate-400 ml-1.5">(${pct}%)</span>
                     </p>
-                    <p class="text-[.65rem] text-slate-500 mt-1">ทำได้ ${opts.completedSteps} / ${opts.totalSteps} ขั้นตอน</p>
+                    <p class="text-[.65rem] text-slate-500 mt-1">${tr('end.stepsDone', { done: opts.completedSteps, total: opts.totalSteps })}</p>
                 </div>
                 <p class="text-[.62rem] text-slate-600 max-w-md">${esc(opts.footnote || '')}</p>
                 <div class="submit-dock">
-                    <button id="btn-end-return" class="primary-btn w-full">← กลับสู่ Campaign Map</button>
+                    <button id="btn-end-return" class="primary-btn w-full">${tr('end.return')}</button>
                 </div>
             </div>`;
 
@@ -1029,13 +1033,13 @@ const UIController = (function() {
             ringClass: 'border-acuity-500/50 bg-acuity-500/10',
             tag: '⚠ CRITICAL ERROR',
             tagClass: '!bg-acuity-500/12 !text-acuity-500 !border-acuity-500/35',
-            title: 'Game Over — การตัดสินใจถึงแก่ชีวิต',
-            message: fatalMessage || 'การตัดสินใจนี้ก่อให้เกิดอันตรายร้ายแรงต่อผู้ป่วย',
+            title: tr('over.title'),
+            message: fatalMessage || tr('over.message'),
             score: state.currentScore,
             maxScore: state.maxPossibleScore,
             completedSteps: state.currentStepIndex + 1,
             totalSteps: state.totalSteps,
-            footnote: 'ทบทวนเหตุผลทางเภสัชวิทยา แล้วลองเล่นเคสนี้ใหม่อีกครั้ง'
+            footnote: tr('over.footnote')
         });
     }
 
@@ -1056,14 +1060,14 @@ const UIController = (function() {
             ringClass: 'border-teal-400/50 bg-teal-400/10',
             tag: '✓ STAGE CLEARED',
             tagClass: '!bg-teal-400/12 !text-teal-400 !border-teal-400/35',
-            title: 'ผ่านด่านแล้ว!',
+            title: tr('win.title'),
             // The diagnosis is the answer — reveal it only now, at the end.
-            message: 'คำวินิจฉัยของเคสนี้คือ ' + ((activeCase && activeCase.case_title) || '—'),
+            message: tr('win.message', { dx: (activeCase && activeCase.case_title) || '—' }),
             score: state.currentScore,
             maxScore: state.maxPossibleScore,
             completedSteps: state.totalSteps,
             totalSteps: state.totalSteps,
-            footnote: 'ผลคะแนนถูกบันทึกเมื่อเข้าสู่ระบบด้วยบัญชี Google'
+            footnote: tr('win.footnote')
         });
     }
 
@@ -1151,7 +1155,7 @@ const UIController = (function() {
             const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() - i);
             const k = todayKey(d);
             out.push({ key: k, active: s.days.indexOf(k) !== -1,
-                       label: ['อา', 'จ', 'อ', 'พ', 'พฤ', 'ศ', 'ส'][d.getDay()] });
+                       label: tr('streak.dayLabels')[d.getDay()] });
         }
         return out;
     }
@@ -1185,18 +1189,16 @@ const UIController = (function() {
                     <div class="leading-tight">
                         <p class="text-[.58rem] font-bold tracking-widest text-slate-500 uppercase">Practice Streak</p>
                         <p class="text-xl font-extrabold ${s.current > 0 ? 'text-gold-400' : 'text-slate-400'} leading-none mt-0.5">
-                            ${s.current}<span class="text-[.7rem] font-bold text-slate-500 ml-1.5">วันติดต่อกัน</span>
+                            ${s.current}<span class="text-[.7rem] font-bold text-slate-500 ml-1.5">${tr('streak.days')}</span>
                         </p>
-                        <p class="text-[.6rem] text-slate-500 mt-0.5">สถิติสูงสุด ${s.best} วัน</p>
+                        <p class="text-[.6rem] text-slate-500 mt-0.5">${tr('streak.best', { n: s.best })}</p>
                     </div>
                 </div>
 
                 <div class="flex gap-1.5 sm:ml-auto">${dots}</div>
 
                 <p class="text-[.64rem] leading-relaxed sm:max-w-[13rem] ${activeToday ? 'text-teal-400' : 'text-slate-400'}">
-                    ${activeToday
-                        ? '✓ วันนี้ฝึกแล้ว — พรุ่งนี้กลับมาต่อเพื่อรักษาสถิติ'
-                        : 'ตอบคำถามอย่างน้อย 1 ข้อวันนี้ เพื่อต่อสถิติของคุณ'}
+                    ${tr(activeToday ? 'streak.doneToday' : 'streak.todo')}
                 </p>
             </div>`;
     }
@@ -1216,7 +1218,7 @@ const UIController = (function() {
         if (!questTrack) return;
 
         if (!cases || cases.length === 0) {
-            questTrack.innerHTML = `<p class="text-xs text-slate-500 py-6">ไม่พบข้อมูลเคส — ตรวจสอบไฟล์ใน data/</p>`;
+            questTrack.innerHTML = `<p class="text-xs text-slate-500 py-6">${tr('campaign.noCases')}</p>`;
             return;
         }
 
@@ -1246,11 +1248,11 @@ const UIController = (function() {
                             <span class="w-9 h-9 rounded-full grid place-items-center text-base bg-navy-800 border border-navy-600">🔒</span>
                             <span class="tag-pill">STAGE ${num}</span>
                         </div>
-                        <h3 class="text-sm font-extrabold text-slate-500 leading-snug">${esc(c.map_title || 'ด่านถัดไป')}</h3>
-                        <p class="text-[.7rem] text-slate-600 leading-relaxed">ผ่านด่านก่อนหน้าเพื่อปลดล็อกเส้นทางนี้</p>
+                        <h3 class="text-sm font-extrabold text-slate-500 leading-snug">${esc(c.map_title || tr('campaign.lockedTitle'))}</h3>
+                        <p class="text-[.7rem] text-slate-600 leading-relaxed">${tr('campaign.lockedBody')}</p>
                         <div class="mt-auto pt-2">
                             <button class="w-full py-3 rounded-xl text-xs font-bold text-slate-600 bg-navy-800 border border-navy-700 cursor-not-allowed" disabled>
-                                🔒 ยังไม่ปลดล็อก
+                                ${tr('campaign.lockedBtn')}
                             </button>
                         </div>
                     </div>`;
@@ -1270,7 +1272,7 @@ const UIController = (function() {
                             : '!bg-gold-400/12 !text-gold-400 !border-gold-400/35'}">${esc(acuity)}</span>
                     </div>
 
-                    <h3 class="text-sm font-extrabold text-white leading-snug">${esc(c.map_title || ('ด่านที่ ' + (i + 1)))}</h3>
+                    <h3 class="text-sm font-extrabold text-white leading-snug">${esc(c.map_title || tr('campaign.stageN', { n: i + 1 }))}</h3>
 
                     <p class="text-[.7rem] text-slate-400 leading-relaxed">
                         ${esc(c.map_subtitle || p.chief_complaint || '')}
@@ -1283,7 +1285,7 @@ const UIController = (function() {
                     </div>
 
                     <button class="primary-btn w-full mt-2" data-case-index="${i}">
-                        ${cleared ? '↻ เล่นซ้ำ' : '▶ เริ่มภารกิจ'}
+                        ${tr(cleared ? 'campaign.replay' : 'campaign.start')}
                     </button>
                 </div>`;
         }).join('');
@@ -1404,7 +1406,7 @@ const UIController = (function() {
 
         return `
 <svg viewBox="0 0 320 240" xmlns="http://www.w3.org/2000/svg" role="img"
-     aria-label="ภาพผู้ป่วย${female ? 'หญิง' : 'ชาย'}" preserveAspectRatio="xMidYMid meet">
+     aria-label="${tr(female ? 'avatar.female' : 'avatar.male')}" preserveAspectRatio="xMidYMid meet">
   <defs>
     <clipPath id="paFrame-${u}"><rect x="0" y="0" width="320" height="240" rx="14"/></clipPath>
     <clipPath id="paHead-${u}"><ellipse cx="160" cy="102" rx="41" ry="45"/></clipPath>
@@ -1686,7 +1688,7 @@ const UIController = (function() {
         initEyeTracking();
 
         setText('patient-name-strip',
-            `${p.name || 'ผู้ป่วย'}${p.age ? `, ${p.age}${p.sex || ''}` : ''}`);
+            `${p.name || tr('common.patient')}${p.age ? `, ${p.age}${p.sex || ''}` : ''}`);
 
         // Every case now starts from the same neutral baseline.
         //
@@ -1732,33 +1734,27 @@ const UIController = (function() {
         if (result.reason === 'signed-out') {
             return `<div class="panel rounded-2xl p-6 text-center">
                         <p class="text-2xl mb-2">🔒</p>
-                        <p class="text-xs font-bold text-white mb-1">ต้องเข้าสู่ระบบก่อน</p>
-                        <p class="text-[.7rem] text-slate-500">โหมด Anonymous ไม่บันทึกผล จึงไม่มีสถิติให้แสดง</p>
+                        <p class="text-xs font-bold text-white mb-1">${tr('state.signedOutTitle')}</p>
+                        <p class="text-[.7rem] text-slate-500">${tr('state.signedOutBody')}</p>
                     </div>`;
         }
         if (result.reason === 'permission-denied') {
             return `<div class="panel rounded-2xl p-6 text-center border-gold-400/30">
                         <p class="text-2xl mb-2">⚠</p>
-                        <p class="text-xs font-bold text-gold-400 mb-1">Firestore ปฏิเสธการอ่านข้อมูล</p>
-                        <p class="text-[.7rem] text-slate-400 leading-relaxed">
-                            Security Rules ของคอลเลกชัน <code class="text-teal-400">user_attempts</code>
-                            ยังไม่อนุญาตให้อ่าน — ต้องแก้ที่ Firebase Console
-                        </p>
+                        <p class="text-xs font-bold text-gold-400 mb-1">${tr('state.deniedTitle')}</p>
+                        <p class="text-[.7rem] text-slate-400 leading-relaxed">${tr('state.deniedBody')}</p>
                     </div>`;
         }
         if (result.reason === 'missing-index') {
             return `<div class="panel rounded-2xl p-6 text-center border-gold-400/30">
                         <p class="text-2xl mb-2">🗂</p>
-                        <p class="text-xs font-bold text-gold-400 mb-1">ยังไม่ได้สร้าง Composite Index</p>
-                        <p class="text-[.7rem] text-slate-400 leading-relaxed">
-                            Deploy ไฟล์ <code class="text-teal-400">firestore.indexes.json</code>
-                            ด้วยคำสั่ง <code class="text-teal-400">firebase deploy --only firestore:indexes</code>
-                        </p>
+                        <p class="text-xs font-bold text-gold-400 mb-1">${tr('state.indexTitle')}</p>
+                        <p class="text-[.7rem] text-slate-400 leading-relaxed">${tr('state.indexBody')}</p>
                     </div>`;
         }
         if (result.reason === 'offline' || result.reason === 'error') {
             return `<div class="panel rounded-2xl p-6 text-center border-acuity-500/30">
-                        <p class="text-xs font-bold text-acuity-500 mb-1">เชื่อมต่อฐานข้อมูลไม่ได้</p>
+                        <p class="text-xs font-bold text-acuity-500 mb-1">${tr('state.offlineTitle')}</p>
                         <p class="text-[.7rem] text-slate-500">${esc(result.message || '')}</p>
                     </div>`;
         }
@@ -1934,7 +1930,7 @@ const UIController = (function() {
         const pts = chrono.slice(-24);
         if (pts.length < 2) {
             return `<div class="panel rounded-xl p-4 text-center">
-                        <p class="text-[.65rem] text-slate-500">ต้องเล่นอย่างน้อย 2 ครั้งจึงจะวาดกราฟแนวโน้มได้</p>
+                        <p class="text-[.65rem] text-slate-500">${tr('stats.trendNeedTwo')}</p>
                     </div>`;
         }
         const W = 600, H = 120, PAD = 8;
@@ -1948,7 +1944,7 @@ const UIController = (function() {
 
         return `<div class="panel rounded-xl p-3">
                     <svg viewBox="0 0 ${W} ${H}" class="w-full h-28" preserveAspectRatio="none" role="img"
-                         aria-label="แนวโน้มคะแนน ${pts.length} ครั้งล่าสุด">
+                         aria-label="${tr('stats.trendAria', { n: pts.length })}">
                         <defs><linearGradient id="trendFill" x1="0" y1="0" x2="0" y2="1">
                             <stop offset="0%" stop-color="#48E5C2" stop-opacity=".28"/>
                             <stop offset="100%" stop-color="#48E5C2" stop-opacity="0"/>
@@ -1959,7 +1955,7 @@ const UIController = (function() {
                         <path d="${line}" fill="none" stroke="#48E5C2" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
                         ${dots}
                     </svg>
-                    <p class="text-[.55rem] text-slate-600 mt-1">เส้นประ = เกณฑ์ 80% · จุดแดง = จบด้วย Fatal · เก่า → ใหม่</p>
+                    <p class="text-[.55rem] text-slate-600 mt-1">${tr('stats.trendLegend')}</p>
                 </div>`;
     }
 
@@ -1981,11 +1977,11 @@ const UIController = (function() {
     async function renderStatsPanel() {
         const host = byId('stats-body');
         if (!host) return;
-        host.innerHTML = loadingBlock('กำลังโหลดสถิติจาก Firestore…');
+        host.innerHTML = loadingBlock(tr('state.loadingStats'));
 
         const res = await window.DBService.getMyAttempts();
         if (!res.ok || res.rows.length === 0) {
-            host.innerHTML = stateBlock(res, 'ยังไม่มีประวัติการเล่น — เล่นเคสให้จบสักครั้งแล้วกลับมาดูใหม่');
+            host.innerHTML = stateBlock(res, tr('state.noAttempts'));
             return;
         }
 
@@ -1994,24 +1990,24 @@ const UIController = (function() {
         // ── Overview ──
         const overview = `
             <div class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-2">
-                ${statCard('Attempts', s.n, 'text-white', `${s.distinctDays} วันที่เล่น`)}
-                ${statCard('Best', s.best + '%', 'text-teal-400', `${s.bestScore} คะแนน`)}
-                ${statCard('Average', s.avg + '%', 'text-gold-400', `มัธยฐาน ${s.median}%`)}
+                ${statCard('Attempts', s.n, 'text-white', tr('stats.daysPlayed', { n: s.distinctDays }))}
+                ${statCard('Best', s.best + '%', 'text-teal-400', tr('stats.points', { n: s.bestScore }))}
+                ${statCard('Average', s.avg + '%', 'text-gold-400', tr('stats.median', { n: s.median }))}
                 ${statCard('Latest', s.latest + '%', s.latest >= s.avg ? 'text-teal-400' : 'text-slate-300',
-                           s.latest >= s.avg ? 'สูงกว่าค่าเฉลี่ยตัวเอง' : 'ต่ำกว่าค่าเฉลี่ยตัวเอง')}
-                ${statCard('Cases', s.distinctCases, 'text-white', `จบครบด่าน ${s.finishedRuns} ครั้ง`)}
-                ${statCard('Fatal', s.fatals, s.fatals ? 'text-acuity-500' : 'text-white', `${s.fatalRate}% ของการเล่น`)}
+                           tr(s.latest >= s.avg ? 'stats.aboveOwnAvg' : 'stats.belowOwnAvg'))}
+                ${statCard('Cases', s.distinctCases, 'text-white', tr('stats.fullRuns', { n: s.finishedRuns }))}
+                ${statCard('Fatal', s.fatals, s.fatals ? 'text-acuity-500' : 'text-white', tr('stats.fatalShare', { n: s.fatalRate }))}
             </div>
             <div class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-2 mt-2">
-                ${statCard('Safe Run', s.safeRun, 'text-teal-400', 'ไม่เจอ Fatal ติดกัน')}
-                ${statCard('Streak', s.streakCurrent + ' วัน', 'text-gold-400', `สถิติสูงสุด ${s.streakBest} วัน`)}
-                ${statCard('ข้อที่ตอบ', s.hasTelemetry ? s.gradedSteps : '—', 'text-white',
-                           s.hasTelemetry ? `ถูกครบข้อ ${s.perfectSteps} ข้อ` : 'ยังไม่มีข้อมูลรายข้อ')}
-                ${statCard('ตอบผิดสะสม', s.hasTelemetry ? s.wrongPicks : '—',
-                           s.wrongPicks ? 'text-acuity-500' : 'text-white', 'ตัวเลือกที่เลือกผิด')}
-                ${statCard('เวลารวม', s.totalSeconds ? fmtDuration(s.totalSeconds) : '—', 'text-white',
-                           s.avgSeconds ? `เฉลี่ย ${fmtDuration(s.avgSeconds)}/ครั้ง` : 'ยังไม่มีข้อมูลเวลา')}
-                ${statCard('DTP', s.dtpAttempts ? `${s.dtpCorrect}/${s.dtpAttempts}` : '—', 'text-teal-400', 'ระบุปัญหาถูกต้อง')}
+                ${statCard('Safe Run', s.safeRun, 'text-teal-400', tr('stats.safeRunSub'))}
+                ${statCard('Streak', tr('stats.streakUnit', { n: s.streakCurrent }), 'text-gold-400', tr('stats.streakBest', { n: s.streakBest }))}
+                ${statCard(tr('stats.stepsAnswered'), s.hasTelemetry ? s.gradedSteps : '—', 'text-white',
+                           s.hasTelemetry ? tr('stats.perfectSteps', { n: s.perfectSteps }) : tr('stats.noStepData'))}
+                ${statCard(tr('stats.wrongPicks'), s.hasTelemetry ? s.wrongPicks : '—',
+                           s.wrongPicks ? 'text-acuity-500' : 'text-white', tr('stats.wrongPicksSub'))}
+                ${statCard(tr('stats.totalTime'), s.totalSeconds ? fmtDuration(s.totalSeconds) : '—', 'text-white',
+                           s.avgSeconds ? tr('stats.avgPerRun', { d: fmtDuration(s.avgSeconds) }) : tr('stats.noTimeData'))}
+                ${statCard('DTP', s.dtpAttempts ? `${s.dtpCorrect}/${s.dtpAttempts}` : '—', 'text-teal-400', tr('stats.dtpSub'))}
             </div>`;
 
         // ── Stage accuracy ──
@@ -2033,9 +2029,9 @@ const UIController = (function() {
                 const lbl = stepLabel(sp.caseId, sp.stepId, allCases);
                 const acc = pct(sp.perfect, sp.seen);
                 return {
-                    label: lbl.retired ? `${sp.stepId} (ข้อที่ถูกยกเลิก)` : lbl.text,
+                    label: lbl.retired ? tr('stats.retiredStep', { id: sp.stepId }) : lbl.text,
                     value: 100 - acc,
-                    right: `${acc}% · ผิด ${sp.misses}`,
+                    right: tr('stats.accWrong', { acc: acc, n: sp.misses }),
                     color: '#FF6B6B',
                     tone: 'text-acuity-500',
                     acc: acc,
@@ -2055,7 +2051,7 @@ const UIController = (function() {
             .map(x => ({
                 label: `${String(x.h).padStart(2, '0')}:00 – ${String(x.h).padStart(2, '0')}:59`,
                 value: x.c,
-                right: `${x.c} ครั้ง`,
+                right: tr('stats.timesN', { n: x.c }),
                 color: '#8B7BE8',
                 tone: 'text-slate-300'
             }));
@@ -2068,7 +2064,7 @@ const UIController = (function() {
             return {
                 label: id,
                 value: bp,
-                right: `${rs.length} ครั้ง · ดีสุด ${bp}%`,
+                right: tr('stats.timesBest', { n: rs.length, best: bp }),
                 color: bp >= 80 ? '#48E5C2' : '#F4C542',
                 tone: bp >= 80 ? 'text-teal-400' : 'text-gold-400'
             };
@@ -2076,27 +2072,24 @@ const UIController = (function() {
 
         const noTelemetryNote = s.hasTelemetry ? '' : `
             <div class="panel rounded-xl p-3 border-gold-400/30 mt-3">
-                <p class="text-[.65rem] text-gold-400 font-bold mb-1">ยังไม่มีข้อมูลเชิงลึกรายข้อ</p>
-                <p class="text-[.6rem] text-slate-400 leading-relaxed">
-                    การวิเคราะห์รายข้อ รายด่าน เวลาที่ใช้ และช่วงเวลาที่เล่น เริ่มเก็บตั้งแต่รุ่นนี้เป็นต้นไป
-                    ผลการเล่นเดิมยังนับรวมในคะแนนทุกช่อง แต่ไม่มีข้อมูลรายข้อให้วิเคราะห์ — เล่นอีกครั้งแล้วส่วนนี้จะขึ้นมาเอง
-                </p>
+                <p class="text-[.65rem] text-gold-400 font-bold mb-1">${tr('stats.noTeleTitle')}</p>
+                <p class="text-[.6rem] text-slate-400 leading-relaxed">${tr('stats.noTeleBody')}</p>
             </div>`;
 
         host.innerHTML = `
             ${overview}
-            ${sectionTitle('แนวโน้มคะแนน', `${Math.min(s.chrono.length, 24)} ครั้งล่าสุด`)}
+            ${sectionTitle(tr('stats.secTrend'), tr('stats.secTrendNote', { n: Math.min(s.chrono.length, 24) }))}
             ${trendChart(s.chrono)}
             ${noTelemetryNote}
-            ${stageRows.length ? sectionTitle('ความแม่นยำรายด่าน', 'คะแนนที่ได้ ÷ คะแนนเต็มของด่านนั้น') + barRows(stageRows) : ''}
-            ${weak.length ? sectionTitle('ข้อที่ควรทบทวน', 'เรียงจากอัตราตอบถูกครบข้อต่ำสุด') + barRows(weak) : ''}
-            ${caseRows.length > 1 ? sectionTitle('แยกตามเคส') + barRows(caseRows) : ''}
-            ${hourRows.length ? sectionTitle('ช่วงเวลาที่เล่นบ่อย', 'ตามนาฬิกาเครื่องคุณ') + barRows(hourRows) : ''}
-            ${sectionTitle('ประวัติล่าสุด')}
+            ${stageRows.length ? sectionTitle(tr('stats.secStage'), tr('stats.secStageNote')) + barRows(stageRows) : ''}
+            ${weak.length ? sectionTitle(tr('stats.secWeak'), tr('stats.secWeakNote')) + barRows(weak) : ''}
+            ${caseRows.length > 1 ? sectionTitle(tr('stats.secByCase')) + barRows(caseRows) : ''}
+            ${hourRows.length ? sectionTitle(tr('stats.secHours'), tr('stats.secHoursNote')) + barRows(hourRows) : ''}
+            ${sectionTitle(tr('stats.secRecent'))}
             <div class="flex flex-col gap-1.5">
                 ${s.rows.slice(0, 15).map(r => {
                     const when = r.date
-                        ? r.date.toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' })
+                        ? r.date.toLocaleString(I18n.locale(), { dateStyle: 'short', timeStyle: 'short' })
                         : '—';
                     return `
                         <div class="panel rounded-lg p-2.5 flex items-center gap-3">
@@ -2117,11 +2110,11 @@ const UIController = (function() {
     async function renderLeaderboardPanel() {
         const host = byId('leaderboard-body');
         if (!host) return;
-        host.innerHTML = loadingBlock('กำลังจัดอันดับ…');
+        host.innerHTML = loadingBlock(tr('state.loadingRank'));
 
         const res = await window.DBService.getLeaderboard(20);
         if (!res.ok || res.rows.length === 0) {
-            host.innerHTML = stateBlock(res, 'ยังไม่มีผู้เล่นที่ทำคะแนนไว้');
+            host.innerHTML = stateBlock(res, tr('state.noRanked'));
             return;
         }
 
@@ -2135,7 +2128,7 @@ const UIController = (function() {
                     <div class="panel rounded-lg p-2.5 flex items-center gap-3 ${isMe ? '!border-teal-400/50 !bg-teal-400/[.06]' : ''}">
                         <span class="w-7 text-center text-sm flex-shrink-0">${medals[i] || `<span class="text-[.7rem] font-mono text-slate-500">${i + 1}</span>`}</span>
                         <span class="text-xs font-bold ${isMe ? 'text-teal-400' : 'text-white'} truncate flex-1">
-                            ${esc(r.displayName)}${isMe ? ' <span class="tag-pill !text-[.55rem] !text-teal-400 !border-teal-400/35">คุณ</span>' : ''}
+                            ${esc(r.displayName)}${isMe ? ' <span class="tag-pill !text-[.55rem] !text-teal-400 !border-teal-400/35">' + tr('lb.you') + '</span>' : ''}
                         </span>
                         <span class="tag-pill !text-[.58rem] hidden sm:inline-flex flex-shrink-0">${esc(r.caseId || '')}</span>
                         <span class="text-[.72rem] font-mono font-bold text-gold-400 flex-shrink-0">${Math.round(r.pct * 100)}%</span>
@@ -2160,77 +2153,80 @@ const UIController = (function() {
     // attempts recorded from build 2026-08-05 onward. They stay locked on
     // older history rather than unlocking on a zero.
 
+    // Category and badge wording lives in the dictionary under `cat.<id>` and
+    // `ach.<id>`, so a badge carries only its icon, its rule and its English
+    // display name — the parts that are not language.
     const AC_CATS = {
-        volume:   { name: 'ก้าวแรกและความต่อเนื่อง', icon: '🚀' },
-        accuracy: { name: 'ความแม่นยำ',              icon: '🎯' },
-        safety:   { name: 'ความปลอดภัยผู้ป่วย',       icon: '🛡' },
-        mastery:  { name: 'ความเชี่ยวชาญรายข้อ',      icon: '🧠' },
-        habit:    { name: 'วินัยและเวลา',             icon: '⏱' },
-        growth:   { name: 'การพัฒนาตนเอง',           icon: '📈' }
+        volume:   { icon: '🚀' },
+        accuracy: { icon: '🎯' },
+        safety:   { icon: '🛡' },
+        mastery:  { icon: '🧠' },
+        habit:    { icon: '⏱' },
+        growth:   { icon: '📈' }
     };
 
     const ACHIEVEMENTS = [
-        // ── ก้าวแรกและความต่อเนื่อง ──
-        { id: 'first',     cat: 'volume', icon: '🩺', name: 'First Case',        desc: 'เล่นจบเคสแรก',                   test: s => s.n >= 1,  prog: s => [s.n, 1] },
-        { id: 'v3',        cat: 'volume', icon: '📋', name: 'Ward Round',        desc: 'เล่นสะสม 3 ครั้ง',                test: s => s.n >= 3,  prog: s => [s.n, 3] },
-        { id: 'v5',        cat: 'volume', icon: '🔥', name: 'Marathon',          desc: 'เล่นสะสม 5 ครั้ง',                test: s => s.n >= 5,  prog: s => [s.n, 5] },
-        { id: 'v10',       cat: 'volume', icon: '💪', name: 'Resident',          desc: 'เล่นสะสม 10 ครั้ง',               test: s => s.n >= 10, prog: s => [s.n, 10] },
-        { id: 'v20',       cat: 'volume', icon: '🏥', name: 'Chief Resident',    desc: 'เล่นสะสม 20 ครั้ง',               test: s => s.n >= 20, prog: s => [s.n, 20] },
-        { id: 'v35',       cat: 'volume', icon: '🎓', name: 'Senior Clinician',  desc: 'เล่นสะสม 35 ครั้ง',               test: s => s.n >= 35, prog: s => [s.n, 35] },
-        { id: 'v50',       cat: 'volume', icon: '👑', name: 'Attending',         desc: 'เล่นสะสม 50 ครั้ง',               test: s => s.n >= 50, prog: s => [s.n, 50] },
-        { id: 'd3',        cat: 'volume', icon: '📆', name: 'Three Days In',     desc: 'เล่นใน 3 วันที่ต่างกัน',           test: s => s.distinctDays >= 3,  prog: s => [s.distinctDays, 3] },
-        { id: 'd7',        cat: 'volume', icon: '🗓', name: 'Weekly Rotation',   desc: 'เล่นใน 7 วันที่ต่างกัน',           test: s => s.distinctDays >= 7,  prog: s => [s.distinctDays, 7] },
-        { id: 'd14',       cat: 'volume', icon: '📅', name: 'Full Rotation',     desc: 'เล่นใน 14 วันที่ต่างกัน',          test: s => s.distinctDays >= 14, prog: s => [s.distinctDays, 14] },
+        // ── Getting started & keeping going ──
+        { id: 'first',     cat: 'volume', icon: '🩺', name: 'First Case',        test: s => s.n >= 1,  prog: s => [s.n, 1] },
+        { id: 'v3',        cat: 'volume', icon: '📋', name: 'Ward Round',        test: s => s.n >= 3,  prog: s => [s.n, 3] },
+        { id: 'v5',        cat: 'volume', icon: '🔥', name: 'Marathon',          test: s => s.n >= 5,  prog: s => [s.n, 5] },
+        { id: 'v10',       cat: 'volume', icon: '💪', name: 'Resident',          test: s => s.n >= 10, prog: s => [s.n, 10] },
+        { id: 'v20',       cat: 'volume', icon: '🏥', name: 'Chief Resident',    test: s => s.n >= 20, prog: s => [s.n, 20] },
+        { id: 'v35',       cat: 'volume', icon: '🎓', name: 'Senior Clinician',  test: s => s.n >= 35, prog: s => [s.n, 35] },
+        { id: 'v50',       cat: 'volume', icon: '👑', name: 'Attending',         test: s => s.n >= 50, prog: s => [s.n, 50] },
+        { id: 'd3',        cat: 'volume', icon: '📆', name: 'Three Days In',     test: s => s.distinctDays >= 3,  prog: s => [s.distinctDays, 3] },
+        { id: 'd7',        cat: 'volume', icon: '🗓', name: 'Weekly Rotation',   test: s => s.distinctDays >= 7,  prog: s => [s.distinctDays, 7] },
+        { id: 'd14',       cat: 'volume', icon: '📅', name: 'Full Rotation',     test: s => s.distinctDays >= 14, prog: s => [s.distinctDays, 14] },
 
-        // ── ความแม่นยำ ──
-        { id: 'a50',       cat: 'accuracy', icon: '🌱', name: 'Passing Grade',    desc: 'ทำคะแนนถึง 50%',              test: s => s.best >= 50,  prog: s => [s.best, 50] },
-        { id: 'a70',       cat: 'accuracy', icon: '📘', name: 'Proficient',       desc: 'ทำคะแนนถึง 70%',              test: s => s.best >= 70,  prog: s => [s.best, 70] },
-        { id: 'a80',       cat: 'accuracy', icon: '🎯', name: 'Sharp Shooter',    desc: 'ทำคะแนนถึง 80%',              test: s => s.best >= 80,  prog: s => [s.best, 80] },
-        { id: 'a85',       cat: 'accuracy', icon: '⭐', name: 'Distinction',      desc: 'ทำคะแนนถึง 85%',              test: s => s.best >= 85,  prog: s => [s.best, 85] },
-        { id: 'a90',       cat: 'accuracy', icon: '🌟', name: 'Honours',          desc: 'ทำคะแนนถึง 90%',              test: s => s.best >= 90,  prog: s => [s.best, 90] },
-        { id: 'a95',       cat: 'accuracy', icon: '💎', name: 'Near Perfect',     desc: 'ทำคะแนนถึง 95%',              test: s => s.best >= 95,  prog: s => [s.best, 95] },
-        { id: 'a100',      cat: 'accuracy', icon: '💯', name: 'Perfect Score',    desc: 'ทำคะแนนเต็มโดยไม่เจอ Fatal',    test: s => s.rows.some(r => !r.isFatal && r.maxScore > 0 && r.finalScore === r.maxScore) },
-        { id: 'avg70',     cat: 'accuracy', icon: '📊', name: 'Consistent',       desc: 'คะแนนเฉลี่ยสะสมถึง 70%',        test: s => s.n >= 3 && s.avg >= 70, prog: s => [s.avg, 70] },
-        { id: 'avg85',     cat: 'accuracy', icon: '🏆', name: 'Reliably Excellent', desc: 'คะแนนเฉลี่ยสะสมถึง 85% (อย่างน้อย 5 ครั้ง)', test: s => s.n >= 5 && s.avg >= 85, prog: s => [s.avg, 85] },
+        // ── Accuracy ──
+        { id: 'a50',       cat: 'accuracy', icon: '🌱', name: 'Passing Grade',    test: s => s.best >= 50,  prog: s => [s.best, 50] },
+        { id: 'a70',       cat: 'accuracy', icon: '📘', name: 'Proficient',       test: s => s.best >= 70,  prog: s => [s.best, 70] },
+        { id: 'a80',       cat: 'accuracy', icon: '🎯', name: 'Sharp Shooter',    test: s => s.best >= 80,  prog: s => [s.best, 80] },
+        { id: 'a85',       cat: 'accuracy', icon: '⭐', name: 'Distinction',      test: s => s.best >= 85,  prog: s => [s.best, 85] },
+        { id: 'a90',       cat: 'accuracy', icon: '🌟', name: 'Honours',          test: s => s.best >= 90,  prog: s => [s.best, 90] },
+        { id: 'a95',       cat: 'accuracy', icon: '💎', name: 'Near Perfect',     test: s => s.best >= 95,  prog: s => [s.best, 95] },
+        { id: 'a100',      cat: 'accuracy', icon: '💯', name: 'Perfect Score',    test: s => s.rows.some(r => !r.isFatal && r.maxScore > 0 && r.finalScore === r.maxScore) },
+        { id: 'avg70',     cat: 'accuracy', icon: '📊', name: 'Consistent',       test: s => s.n >= 3 && s.avg >= 70, prog: s => [s.avg, 70] },
+        { id: 'avg85',     cat: 'accuracy', icon: '🏆', name: 'Reliably Excellent', test: s => s.n >= 5 && s.avg >= 85, prog: s => [s.avg, 85] },
 
-        // ── ความปลอดภัยผู้ป่วย ──
-        { id: 'clean1',    cat: 'safety', icon: '✅', name: 'No Harm Done',       desc: 'เล่นจบโดยไม่เจอ Fatal 1 ครั้ง',   test: s => s.cleanRuns >= 1,  prog: s => [s.cleanRuns, 1] },
-        { id: 'safe3',     cat: 'safety', icon: '🛡', name: 'Do No Harm',         desc: 'ไม่เจอ Fatal ติดต่อกัน 3 ครั้ง',   test: s => s.safeRun >= 3,   prog: s => [s.safeRun, 3] },
-        { id: 'safe5',     cat: 'safety', icon: '🩹', name: 'Steady Hands',       desc: 'ไม่เจอ Fatal ติดต่อกัน 5 ครั้ง',   test: s => s.safeRun >= 5,   prog: s => [s.safeRun, 5] },
-        { id: 'safe10',    cat: 'safety', icon: '🕊', name: 'Safety Culture',     desc: 'ไม่เจอ Fatal ติดต่อกัน 10 ครั้ง',  test: s => s.safeRun >= 10,  prog: s => [s.safeRun, 10] },
-        { id: 'safe20',    cat: 'safety', icon: '🏅', name: 'Zero Harm Streak',   desc: 'ไม่เจอ Fatal ติดต่อกัน 20 ครั้ง',  test: s => s.safeRun >= 20,  prog: s => [s.safeRun, 20] },
-        { id: 'nofatal10', cat: 'safety', icon: '🧿', name: 'Spotless Record',    desc: 'เล่น 10 ครั้งโดยไม่เคยเจอ Fatal เลย', test: s => s.n >= 10 && s.fatals === 0, prog: s => [s.fatals === 0 ? s.n : 0, 10] },
-        { id: 'fin5',      cat: 'safety', icon: '🏁', name: 'Full Workup',        desc: 'เล่นจบครบทุกสถานี 5 ครั้ง',       test: s => s.finishedRuns >= 5,  prog: s => [s.finishedRuns, 5] },
-        { id: 'fin15',     cat: 'safety', icon: '🗿', name: 'Complete Clinician', desc: 'เล่นจบครบทุกสถานี 15 ครั้ง',      test: s => s.finishedRuns >= 15, prog: s => [s.finishedRuns, 15] },
+        // ── Patient safety ──
+        { id: 'clean1',    cat: 'safety', icon: '✅', name: 'No Harm Done',       test: s => s.cleanRuns >= 1,  prog: s => [s.cleanRuns, 1] },
+        { id: 'safe3',     cat: 'safety', icon: '🛡', name: 'Do No Harm',         test: s => s.safeRun >= 3,   prog: s => [s.safeRun, 3] },
+        { id: 'safe5',     cat: 'safety', icon: '🩹', name: 'Steady Hands',       test: s => s.safeRun >= 5,   prog: s => [s.safeRun, 5] },
+        { id: 'safe10',    cat: 'safety', icon: '🕊', name: 'Safety Culture',     test: s => s.safeRun >= 10,  prog: s => [s.safeRun, 10] },
+        { id: 'safe20',    cat: 'safety', icon: '🏅', name: 'Zero Harm Streak',   test: s => s.safeRun >= 20,  prog: s => [s.safeRun, 20] },
+        { id: 'nofatal10', cat: 'safety', icon: '🧿', name: 'Spotless Record',    test: s => s.n >= 10 && s.fatals === 0, prog: s => [s.fatals === 0 ? s.n : 0, 10] },
+        { id: 'fin5',      cat: 'safety', icon: '🏁', name: 'Full Workup',        test: s => s.finishedRuns >= 5,  prog: s => [s.finishedRuns, 5] },
+        { id: 'fin15',     cat: 'safety', icon: '🗿', name: 'Complete Clinician', test: s => s.finishedRuns >= 15, prog: s => [s.finishedRuns, 15] },
 
-        // ── ความเชี่ยวชาญรายข้อ (ต้องใช้ข้อมูลรายข้อ) ──
-        { id: 'p1',        cat: 'mastery', tele: true, icon: '🎖', name: 'First Perfect Step', desc: 'ตอบถูกครบทุกตัวเลือกใน 1 ข้อ',  test: s => s.perfectSteps >= 1,   prog: s => [s.perfectSteps, 1] },
-        { id: 'p25',       cat: 'mastery', tele: true, icon: '🧩', name: 'Pattern Recognition', desc: 'ตอบถูกครบข้อสะสม 25 ข้อ',      test: s => s.perfectSteps >= 25,  prog: s => [s.perfectSteps, 25] },
-        { id: 'p100',      cat: 'mastery', tele: true, icon: '🧠', name: 'Clinical Reasoning',  desc: 'ตอบถูกครบข้อสะสม 100 ข้อ',     test: s => s.perfectSteps >= 100, prog: s => [s.perfectSteps, 100] },
-        { id: 'p250',      cat: 'mastery', tele: true, icon: '🦉', name: 'Deep Knowledge',      desc: 'ตอบถูกครบข้อสะสม 250 ข้อ',     test: s => s.perfectSteps >= 250, prog: s => [s.perfectSteps, 250] },
-        { id: 'st5',       cat: 'mastery', tele: true, icon: '⚡', name: 'On a Roll',           desc: 'ตอบถูกครบข้อติดกัน 5 ข้อ',      test: s => s.bestStepStreak >= 5,  prog: s => [s.bestStepStreak, 5] },
-        { id: 'st10',      cat: 'mastery', tele: true, icon: '🌀', name: 'In the Zone',         desc: 'ตอบถูกครบข้อติดกัน 10 ข้อ',     test: s => s.bestStepStreak >= 10, prog: s => [s.bestStepStreak, 10] },
-        { id: 'st13',      cat: 'mastery', tele: true, icon: '🔱', name: 'Unbroken Chain',      desc: 'ตอบถูกครบข้อติดกัน 13 ข้อ',     test: s => s.bestStepStreak >= 13, prog: s => [s.bestStepStreak, 13] },
-        { id: 'flaw1',     cat: 'mastery', tele: true, icon: '🕯', name: 'Flawless Run',        desc: 'เล่นจบ 1 ครั้งโดยถูกครบทุกข้อ',  test: s => s.flawlessRuns >= 1, prog: s => [s.flawlessRuns, 1] },
-        { id: 'flaw3',     cat: 'mastery', tele: true, icon: '👑', name: 'Triple Flawless',     desc: 'เล่นจบแบบถูกครบทุกข้อ 3 ครั้ง',  test: s => s.flawlessRuns >= 3, prog: s => [s.flawlessRuns, 3] },
-        { id: 'g500',      cat: 'mastery', tele: true, icon: '📚', name: 'Five Hundred Calls',  desc: 'ตอบคำถามสะสม 500 ข้อ',        test: s => s.gradedSteps >= 500, prog: s => [s.gradedSteps, 500] },
+        // ── Step-level mastery (needs per-step telemetry) ──
+        { id: 'p1',        cat: 'mastery', tele: true, icon: '🎖', name: 'First Perfect Step', test: s => s.perfectSteps >= 1,   prog: s => [s.perfectSteps, 1] },
+        { id: 'p25',       cat: 'mastery', tele: true, icon: '🧩', name: 'Pattern Recognition', test: s => s.perfectSteps >= 25,  prog: s => [s.perfectSteps, 25] },
+        { id: 'p100',      cat: 'mastery', tele: true, icon: '🧠', name: 'Clinical Reasoning',  test: s => s.perfectSteps >= 100, prog: s => [s.perfectSteps, 100] },
+        { id: 'p250',      cat: 'mastery', tele: true, icon: '🦉', name: 'Deep Knowledge',      test: s => s.perfectSteps >= 250, prog: s => [s.perfectSteps, 250] },
+        { id: 'st5',       cat: 'mastery', tele: true, icon: '⚡', name: 'On a Roll',           test: s => s.bestStepStreak >= 5,  prog: s => [s.bestStepStreak, 5] },
+        { id: 'st10',      cat: 'mastery', tele: true, icon: '🌀', name: 'In the Zone',         test: s => s.bestStepStreak >= 10, prog: s => [s.bestStepStreak, 10] },
+        { id: 'st13',      cat: 'mastery', tele: true, icon: '🔱', name: 'Unbroken Chain',      test: s => s.bestStepStreak >= 13, prog: s => [s.bestStepStreak, 13] },
+        { id: 'flaw1',     cat: 'mastery', tele: true, icon: '🕯', name: 'Flawless Run',        test: s => s.flawlessRuns >= 1, prog: s => [s.flawlessRuns, 1] },
+        { id: 'flaw3',     cat: 'mastery', tele: true, icon: '👑', name: 'Triple Flawless',     test: s => s.flawlessRuns >= 3, prog: s => [s.flawlessRuns, 3] },
+        { id: 'g500',      cat: 'mastery', tele: true, icon: '📚', name: 'Five Hundred Calls',  test: s => s.gradedSteps >= 500, prog: s => [s.gradedSteps, 500] },
 
-        // ── วินัยและเวลา ──
-        { id: 'sc2',       cat: 'habit', icon: '🔥', name: 'Back Tomorrow',   desc: 'เล่นต่อเนื่อง 2 วันติด',            test: s => s.streakBest >= 2,  prog: s => [s.streakBest, 2] },
-        { id: 'sc3',       cat: 'habit', icon: '🔥', name: 'Three Day Streak', desc: 'เล่นต่อเนื่อง 3 วันติด',           test: s => s.streakBest >= 3,  prog: s => [s.streakBest, 3] },
-        { id: 'sc7',       cat: 'habit', icon: '🌤', name: 'Seven Day Streak', desc: 'เล่นต่อเนื่อง 7 วันติด',           test: s => s.streakBest >= 7,  prog: s => [s.streakBest, 7] },
-        { id: 'sc14',      cat: 'habit', icon: '🌗', name: 'Fortnight',        desc: 'เล่นต่อเนื่อง 14 วันติด',          test: s => s.streakBest >= 14, prog: s => [s.streakBest, 14] },
-        { id: 'sc30',      cat: 'habit', icon: '🌕', name: 'Month of Rounds',  desc: 'เล่นต่อเนื่อง 30 วันติด',          test: s => s.streakBest >= 30, prog: s => [s.streakBest, 30] },
-        { id: 't1h',       cat: 'habit', tele: true, icon: '⏱', name: 'One Hour In',  desc: 'ใช้เวลาฝึกสะสมครบ 1 ชั่วโมง', test: s => s.totalSeconds >= 3600, prog: s => [Math.round(s.totalSeconds / 60), 60] },
-        { id: 'night',     cat: 'habit', tele: true, icon: '🦇', name: 'Night Shift',  desc: 'เล่นในช่วง 00:00–04:59',     test: s => s.hours.slice(0, 5).some(c => c > 0) },
+        // ── Discipline & time ──
+        { id: 'sc2',       cat: 'habit', icon: '🔥', name: 'Back Tomorrow',   test: s => s.streakBest >= 2,  prog: s => [s.streakBest, 2] },
+        { id: 'sc3',       cat: 'habit', icon: '🔥', name: 'Three Day Streak', test: s => s.streakBest >= 3,  prog: s => [s.streakBest, 3] },
+        { id: 'sc7',       cat: 'habit', icon: '🌤', name: 'Seven Day Streak', test: s => s.streakBest >= 7,  prog: s => [s.streakBest, 7] },
+        { id: 'sc14',      cat: 'habit', icon: '🌗', name: 'Fortnight',        test: s => s.streakBest >= 14, prog: s => [s.streakBest, 14] },
+        { id: 'sc30',      cat: 'habit', icon: '🌕', name: 'Month of Rounds',  test: s => s.streakBest >= 30, prog: s => [s.streakBest, 30] },
+        { id: 't1h',       cat: 'habit', tele: true, icon: '⏱', name: 'One Hour In',  test: s => s.totalSeconds >= 3600, prog: s => [Math.round(s.totalSeconds / 60), 60] },
+        { id: 'night',     cat: 'habit', tele: true, icon: '🦇', name: 'Night Shift',  test: s => s.hours.slice(0, 5).some(c => c > 0) },
 
-        // ── การพัฒนาตนเอง ──
-        { id: 'imp2',      cat: 'growth', icon: '📈', name: 'Getting Better',   desc: 'ทำคะแนนดีขึ้นติดกัน 2 ครั้ง',      test: s => s.bestImprovementRun >= 2, prog: s => [s.bestImprovementRun, 2] },
-        { id: 'imp4',      cat: 'growth', icon: '🚀', name: 'Steep Curve',      desc: 'ทำคะแนนดีขึ้นติดกัน 4 ครั้ง',      test: s => s.bestImprovementRun >= 4, prog: s => [s.bestImprovementRun, 4] },
-        { id: 'comeback',  cat: 'growth', icon: '🔄', name: 'Comeback',         desc: 'เคยได้ต่ำกว่า 50% แล้วกลับมาได้ถึง 80%', test: s => s.comeback },
-        { id: 'explorer',  cat: 'growth', icon: '🗺', name: 'Case Explorer',    desc: 'เล่นครบ 2 เคสที่ต่างกัน',          test: s => s.distinctCases >= 2, prog: s => [s.distinctCases, 2] },
-        { id: 'dtp1',      cat: 'growth', icon: '🔍', name: 'DTP Spotter',      desc: 'ระบุ Drug Therapy Problem ถูกต้อง 1 ครั้ง', test: s => s.dtpCorrect >= 1, prog: s => [s.dtpCorrect, 1] },
-        { id: 'dtp3',      cat: 'growth', icon: '💊', name: 'DTP Specialist',   desc: 'ระบุ Drug Therapy Problem ถูกต้อง 3 ครั้ง', test: s => s.dtpCorrect >= 3, prog: s => [s.dtpCorrect, 3] }
+        // ── Personal growth ──
+        { id: 'imp2',      cat: 'growth', icon: '📈', name: 'Getting Better',   test: s => s.bestImprovementRun >= 2, prog: s => [s.bestImprovementRun, 2] },
+        { id: 'imp4',      cat: 'growth', icon: '🚀', name: 'Steep Curve',      test: s => s.bestImprovementRun >= 4, prog: s => [s.bestImprovementRun, 4] },
+        { id: 'comeback',  cat: 'growth', icon: '🔄', name: 'Comeback',         test: s => s.comeback },
+        { id: 'explorer',  cat: 'growth', icon: '🗺', name: 'Case Explorer',    test: s => s.distinctCases >= 2, prog: s => [s.distinctCases, 2] },
+        { id: 'dtp1',      cat: 'growth', icon: '🔍', name: 'DTP Spotter',      test: s => s.dtpCorrect >= 1, prog: s => [s.dtpCorrect, 1] },
+        { id: 'dtp3',      cat: 'growth', icon: '💊', name: 'DTP Specialist',   test: s => s.dtpCorrect >= 3, prog: s => [s.dtpCorrect, 3] }
     ];
 
     function achievementCard(a, s, on) {
@@ -2257,8 +2253,8 @@ const UIController = (function() {
                 </div>
                 <div class="min-w-0 flex-1">
                     <p class="text-xs font-bold ${on ? 'text-white' : 'text-slate-500'} truncate">${esc(a.name)}</p>
-                    <p class="text-[.65rem] text-slate-500 leading-snug">${esc(a.desc)}</p>
-                    ${needsData ? '<p class="text-[.5rem] text-slate-600 mt-1">ต้องใช้ข้อมูลรายข้อ — เริ่มเก็บตั้งแต่รุ่นนี้</p>' : bar}
+                    <p class="text-[.65rem] text-slate-500 leading-snug">${esc(tr('ach.' + a.id))}</p>
+                    ${needsData ? `<p class="text-[.5rem] text-slate-600 mt-1">${tr('ach.needsData')}</p>` : bar}
                 </div>
             </div>`;
     }
@@ -2266,7 +2262,7 @@ const UIController = (function() {
     async function renderAchievementsPanel() {
         const host = byId('achievements-body');
         if (!host) return;
-        host.innerHTML = loadingBlock('กำลังตรวจสอบความสำเร็จ…');
+        host.innerHTML = loadingBlock(tr('state.loadingAch'));
 
         const res = await window.DBService.getMyAttempts();
         if (!res.ok) {
@@ -2282,7 +2278,7 @@ const UIController = (function() {
             const items = state.filter(x => x.a.cat === cat);
             const got = items.filter(x => x.on).length;
             return `
-                ${sectionTitle(`${AC_CATS[cat].icon} ${AC_CATS[cat].name}`, `${got}/${items.length}`)}
+                ${sectionTitle(`${AC_CATS[cat].icon} ${tr('cat.' + cat)}`, `${got}/${items.length}`)}
                 <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-2">
                     ${items.map(x => achievementCard(x.a, s, x.on)).join('')}
                 </div>`;
@@ -2335,11 +2331,11 @@ const UIController = (function() {
     async function renderInstructorPanel() {
         const host = byId('instructor-body');
         if (!host) return;
-        host.innerHTML = loadingBlock('กำลังรวบรวมข้อมูลของนักศึกษา…');
+        host.innerHTML = loadingBlock(tr('state.loadingCohort'));
 
         const result = await window.DBService.getAllAttempts(1000);
         if (!result.ok || result.rows.length === 0) {
-            host.innerHTML = stateBlock(result, 'ยังไม่มีการส่งผลจากนักศึกษา');
+            host.innerHTML = stateBlock(result, tr('state.noSubmissions'));
             return;
         }
 
@@ -2401,7 +2397,7 @@ const UIController = (function() {
                 <div class="flex items-baseline justify-between gap-2 mb-1">
                     <p class="text-[.7rem] font-semibold text-slate-200 truncate">
                         ${esc(item.label)}
-                        ${item.retired ? '<span class="ml-1 text-[.55rem] font-bold text-gold-400 align-middle">· ขั้นตอนเก่า</span>' : ''}
+                        ${item.retired ? `<span class="ml-1 text-[.55rem] font-bold text-gold-400 align-middle">${tr('ins.retiredTag')}</span>` : ''}
                     </p>
                     <p class="text-[.66rem] font-mono font-bold ${tone} flex-shrink-0">${item.rate}%
                         <span class="text-slate-600 font-sans font-normal">(${item.count}/${total})</span></p>
@@ -2419,19 +2415,13 @@ const UIController = (function() {
         const sampleNote = total < 5 ? `
             <div class="rounded-xl border border-gold-400/35 bg-gold-400/[.07] px-3 py-2 mb-4 flex items-start gap-2">
                 <span class="text-gold-400 text-[.7rem] leading-none mt-0.5">ⓘ</span>
-                <p class="text-[.66rem] text-slate-300 leading-relaxed">
-                    ขนาดตัวอย่างเล็กมาก (${total} ครั้ง) — ค่าร้อยละยังไม่มีความหมายทางสถิติ
-                    ผู้เรียนคนเดียวที่ตอบผิดหนึ่งข้อจะแสดงเป็น 100% ให้ดูจำนวนครั้งในวงเล็บแทน
-                </p>
+                <p class="text-[.66rem] text-slate-300 leading-relaxed">${tr('ins.smallSample', { n: total })}</p>
             </div>` : '';
 
         const retiredNote = retiredCount > 0 ? `
             <div class="rounded-xl border border-navy-600/70 bg-navy-800/50 px-3 py-2 mb-4 flex items-start gap-2">
                 <span class="text-slate-400 text-[.7rem] leading-none mt-0.5">⚑</span>
-                <p class="text-[.66rem] text-slate-400 leading-relaxed">
-                    มี ${retiredCount} ขั้นตอนที่ไม่มีอยู่ในเคสฉบับปัจจุบันแล้ว — เป็นผลจากการส่งก่อนที่เคสจะถูกปรับปรุงใหม่
-                    ข้อมูลนี้ยังถูกต้อง แต่วัดเนื้อหาคนละฉบับกับที่นักศึกษาเล่นอยู่ตอนนี้
-                </p>
+                <p class="text-[.66rem] text-slate-400 leading-relaxed">${tr('ins.retiredNote', { n: retiredCount })}</p>
             </div>` : '';
 
         host.innerHTML = `
@@ -2448,31 +2438,28 @@ const UIController = (function() {
             <div class="panel rounded-2xl p-4 mb-4">
                 <div class="flex items-baseline justify-between mb-3">
                     <h3 class="text-xs font-extrabold text-white">Most Common Clinical Mistakes</h3>
-                    <p class="text-[.6rem] text-slate-500">% ของนักศึกษาที่ตอบผิดในขั้นตอนนั้น</p>
+                    <p class="text-[.6rem] text-slate-500">${tr('ins.mistakeNote')}</p>
                 </div>
                 ${chart.length
                     ? chart.map(i => bar(i, 'text-slate-300')).join('')
-                    : '<p class="text-[.72rem] text-slate-500">ยังไม่พบข้อผิดพลาดที่บันทึกไว้</p>'}
+                    : `<p class="text-[.72rem] text-slate-500">${tr('ins.noMistakes')}</p>`}
             </div>
 
             <div class="panel rounded-2xl p-4">
                 <div class="flex items-baseline justify-between mb-3">
                     <h3 class="text-xs font-extrabold text-white">DTP Classification</h3>
-                    <p class="text-[.6rem] text-slate-500">${tagged.length} attempt(s) ที่ติดแท็ก</p>
+                    <p class="text-[.6rem] text-slate-500">${tr('ins.taggedCount', { n: tagged.length })}</p>
                 </div>
                 ${tagged.length === 0
-                    ? `<p class="text-[.72rem] text-slate-500 leading-relaxed">
-                           ยังไม่มีข้อมูลการจำแนก DTP — ข้อมูลจะเริ่มเก็บจากการส่งผลครั้งถัดไป
-                       </p>`
+                    ? `<p class="text-[.72rem] text-slate-500 leading-relaxed">${tr('ins.noDTP')}</p>`
                     : `<p class="text-[.72rem] text-slate-300 mb-3">
-                           จำแนกถูกต้อง <strong class="text-teal-400">${pct(dtpCorrect, tagged.length)}%</strong>
-                           (${dtpCorrect}/${tagged.length})
+                           ${tr('ins.dtpAccuracy', { pct: pct(dtpCorrect, tagged.length), n: dtpCorrect, total: tagged.length })}
                        </p>
                        ${DTP_CATEGORIES.map(c => {
                            const n = dtpCounts[c.id] || 0;
                            return bar({
                                label: `${c.id}. ${c.short}`,
-                               caseId: c.th, stepId: '',
+                               caseId: dtpGloss(c), stepId: '',
                                count: n, rate: pct(n, tagged.length)
                            }, 'text-slate-300');
                        }).join('')}`}
@@ -2527,7 +2514,7 @@ const UIController = (function() {
                 svg = window.QRCode.toSVG(PUBLIC_URL, {
                     dark: '#0B1220',
                     light: '#FFFFFF',
-                    label: 'QR code สำหรับเปิด Clinical Case Simulator'
+                    label: tr('qr.aria')
                 });
             }
         } catch (err) {
@@ -2544,7 +2531,7 @@ const UIController = (function() {
                 card.innerHTML = `
                     <p class="text-[.6rem] font-bold tracking-widest text-slate-500 uppercase mb-1">Scan to open</p>
                     <p class="text-[.62rem] text-slate-400 leading-relaxed">
-                        สร้าง QR ไม่สำเร็จ — เปิดผ่านลิงก์นี้แทนได้
+                        ${tr('qr.failed')}
                     </p>
                     <p class="text-[.58rem] font-mono text-teal-400 break-all mt-1">${esc(PUBLIC_URL)}</p>`;
                 return;
@@ -2554,11 +2541,16 @@ const UIController = (function() {
                 <p class="text-[.6rem] font-bold tracking-widest text-slate-500 uppercase mb-2">Scan to open</p>
                 <div class="mx-auto rounded-lg bg-white p-1.5 ${small ? 'max-w-[7.5rem]' : 'max-w-[9.5rem]'}">${svg}</div>
                 <p class="text-[.62rem] text-slate-400 leading-relaxed text-center mt-2">
-                    สแกนเพื่อเปิดเว็บนี้บนมือถือ
+                    ${tr('qr.caption')}
                 </p>
                 <p class="text-[.55rem] font-mono text-slate-600 break-all text-center mt-1">${esc(PUBLIC_URL)}</p>`;
         });
     }
+
+    // Static markup is translated before anything reads it back. syncSoapTabs()
+    // caches each tab's base label from the DOM, so it has to run after this.
+    I18n.applyStatic();
+    I18n.initSwitcher();
 
     initEventListeners();
     renderQRCards();

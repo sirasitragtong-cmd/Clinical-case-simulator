@@ -8,7 +8,7 @@
     <title>Clinical Case Simulator — Medical RPG</title>
 
     <!-- PWA — installable on iPad for clinical rotations -->
-    <link rel="manifest" href="./manifest.json?v=202608050908" />
+    <link rel="manifest" href="./manifest.json?v=202608060958" />
     <link rel="apple-touch-icon" href="./icons/icon-192.png" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
@@ -26,7 +26,7 @@
 
     <!-- Compiled production stylesheet (node build.js). Replaces the
          cdn.tailwindcss.com in-browser compiler and its production warning. -->
-    <link rel="stylesheet" href="./css/style.min.css?v=202608050908" />
+    <link rel="stylesheet" href="./css/style.min.css?v=202608060958" />
 </head>
 <body>
 
@@ -39,7 +39,7 @@
         <path class="ecg-line" d="M2 20h20l6-13 9 26 7-19 6 9h18l6-6 7 12 6-9h26" />
     </svg>
     <p class="text-sm font-semibold text-slate-300">Restoring Session…</p>
-    <p class="text-[.68rem] text-slate-600">กำลังกู้คืนเซสชันของคุณ</p>
+    <p class="text-[.68rem] text-slate-600" data-i18n="splash.restoring">กำลังกู้คืนเซสชันของคุณ</p>
 </div>
 
 
@@ -58,6 +58,13 @@
       </svg>
       <p class="text-[.7rem] font-bold tracking-[.32em] text-slate-400 uppercase">Medical RPG Simulator</p>
     </div>
+
+    <!-- Language switch. Present on the login screen as well as the dashboard
+         so a visitor who was auto-detected into the wrong language can fix it
+         before signing in, not after. -->
+    <button data-lang-switch
+            class="absolute top-4 right-4 px-3 h-9 rounded-lg text-xs font-bold tracking-wide text-slate-300
+                   bg-navy-700/70 border border-navy-600 hover:text-white hover:border-teal-400/50 transition">EN</button>
 
     <div class="relative w-full max-w-md glass-card rounded-2xl p-6 sm:p-8 shadow-2xl animate-slide-up">
 
@@ -171,7 +178,11 @@
             </div>
           </div>
 
-          <button id="btn-logout" title="ออกจากระบบ"
+          <button data-lang-switch
+                  class="px-2.5 h-9 rounded-lg text-[.7rem] font-bold tracking-wide text-slate-300 bg-navy-700/70
+                         border border-navy-600 hover:text-white hover:border-teal-400/50 transition flex-shrink-0">EN</button>
+
+          <button id="btn-logout" data-i18n-title="nav.logout" title="ออกจากระบบ"
                   class="w-9 h-9 grid place-items-center rounded-lg text-slate-400 bg-navy-700/70 border border-navy-600 hover:text-acuity-500 hover:border-acuity-500/50 transition">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15M12 9l-3 3m0 0 3 3m-3-3h12.75" />
@@ -218,8 +229,8 @@
             <!-- Daily practice streak -->
             <div id="streak-card" class="mb-4"></div>
 
-            <h2 class="text-base font-extrabold text-white">เลือกกรณีศึกษา</h2>
-            <p class="text-[.7rem] text-slate-500 mt-0.5 mb-4">แต่ละเคสดำเนินตามกระบวนการ SOAP — DATA → IDENTIFY → ASSESSMENT → PLAN</p>
+            <h2 class="text-base font-extrabold text-white" data-i18n="campaign.title">เลือกกรณีศึกษา</h2>
+            <p class="text-[.7rem] text-slate-500 mt-0.5 mb-4" data-i18n="campaign.subtitle">แต่ละเคสดำเนินตามกระบวนการ SOAP — DATA → IDENTIFY → ASSESSMENT → PLAN</p>
             <div id="quest-track" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3"></div>
           </section>
 
@@ -229,9 +240,9 @@
             <div class="flex items-center justify-between mb-4">
               <div>
                 <h2 class="text-base font-extrabold text-white">My Stats</h2>
-                <p class="text-[.7rem] text-slate-500 mt-0.5">สถิติจากผลการเล่นจริงของคุณใน Firestore</p>
+                <p class="text-[.7rem] text-slate-500 mt-0.5" data-i18n="stats.subtitle">สถิติจากผลการเล่นจริงของคุณใน Firestore</p>
               </div>
-              <button class="refresh-btn px-3 py-2 rounded-lg text-xs font-semibold text-slate-300 bg-navy-700/70 border border-navy-600 hover:text-white transition" data-refresh="stats">↻ รีเฟรช</button>
+              <button class="refresh-btn px-3 py-2 rounded-lg text-xs font-semibold text-slate-300 bg-navy-700/70 border border-navy-600 hover:text-white transition" data-refresh="stats" data-i18n="common.refresh">↻ รีเฟรช</button>
             </div>
             <div id="stats-body"></div>
           </section>
@@ -241,9 +252,9 @@
             <div class="flex items-center justify-between mb-4">
               <div>
                 <h2 class="text-base font-extrabold text-white">Leaderboard</h2>
-                <p class="text-[.7rem] text-slate-500 mt-0.5">อันดับจากคะแนนที่ดีที่สุดของผู้เล่นแต่ละคน</p>
+                <p class="text-[.7rem] text-slate-500 mt-0.5" data-i18n="lb.subtitle">อันดับจากคะแนนที่ดีที่สุดของผู้เล่นแต่ละคน</p>
               </div>
-              <button class="refresh-btn px-3 py-2 rounded-lg text-xs font-semibold text-slate-300 bg-navy-700/70 border border-navy-600 hover:text-white transition" data-refresh="leaderboard">↻ รีเฟรช</button>
+              <button class="refresh-btn px-3 py-2 rounded-lg text-xs font-semibold text-slate-300 bg-navy-700/70 border border-navy-600 hover:text-white transition" data-refresh="leaderboard" data-i18n="common.refresh">↻ รีเฟรช</button>
             </div>
             <div id="leaderboard-body"></div>
           </section>
@@ -253,9 +264,9 @@
             <div class="flex items-center justify-between mb-4">
               <div>
                 <h2 class="text-base font-extrabold text-white">Achievements</h2>
-                <p class="text-[.7rem] text-slate-500 mt-0.5">ปลดล็อกจากผลการเล่นจริง — ไม่ใช่ค่าตัวอย่าง</p>
+                <p class="text-[.7rem] text-slate-500 mt-0.5" data-i18n="ach.subtitle">ปลดล็อกจากผลการเล่นจริง — ไม่ใช่ค่าตัวอย่าง</p>
               </div>
-              <button class="refresh-btn px-3 py-2 rounded-lg text-xs font-semibold text-slate-300 bg-navy-700/70 border border-navy-600 hover:text-white transition" data-refresh="achievements">↻ รีเฟรช</button>
+              <button class="refresh-btn px-3 py-2 rounded-lg text-xs font-semibold text-slate-300 bg-navy-700/70 border border-navy-600 hover:text-white transition" data-refresh="achievements" data-i18n="common.refresh">↻ รีเฟรช</button>
             </div>
             <div id="achievements-body"></div>
           </section>
@@ -265,9 +276,9 @@
             <div class="flex items-center justify-between mb-4">
               <div>
                 <h2 class="text-base font-extrabold text-white">Instructor Analytics</h2>
-                <p class="text-[.7rem] text-slate-500 mt-0.5">ข้อมูลรวมแบบไม่ระบุตัวตน — สำหรับอาจารย์เภสัชกรรม</p>
+                <p class="text-[.7rem] text-slate-500 mt-0.5" data-i18n="ins.subtitle">ข้อมูลรวมแบบไม่ระบุตัวตน — สำหรับอาจารย์เภสัชกรรม</p>
               </div>
-              <button class="refresh-btn px-3 py-2 rounded-lg text-xs font-semibold text-slate-300 bg-navy-700/70 border border-navy-600 hover:text-white transition" data-refresh="instructor">↻ รีเฟรช</button>
+              <button class="refresh-btn px-3 py-2 rounded-lg text-xs font-semibold text-slate-300 bg-navy-700/70 border border-navy-600 hover:text-white transition" data-refresh="instructor" data-i18n="common.refresh">↻ รีเฟรช</button>
             </div>
             <div id="instructor-body"></div>
           </section>
@@ -288,7 +299,7 @@
     <header class="flex-shrink-0 border-b border-navy-700/60 bg-navy-850/95 backdrop-blur-xl sticky top-0 z-40">
       <div class="flex items-center gap-2 px-3 py-2">
 
-        <button id="btn-back-dashboard" title="ออกจากเคส"
+        <button id="btn-back-dashboard" data-i18n-title="nav.exitCase" title="ออกจากเคส"
                 class="w-9 h-9 grid place-items-center rounded-lg text-slate-400 bg-navy-700/70 border border-navy-600 hover:text-white transition flex-shrink-0">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" />
@@ -373,7 +384,7 @@
           <div class="flex gap-1 p-2 border-b border-navy-700/60 flex-shrink-0">
             <button class="soap-tab flex-1 px-2 py-2 rounded-lg text-[.68rem] font-bold text-navy-900 bg-teal-400 transition" data-soap="subjective">💬 Subj</button>
             <button class="soap-tab flex-1 px-2 py-2 rounded-lg text-[.68rem] font-semibold text-slate-400 transition" data-soap="objective">🔬 Obj</button>
-            <button class="soap-tab flex-1 px-2 py-2 rounded-lg text-[.68rem] font-semibold text-slate-400 transition" data-soap="cpg">📚 อ้างอิง</button>
+            <button class="soap-tab flex-1 px-2 py-2 rounded-lg text-[.68rem] font-semibold text-slate-400 transition" data-soap="cpg" data-i18n="soap.cpg">📚 อ้างอิง</button>
             <button class="soap-tab flex-1 px-2 py-2 rounded-lg text-[.68rem] font-semibold text-slate-400 transition" data-soap="monitoring">🎯 Mon</button>
           </div>
           <div id="soap-content" class="flex-1 overflow-y-auto p-3 text-xs"></div>
@@ -464,7 +475,7 @@
   <div class="flex gap-1 p-2 border-b border-navy-700/60 flex-shrink-0">
     <button class="soap-tab flex-1 px-2 py-2.5 rounded-lg text-xs font-bold text-navy-900 bg-teal-400 transition" data-soap="subjective">💬 Subjective</button>
     <button class="soap-tab flex-1 px-2 py-2.5 rounded-lg text-xs font-semibold text-slate-400 transition" data-soap="objective">🔬 Objective</button>
-    <button class="soap-tab flex-1 px-2 py-2.5 rounded-lg text-xs font-semibold text-slate-400 transition" data-soap="cpg">📚 อ้างอิง</button>
+    <button class="soap-tab flex-1 px-2 py-2.5 rounded-lg text-xs font-semibold text-slate-400 transition" data-soap="cpg" data-i18n="soap.cpg">📚 อ้างอิง</button>
     <button class="soap-tab flex-1 px-2 py-2.5 rounded-lg text-xs font-semibold text-slate-400 transition" data-soap="monitoring">🎯 Monitoring</button>
   </div>
 
@@ -483,20 +494,54 @@
 <!-- ═══════════════════════════════════════════════════════════════
      SCRIPTS
      ═══════════════════════════════════════════════════════════════ -->
-<script src="./js/qrcode.js?v=202608050908"></script>
-<script src="./js/firebase-service.js?v=202608050908"></script>
-<script src="./js/ui-controller.js?v=202608050908"></script>
-<script src="./js/game-engine.js?v=202608050908"></script>
+<script src="./js/i18n.js?v=202608060958"></script>
+<script src="./js/qrcode.js?v=202608060958"></script>
+<script src="./js/firebase-service.js?v=202608060958"></script>
+<script src="./js/ui-controller.js?v=202608060958"></script>
+<script src="./js/game-engine.js?v=202608060958"></script>
 
 <script>
 (function() {
     'use strict';
 
+    const t = window.I18n.t;
+
     // Case registry. Stage 1 only for now — later stages get added here as
     // they are authored, and the campaign map unlocks them in order.
-    const CASE_FILES = [
-        './data/case_001.json?v=202608050908'
-    ];
+    //
+    // Ids only. The clinical content of a case is translated as a whole file
+    // (data/<id>.en.json) rather than key by key, so a pharmacist can review a
+    // translated case as one readable document.
+    const CASE_IDS = ['case_001'];
+
+    // Read the build stamp off a tag build.js already rewrites, rather than
+    // hard-coding it here. build.js only rewrites `?v=` query tags on asset
+    // URLs, so a bare constant would keep the stamp of whichever build first
+    // wrote it and quietly serve stale case files for every deploy after that.
+    const BUILD = (function() {
+        const link = document.querySelector('link[rel="stylesheet"][href*="?v="]');
+        const m = link && link.getAttribute('href').match(/\?v=([A-Za-z0-9_.-]+)/);
+        return m ? m[1] : String(Date.now());   // no tag found: never cache
+    })();
+
+    /**
+     * Candidate URLs for one case, best first.
+     *
+     * In English the translated file is preferred and the Thai original is the
+     * fallback — a case whose translation has not been written yet still plays,
+     * in Thai, instead of vanishing from the campaign map. The learner is told
+     * which one they got rather than being left to wonder.
+     */
+    function caseUrls(id) {
+        // The query string is concatenated rather than written inline. build.js
+        // rewrites every asset extension followed by a version query it finds in
+        // this file, and it cannot tell a template apart from a real asset tag —
+        // written inline, these had the version stamped into the source, which
+        // BUILD then appended a second time on every load.
+        const q  = '?v=' + BUILD;
+        const th = './data/' + id + '.json' + q;
+        return window.I18n.isThai() ? [th] : ['./data/' + id + '.en.json' + q, th];
+    }
 
     const btnLogin       = document.getElementById('btn-google-login');
     const btnGuest       = document.getElementById('btn-guest-login');
@@ -554,15 +599,31 @@
     // ─── Case loading ──────────────────────────────────────
     async function loadCases() {
         const loaded = [];
-        for (const file of CASE_FILES) {
-            try {
-                const res = await fetch(file);
-                if (!res.ok) throw new Error(`HTTP ${res.status}`);
-                loaded.push(await res.json());
-            } catch (err) {
-                console.error(`[Launcher] Failed to load ${file}:`, err.message);
+        let fellBack = false;
+
+        for (const id of CASE_IDS) {
+            const urls = caseUrls(id);
+            for (let i = 0; i < urls.length; i++) {
+                try {
+                    const res = await fetch(urls[i]);
+                    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                    loaded.push(await res.json());
+                    if (i > 0) fellBack = true;
+                    break;
+                } catch (err) {
+                    console.warn(`[Launcher] ${urls[i]} unavailable:`, err.message);
+                    if (i === urls.length - 1) {
+                        console.error(`[Launcher] No usable file for ${id}.`);
+                    }
+                }
             }
         }
+
+        // Say plainly that the content is not in the language they asked for.
+        // Silently serving Thai to someone who chose English would look like a
+        // broken translation rather than one that has not been written yet.
+        if (fellBack) setTimeout(() => showToast(t('launch.caseFallback'), 5200), 900);
+
         cases = loaded;
         document.getElementById('case-count').textContent = cases.length;
         console.log(`[Launcher] ${cases.length} case(s) loaded:`, cases.map(c => c.case_id).join(', '));
@@ -583,7 +644,7 @@
 
         const ok = GameEngine.initGame(caseData);
         if (!ok) {
-            showToast('❌ ไม่สามารถเริ่มเคสได้ — ข้อมูล JSON ไม่ถูกต้อง');
+            showToast(t('launch.caseFailed'));
             UIController.navigateTo('dashboard');
             return;
         }
@@ -603,7 +664,7 @@
 
     // ─── Exit ──────────────────────────────────────────────
     function exitCase() {
-        if (confirm('ออกจากเคสนี้? ความก้าวหน้าจะถูกบันทึก')) {
+        if (confirm(t('launch.confirmExit'))) {
             stopTimer();
             UIController.closeDrawer();
             UIController.navigateTo('dashboard');
@@ -647,7 +708,7 @@
         const sbName = document.getElementById('sidebar-user-name');
         const sbMode = document.getElementById('sidebar-user-mode');
         if (sbName) sbName.textContent = label;
-        if (sbMode) sbMode.textContent = isGuest ? 'Anonymous · ไม่บันทึกผล' : 'Signed In · บันทึกผลแล้ว';
+        if (sbMode) sbMode.textContent = t(isGuest ? 'session.anon' : 'session.signedIn');
 
         if (user && user.photoURL && badgeEl) {
             badgeEl.innerHTML = `<img src="${user.photoURL}" alt="" class="w-full h-full object-cover" />`;
@@ -670,7 +731,7 @@
             UIController.navigateTo('dashboard');
         } catch (err) {
             console.error('[Auth Login Error]', err);
-            showToast(`❌ เข้าสู่ระบบไม่สำเร็จ: ${err.message || 'เกิดข้อผิดพลาด'}`);
+            showToast(t('auth.loginFailed', { msg: err.message || t('auth.genericError') }));
         } finally {
             btnLogin.disabled = false;
         }
@@ -682,10 +743,10 @@
             const user = await window.AuthService.loginAnonymously();
             applyUserToUI(user);
             UIController.navigateTo('dashboard');
-            showToast('⚠ โหมด Anonymous — คะแนนจะไม่ถูกบันทึก');
+            showToast(t('auth.guestNotice'));
         } catch (err) {
             console.error('[Auth Guest Error]', err);
-            showToast(`❌ เข้าสู่โหมด Guest ไม่สำเร็จ: ${err.message || 'เกิดข้อผิดพลาด'}`);
+            showToast(t('auth.guestFailed', { msg: err.message || t('auth.genericError') }));
         } finally {
             btnGuest.disabled = false;
         }
