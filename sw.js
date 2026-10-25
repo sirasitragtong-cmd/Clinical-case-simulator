@@ -1,128 +1,32 @@
-/**
- * sw.js — Service Worker for Clinical Case Simulator (Pharmacy Edition).
- *
- * Purpose: a pharmacy student on a ward round should be able to open the
- * app on an iPad and have it load instantly even when hospital Wi-Fi is
- * unreliable. Everything the simulator needs to run a case — shell, styles,
- * scripts and case JSON — is precached on install.
- *
- * CACHE_NAME carries the build stamp and is rewritten by build.js, so each
- * deploy installs a fresh worker and drops the previous cache on activate.
- * Never edit CACHE_NAME by hand.
- *
- * Strategies:
- *   - Navigations   → network-first (a new deploy wins), cache as fallback.
- *   - Same-origin   → stale-while-revalidate (instant, refreshes silently).
- *   - Cross-origin  → passthrough. Firebase Auth/Firestore and Google Fonts
- *                     must never be intercepted; caching auth traffic would
- *                     serve stale credentials and break sign-in.
- */
 'use strict';
-
-const CACHE_NAME = 'pharmsim-202610250827';
-
-const PRECACHE_URLS = [
-    './',
-    './index.html',
-    './css/style.min.css?v=202610250827',
-    './js/i18n.js?v=202610250827',
-    './js/qrcode.js?v=202610250827',
-    './js/firebase-service.js?v=202610250827',
-    './js/ui-controller.js?v=202610250827',
-    './js/game-engine.js?v=202610250827',
-    './js/pharmville-shell.js?v=202610250827',
-    './hospital-scene.js?v=202610250827',
-    './css/pharmville.css?v=202610250827',
-    // Both language editions are precached. Which one a visitor needs is not
-    // known at install time, and a student who switches to English on a ward
-    // with no signal must not find the case missing.
-    './data/case_001.json?v=202610250827',
-    './data/case_001.en.json?v=202610250827',
-    './manifest.json?v=202610250827',
-    './icons/icon-192.png',
-    './icons/icon-512.png',
-];
-
-// ─── Install ────────────────────────────────────────────────────
-self.addEventListener('install', event => {
-    event.waitUntil((async () => {
-        const cache = await caches.open(CACHE_NAME);
-        // addAll() is all-or-nothing: one 404 would abort the whole install
-        // and leave the app with no offline support at all. Add individually
-        // and tolerate misses so a renamed asset degrades instead of failing.
-        await Promise.all(PRECACHE_URLS.map(async url => {
-            try {
-                await cache.add(new Request(url, { cache: 'reload' }));
-            } catch (err) {
-                console.warn('[SW] Precache skipped:', url, err.message);
-            }
-        }));
-        await self.skipWaiting();
-    })());
-});
-
-// ─── Activate ───────────────────────────────────────────────────
-self.addEventListener('activate', event => {
-    event.waitUntil((async () => {
-        const names = await caches.keys();
-        await Promise.all(
-            names.filter(n => n.startsWith('pharmsim-') && n !== CACHE_NAME)
-                 .map(n => caches.delete(n))
-        );
-        await self.clients.claim();
-    })());
-});
-
-// ─── Fetch ──────────────────────────────────────────────────────
+const CACHE_NAME = 'pharmsim-20261025072904';
+const SHELL = ['./', './index.html', './css/game-hub.css?v=20261025072904', './js/game-hub.js?v=20261025072904', './js/clinic-room.js?v=20261025072904', './js/firebase-service.js?v=20261025072904', './manifest.json?v=20261025072904', './icons/icon-192.png', './icons/icon-512.png'];
+const RETIRED = /\/(?:data\/|tools\/build-case-001\.js|js\/(?:game-engine|ui-controller|i18n|pharmville-shell)\.js|hospital(?:-scene)?\.js)/;
+self.addEventListener('install', event => event.waitUntil((async () => {
+  const cache = await caches.open(CACHE_NAME);
+  await Promise.all(SHELL.map(url => cache.add(new Request(url, {cache:'reload'})).catch(() => {})));
+  await self.skipWaiting();
+})()));
+self.addEventListener('activate', event => event.waitUntil((async () => {
+  await Promise.all((await caches.keys()).filter(name => name.startsWith('pharmsim-') && name !== CACHE_NAME).map(name => caches.delete(name)));
+  await self.clients.claim();
+})()));
 self.addEventListener('fetch', event => {
-    const req = event.request;
-
-    if (req.method !== 'GET') return;
-
-    const url = new URL(req.url);
-    if (url.origin !== self.location.origin) return; // Firebase, fonts, CDNs
-
-    if (req.mode === 'navigate') {
-        event.respondWith(networkFirst(req));
-        return;
-    }
-
-    event.respondWith(staleWhileRevalidate(req));
-});
-
-/** Fresh HTML when online; last good shell when not. */
-async function networkFirst(req) {
+  const request = event.request;
+  const url = new URL(request.url);
+  if (request.method !== 'GET' || url.origin !== self.location.origin) return;
+  if (RETIRED.test(url.pathname)) {
+    event.respondWith(Promise.resolve(new Response('This content has been retired.', {status:410})));
+    return;
+  }
+  event.respondWith((async () => {
     const cache = await caches.open(CACHE_NAME);
     try {
-        const res = await fetch(req);
-        if (res && res.ok) cache.put(req, res.clone());
-        return res;
-    } catch (err) {
-        return (await cache.match(req))
-            || (await cache.match('./index.html'))
-            || Response.error();
+      const response = await fetch(request);
+      if (response.ok) await cache.put(request, response.clone());
+      return response;
+    } catch (error) {
+      return await cache.match(request) || (request.mode === 'navigate' ? await cache.match('./index.html') : null) || new Response('Offline', {status:503});
     }
-}
-
-/** Serve from cache immediately, refresh the entry in the background. */
-async function staleWhileRevalidate(req) {
-    const cache = await caches.open(CACHE_NAME);
-
-    // Exact match first — right version, right file.
-    let cached = await cache.match(req);
-
-    // Fallback that ignores the version query string. A cached index.html
-    // can outlive the build stamp it was tagged with, and would otherwise
-    // request assets at a stamp this cache does not hold, failing every one
-    // of them while offline. Serving the older copy beats serving nothing on
-    // a ward with no signal; when the network is reachable the revalidate
-    // below replaces it anyway.
-    if (!cached) cached = await cache.match(req, { ignoreSearch: true });
-
-    const network = fetch(req).then(res => {
-        if (res && res.ok) cache.put(req, res.clone());
-        return res;
-    }).catch(() => null);
-
-    return cached || (await network) || Response.error();
-}
+  })());
+});
