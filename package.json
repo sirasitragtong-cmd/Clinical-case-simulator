@@ -1,11 +1,11 @@
 {
   "name": "clinical-case-simulator",
   "version": "7.0.0",
-  "description": "Clinical Case Simulator — Pharmacy Edition. SOAP note and DTP practice for pharmacy students.",
+  "description": "PharmVille \u2014 pharmacy game framework",
   "scripts": {
     "build": "node build.js",
-    "build:css": "node build-css.js",
-    "icons": "node tools/gen-icons.js"
+    "icons": "node tools/gen-icons.js",
+    "test": "node --test tests/*.test.cjs"
   },
   "repository": {
     "type": "git",

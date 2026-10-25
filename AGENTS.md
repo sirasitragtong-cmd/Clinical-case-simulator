@@ -4,16 +4,16 @@
 
 The user directs the product through one lead agent. The lead translates requests into bounded assignments, delegates relevant work, integrates results, verifies them, and reports back in Thai. This file is a repository workflow, not a background service or a grant of credentials. Follow applicable platform instructions and current user directions first. Delegate when supported and useful; do not pretend that specialist agents ran when they did not. If delegation is unavailable, perform the roles sequentially and disclose that distinction.
 
-Current product priority: improve the hospital game's structure, visuals, animation, audio and interaction before expanding clinical cases. Staff remain at their stations; only patients move. Keep the world independent of clinical content. Preserve the original app, authentication, stored drafts and scores.
+Current product priority: a fresh, content-free pharmacy game framework. The user explicitly removed all old clinical cases, case generators, chart/portrait UI and audio. Keep two future case slots, onboarding missions, empty scoring/ranking scaffolds and existing authentication. No real score writes. Preserve database records and existing browser drafts without reading, rewriting or deleting them.
 
 ## Roles and default ownership
 
 | Role | Responsibility | Default area |
 | --- | --- | --- |
 | Lead / architect / integrator | Scope, acceptance criteria, interfaces, task allocation, integration, release and rollback | Cross-cutting decisions, build/deploy files, AGENTS.md, task coordination |
-| UX / UI | Layout, visual language, Thai copy, accessibility, responsive behavior | hospital.html, hospital.css, design specification |
-| Game / animation / audio | Actors, routes, stationary staff, movement, effects, sound lifecycle and performance | hospital-scene.js |
-| Frontend / learning workflow | Panels, interactions, SOAP drafts, export, case-to-UI adapters | hospital.js; js/ui-controller.js, js/game-engine.js and js/i18n.js only when in scope |
+| UX / UI | Layout, visual language, Thai copy, accessibility, responsive behavior | index.html, css/game-hub.css, design specification |
+| Game / animation | Actors, routes, stationary staff, movement, visual effects and performance | js/clinic-room.js |
+| Frontend / learning workflow | Panels, interactions, onboarding missions and future case integration | js/game-hub.js |
 | Data / backend / security | Schemas, persistence, validation, identity, authorization, data migration | js/firebase-service.js, firestore.rules, firestore.indexes.json, case schema decisions |
 | QA / regression reviewer | Independently check acceptance criteria, regression risk, failure paths and verification evidence | tests/ and review findings; no production rewrites without assignment |
 | Clinical content specialist (on demand) | Map user-supplied cases to schema, check sources and Thai/English parity, identify clinical ambiguities | data/ and learning-content specifications, only when clinical work is requested |
@@ -33,15 +33,15 @@ These are responsibility areas, not permanent exclusive file permissions. For ea
 
 ## Integration and regression rules
 
-- The original app is index.html + js/ + css/; the prototype is hospital.html + hospital.js + hospital-scene.js + hospital.css. Changes in one must not accidentally alter the other.
-- World motion and audio must work without case loading or Firebase. Learning events can highlight stations but must not move staff. Never mix case-dependent rules into decorative animation.
+- The current app is index.html, css/game-hub.css, js/game-hub.js and js/clinic-room.js. hospital.html is a compatibility redirect. Old clinical files and renderers are retired.
+- World motion must work without case loading or Firebase. Learning events can highlight stations but must not move staff. Never mix case-dependent rules into decorative animation.
 - Preserve the current draft key and data shape unless an explicit, tested migration is included. Do not read or rewrite live user data to test a visual feature.
 - Keep clinical content out of a visual/structural task unless the user expands scope. Do not invent patient facts, treatment guidance or automatic correctness scores. An AI content review does not replace a qualified clinical review.
 - Changes to the original asset pipeline follow BUILD.md. A standalone prototype change needs appropriate syntax/behavior checks and updated asset versions; avoid unnecessary rebuild churn. Test altered service-worker behavior if caching changes.
-- New logic needs targeted behavioral tests when it introduces meaningful regression risk. For world changes run `node --test tests/hospital-scene.test.cjs`; syntax-check changed JavaScript. For changed builds run `npm run build`. Test visual/interaction changes in the supported browser when available, including relevant small-screen/keyboard/failure states.
+- New logic needs targeted behavioral tests when it introduces meaningful regression risk. For world changes run `npm test`; syntax-check changed JavaScript. For changed builds run `npm run build`. Test visual/interaction changes in the supported browser when available, including relevant small-screen/keyboard/failure states.
 - Use only observed verification results. Distinguish simulated tests from real-browser and physical-device checks. Never promise zero bugs, universal device coverage or medically verified content without evidence.
 - Do not put credentials, patient-identifying information or real user records in code, task notes, screenshots or test fixtures.
-- Avoid unnecessary dependencies. Keep sound user-activated, controllable and suspended in hidden tabs; respect reduced motion. Do not sacrifice readability, accessibility or data preservation for decoration.
+- Avoid unnecessary dependencies. Do not add audio in the current scope; respect reduced motion and suspend animation in hidden tabs. Do not sacrifice readability, accessibility or data preservation for decoration.
 
 ## Team reference
 

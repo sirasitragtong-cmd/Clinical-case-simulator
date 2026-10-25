@@ -1,7 +1,7 @@
 {
-  "name": "Clinical Case Simulator — Pharmacy Edition",
-  "short_name": "PharmSim",
-  "description": "SOAP note practice and drug therapy problem simulation for pharmacy students.",
+  "name": "PharmVille — โรงพยาบาลของคุณ",
+  "short_name": "PharmVille",
+  "description": "สำรวจโรงพยาบาล เตรียมพร้อมสำหรับภารกิจเภสัชกร",
   "lang": "th",
   "dir": "ltr",
   "start_url": "./index.html",
@@ -9,9 +9,12 @@
   "id": "/Clinical-case-simulator/",
   "display": "standalone",
   "orientation": "any",
-  "theme_color": "#0A0F1D",
-  "background_color": "#0A0F1D",
-  "categories": ["education", "medical"],
+  "theme_color": "#202b46",
+  "background_color": "#f6f3ea",
+  "categories": [
+    "education",
+    "medical"
+  ],
   "icons": [
     {
       "src": "./icons/icon-192.png",
