@@ -9,8 +9,15 @@
         pharmacy: 'พื้นที่หลักสำหรับโหมดเภสัชกร — ยังไม่มีเคสให้เล่น'
     };
     const roles = { pharmacist: 'เภสัชกร', doctor: 'แพทย์', nurse: 'พยาบาล', dentist: 'ทันตแพทย์' };
-    const visited = new Set();
+    const tasks = [
+        { room: 'reception', title: 'รับบัตรคิว', action: 'ตรวจบัตรคิวเรียบร้อย', done: 'ตรวจบัตรคิวแล้ว' },
+        { room: 'exam', title: 'เตรียมพื้นที่รับบริการ', action: 'ยืนยันว่าห้องพร้อม', done: 'เตรียมห้องแล้ว' },
+        { room: 'pharmacy', title: 'ส่งมอบชุดเรียนรู้', action: 'ส่งมอบชุดเรียนรู้เปล่า', done: 'ส่งมอบชุดเรียนรู้แล้ว' }
+    ];
+    let completed = 0;
     let started = false;
+    let arrivedRoom = null;
+    let travelTarget = null;
     let paused = false;
     let authBusy = false;
     const put = (id, text) => { const el = byId(id); if (el) el.textContent = text; };
@@ -44,13 +51,54 @@
     }
 
     function renderMissions() {
-        put('mission-progress', visited.size + ' / 3');
-        const fill=byId('mission-progress-fill'); if(fill) fill.style.width=(visited.size/3*100)+'%';
+        put('mission-progress', completed + ' / 3');
+        const fill = byId('mission-progress-fill');
+        if (fill) fill.style.width = (completed / 3 * 100) + '%';
         const host = byId('mission-list');
-        if (host) host.innerHTML = Object.entries(rooms).map(([id, title]) =>
-            `<li class="mission-item${visited.has(id) ? ' is-complete' : ''}"><span aria-hidden="true">${visited.has(id) ? '✓' : '○'}</span><div><strong>เยี่ยมชม${title}</strong><p>${visited.has(id) ? 'สำรวจแล้ว' : 'รอสำรวจ'}</p></div><button type="button" data-room="${id}">ไปที่ห้อง</button></li>`
+        if (host) host.innerHTML = tasks.map((task, i) =>
+            `<li class="mission-item${i < completed ? ' is-complete' : ''}${started && i === completed ? ' is-current' : ''}"><span aria-hidden="true">${i < completed ? '✓' : i + 1}</span><div><strong>${task.title}</strong><p>${i < completed ? task.done : rooms[task.room]}</p></div><button type="button" data-room="${task.room}">ไปที่ห้อง</button></li>`
         ).join('');
-        put('mission-start', started ? 'สำรวจต่อ' : 'เริ่มภารกิจทดลอง');
+        const task = tasks[completed];
+        const ready = started && task && arrivedRoom === task.room;
+        const action = byId('service-button');
+        if (action) {
+            action.disabled = !ready;
+            action.textContent = completed === 3 ? 'ภารกิจรอบนี้เสร็จแล้ว' : ready ? task.action : 'รอคนไข้ถึงจุดบริการ';
+        }
+        put('mission-start', completed === 3 ? 'เล่นรอบใหม่' : started ? 'ไปยังภารกิจถัดไป' : 'เริ่มรับคนไข้');
+        put('tour-button', completed === 3 ? 'เล่นอีกรอบ' : started ? 'ไปยังจุดบริการ' : 'เริ่มเล่น');
+        let status = 'กดเริ่มรับคนไข้ แล้วพาไปจุดบริการตามลำดับ';
+        if (completed === 3) status = 'ดูแลครบ 3 จุดแล้ว! เล่นรอบใหม่ได้ ไม่มีคะแนนหรือผลบันทึก';
+        else if (started) status = ready
+            ? 'ถึง' + rooms[task.room] + 'แล้ว · กด “' + task.action + '” เพื่อทำภารกิจ'
+            : travelTarget ? 'คนไข้กำลังเดินไป' + rooms[travelTarget] + ' · ภารกิจปัจจุบัน: ' + task.title
+            : 'ภารกิจต่อไป: ' + task.title + ' · พาคนไข้ไป' + rooms[task.room];
+        put('game-status', status);
+    }
+
+    function resetRound() {
+        completed = 0;
+        started = false;
+        arrivedRoom = null;
+        travelTarget = null;
+        window.ClinicRoom?.reset?.();
+        document.querySelectorAll('[data-room]').forEach(el => el.classList.toggle('is-selected', false));
+        put('room-title', 'พร้อมต้อนรับคนไข้คนต่อไป');
+        put('room-caption', 'เริ่มรอบใหม่ได้เมื่อพร้อม · เกมทดลองการจัดการพื้นที่ ไม่มีเนื้อหาการรักษา');
+        renderMissions();
+    }
+
+    function completeService() {
+        const task = tasks[completed];
+        if (!started || !task || arrivedRoom !== task.room) return;
+        completed++;
+        arrivedRoom = null;
+        travelTarget = null;
+        renderMissions();
+        if (completed === tasks.length) {
+            showInfo('จบรอบแล้ว! ครบทั้ง 3 จุด', 'ตรวจบัตรคิว เตรียมห้อง และส่งมอบชุดเรียนรู้ครบแล้ว กดเล่นรอบใหม่เพื่อเริ่มอีกครั้ง เกมนี้ไม่มีการรักษาหรือการให้คะแนน');
+            toast('ภารกิจสำเร็จ 3 / 3 · ไม่มีการบันทึกคะแนน');
+        } else toast(task.done + ' · ต่อไปที่' + rooms[tasks[completed].room]);
     }
 
     function selectRoom(room) {
@@ -73,16 +121,21 @@
     }
 
     function startSandbox() {
-        started = true;
+        if (completed === tasks.length) resetRound();
+        if (!started) {
+            window.ClinicRoom?.reset?.();
+            arrivedRoom = null;
+            travelTarget = null;
+            started = true;
+        }
         renderMissions();
-        selectRoom('reception');
+        selectRoom(tasks[completed].room);
         const canvas = byId('clinic-room');
         if (canvas) {
             canvas.setAttribute('tabindex', '0');
             canvas.scrollIntoView?.({ behavior: 'auto', block: 'center' });
             canvas.focus({ preventScroll: true });
         }
-        toast('โหมดทดลอง: สำรวจครบ 3 จุดได้โดยไม่มีคะแนนและไม่มีการบันทึกผล');
     }
 
     function renderSession() {
@@ -128,22 +181,32 @@
         }
         switch (button.id) {
             case 'tour-button': case 'mission-start': startSandbox(); break;
-            case 'mission-reset': visited.clear(); started = false; renderMissions(); toast('เริ่มภารกิจทดลองใหม่แล้ว ไม่มีข้อมูลคะแนนถูกเปลี่ยนแปลง'); break;
+            case 'mission-reset': resetRound(); toast('รีเซ็ตรอบแล้ว กดเริ่มรับคนไข้เมื่อพร้อม'); break;
+            case 'service-button': completeService(); break;
             case 'motion-button': setPaused(!paused); break;
             case 'login-button': void authAction('login'); break;
             case 'logout-button': void authAction('logout'); break;
         }
     });
-    window.addEventListener('clinic:visit', event => {
+    window.addEventListener('clinic:travel', event => {
         const room = event.detail?.room;
         if (!Object.hasOwn(rooms, room)) return;
+        travelTarget = room;
+        arrivedRoom = null;
+        renderMissions();
+    });
+    window.addEventListener('clinic:visit', event => {
+        const room = event.detail?.room;
+        if (!Object.hasOwn(rooms, room) || room !== travelTarget) return;
+        travelTarget = null;
+        arrivedRoom = room;
         document.querySelectorAll('[data-room]').forEach(el => el.classList.toggle('is-selected', el.dataset.room === room));
         put('room-title', rooms[room]);
         put('room-caption', captions[room]);
-        if (!started || visited.has(room)) return;
-        visited.add(room);
         renderMissions();
-        toast(visited.size === 3 ? 'สำรวจครบแล้ว! นี่คือภารกิจทดลอง ไม่มีคะแนนหรือผลบันทึก' : 'สำรวจแล้ว ' + visited.size + ' / 3 จุด');
+        if (!started || completed === tasks.length) return;
+        const task = tasks[completed];
+        toast(room === task.room ? 'ถึงจุดบริการแล้ว · ' + task.action : 'จุดนี้ยังไม่ใช่ภารกิจปัจจุบัน ไปที่' + rooms[task.room] + 'ก่อน');
     });
 
     const stages = byId('stage-list');
