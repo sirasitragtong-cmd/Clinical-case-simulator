@@ -15,7 +15,7 @@ test('arrival only fires after continuous corridor travel; staff remain fixed',(
  const h=harness(),staff=JSON.stringify(h.api.getState().staff);h.tick();assert.equal(h.events.length,0);h.api.selectRoom('reception');assert.equal(h.events.filter(e=>e.type==='clinic:visit').length,0);
  let previous=h.api.getState().patient;
  for(let i=0;i<420;i++){h.tick();const p=h.api.getState().patient;assert(Math.hypot(p.x-previous.x,p.y-previous.y)<=.7);assert(p.y>=173);if(p.y<204.99)assert(Math.abs(p.x-112)<.01);previous=p;}
- assert.equal(h.events.filter(e=>e.type==='clinic:visit').length,1);assert.equal(h.events.at(-1).detail.room,'reception');assert.equal(JSON.stringify(h.api.getState().staff),staff);assert.equal(h.jobs.size,0);
+ assert.equal(h.events.filter(e=>e.type==='clinic:visit').length,1);assert.equal(h.events.at(-1).detail.room,'reception');assert.equal(JSON.stringify(h.api.getState().staff),staff);assert.equal(h.jobs.size,1);
 });
 test('reroute has no position jump and never completes stale destination',()=>{
  const h=harness();h.api.selectRoom('reception');h.tick(140);const before=h.api.getState().patient;h.api.selectRoom('pharmacy');assert.deepEqual(h.api.getState().patient,before);h.tick(650);assert.deepEqual(h.events.filter(e=>e.type==='clinic:visit').map(e=>e.detail.room),['pharmacy']);
@@ -33,4 +33,16 @@ test('reset cancels old arrival; invalid room ignored; canvas clicks and fallbac
 
 test('low frame rate preserves walking speed without skipping arrival',()=>{
  const h=harness();h.api.selectRoom('reception');h.tick(7,1000);assert.equal(h.events.at(-1).type,'clinic:visit');assert.equal(h.events.at(-1).detail.room,'reception');assert.equal(h.api.getState().moving,false);
+});
+
+test('ambient life continues before play and after arrival without moving staff or emitting extra visits',()=>{
+ const h=harness(),staff=JSON.stringify(h.api.getState().staff);h.tick(20);const before=h.api.getState().ambientTime;assert(before>0);assert.equal(h.events.length,0);h.api.selectRoom('exam');h.tick(300);const after=h.api.getState().ambientTime,patient=JSON.stringify(h.api.getState().patient);h.tick(100);assert(h.api.getState().ambientTime>after);assert.equal(JSON.stringify(h.api.getState().patient),patient);assert.equal(JSON.stringify(h.api.getState().staff),staff);assert.equal(h.events.filter(e=>e.type==='clinic:visit').length,1);
+});
+test('ambient clock freezes on pause, hidden, inactive and reduced motion; resumes safely',()=>{
+ const h=harness();h.tick(30);h.api.setPaused(true);h.tick();const paused=h.api.getState().ambientTime;h.tick(60);assert.equal(h.api.getState().ambientTime,paused);assert.equal(h.jobs.size,0);h.api.setPaused(false);h.tick(10);assert(h.api.getState().ambientTime>paused);h.api.setActive(false);const inactive=h.api.getState().ambientTime;h.tick(30);assert.equal(h.api.getState().ambientTime,inactive);assert.equal(h.jobs.size,0);h.api.setActive(true);h.document.hidden=true;h.listeners.visibilitychange();const hidden=h.api.getState().ambientTime;h.tick(30);assert.equal(h.api.getState().ambientTime,hidden);h.document.hidden=false;h.listeners.visibilitychange();h.tick(10);assert(h.api.getState().ambientTime>hidden);h.api.destroy();assert.equal(h.jobs.size,0);
+ const r=harness({reduced:true});r.tick(60);assert.equal(r.api.getState().ambientTime,0);assert.equal(r.jobs.size,0);
+});
+
+test('selecting the current station never sends the patient on a corridor detour',()=>{
+ const h=harness();h.api.selectRoom('exam');h.tick(300);const before=JSON.stringify(h.api.getState().patient);h.api.selectRoom('exam');assert.equal(h.api.getState().moving,false);assert.equal(JSON.stringify(h.api.getState().patient),before);assert.equal(h.events.at(-1).type,'clinic:visit');h.api.setPaused(true);h.api.selectRoom('exam');assert.equal(h.events.at(-1).type,'clinic:travel');h.api.setPaused(false);h.tick(3);assert.equal(h.events.at(-1).type,'clinic:visit');assert.equal(JSON.stringify(h.api.getState().patient),before);
 });
