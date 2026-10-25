@@ -1,25 +1,55 @@
 'use strict';
+// Standalone world preview. Case gameplay, authentication and scores live in index.html.
+// No storage access: previously saved learner drafts remain untouched and inert.
 (() => {
-const $ = id => document.getElementById(id);
-const topics = [
-['S','ประวัติและอาการสำคัญ','step_1_subjective_data'],['O','ผลตรวจและข้อมูลวัดได้','step_2_objective_data'],
-['A','Problem list','step_1_problem_list'],['A','ปัญหาจากการใช้ยา (DRP)','step_2_drps'],['A','สาเหตุของปัญหา','step_3_etiology'],['A','ปัจจัยเสี่ยง','step_4_risk_factor'],['A','ความรุนแรง','step_5_severity'],
-['P','ประเมินการรักษาปัจจุบัน','step_6_current_therapy'],['P','การรักษาที่เสนอ','step_7_new_therapy'],['P','เป้าหมายการรักษา','step_8_goal'],['P','แผนการรักษา','step_9_therapeutic_plan'],['P','ติดตามประสิทธิผล','step_10_efficacy_monitoring'],['P','ติดตามความปลอดภัย','step_11_adr_monitoring'],['P','คำแนะนำผู้ป่วย','step_12_patient_education'],['P','แผนระยะต่อไป','step_13_future_plan']];
-let data,steps={},current=0,drafts={},key='',storage=true;
-const plain = text => new DOMParser().parseFromString(String(text),'text/html').body.textContent || '';
-function paragraph(parent,text){const p=document.createElement('p');p.textContent=plain(text);parent.append(p);}
-function progress(){const n=topics.filter(t=>(drafts[t[2]]||'').trim()).length;$('progress').value=n;$('progress-label').textContent=`เขียนแล้ว ${n} / 15 หัวข้อ`;}
-function save(){drafts[topics[current][2]]=$('draft').value;try{localStorage.setItem(key,JSON.stringify(drafts));storage=true;$('save-status').textContent='บันทึกร่างในเบราว์เซอร์นี้แล้ว';}catch(e){storage=false;$('save-status').textContent='บันทึกอัตโนมัติไม่ได้ กรุณาส่งออกบันทึกก่อนปิดหน้า';}progress();}
-function choose(index){current=index;const [tab,title,id]=topics[index];document.querySelectorAll('[data-tab]').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));$('topic').replaceChildren();topics.forEach((t,i)=>{if(t[0]===tab){const o=document.createElement('option');o.value=i;o.textContent=t[1];o.selected=i===index;$('topic').append(o);}});$('draft').value=drafts[id]||'';$('prompt').textContent=steps[id]?.question?plain(steps[id].question):'เลือกข้อมูลสำคัญจากเคส พร้อมระบุข้อมูลที่ยังต้องซักถามหรือตรวจสอบเพิ่มเติม';$('hint-content').hidden=true;$('reference-content').hidden=true;$('next').textContent=index===14?'กลับหัวข้อแรก ↺':'หัวข้อถัดไป →';}
-function notebook(){ $('notebook').hidden=false;document.querySelector('.workspace').classList.remove('closed');$('toggle').setAttribute('aria-expanded','true'); }
-function station(name){if(!data)return;document.querySelectorAll('[data-station]').forEach(b=>b.classList.toggle('selected',b.dataset.station===name));window.HospitalScene?.selectStation(name);$('record-content').replaceChildren();$('record').hidden=name==='pharmacy';if(name==='patient'){choose(0);$('speaker').textContent='ผู้ป่วย · นายวิชัย';$('dialogue-title').textContent='เริ่มต้นจากการฟัง';$('dialogue-text').textContent=data.patient.chief_complaint;$('record-title').textContent='ประวัติผู้ป่วย · ข้อมูลจากเคสต้นฉบับ';steps[topics[0][2]].content.forEach(t=>paragraph($('record-content'),t));}else if(name==='nurse'){choose(1);$('speaker').textContent='จุดพยาบาล · เวชระเบียน';$('dialogue-title').textContent='รวบรวมข้อมูลที่วัดได้';$('dialogue-text').textContent='ตรวจสัญญาณชีพ ผลตรวจร่างกาย และผลห้องปฏิบัติการ แล้วเลือกข้อมูลสำคัญลงใน O';$('record-title').textContent='ผลตรวจจากเวชระเบียน';const vit=document.createElement('div');vit.className='vitals';data.vitals.slice(0,6).forEach(v=>{const item=document.createElement('div');item.className='vital';item.textContent=v.label;const b=document.createElement('b');b.textContent=v.value;item.append(b,document.createTextNode(v.unit));vit.append(item);});$('record-content').append(vit);steps[topics[1][2]].content.forEach(t=>paragraph($('record-content'),t));}else{choose(2);$('speaker').textContent='พี่เภสัชกร · โต๊ะประเมิน';$('dialogue-title').textContent='เชื่อมข้อมูล สู่การตัดสินใจ';$('dialogue-text').textContent='เขียน Problem list และเหตุผลจาก S / O ก่อนเปิดตัวช่วย แล้วประเมิน DRP และวางแผนทีละหัวข้อ';}notebook();}
-$('toggle').onclick=()=>{const hide=!$('notebook').hidden;$('notebook').hidden=hide;document.querySelector('.workspace').classList.toggle('closed',hide);$('toggle').setAttribute('aria-expanded',String(!hide));};
-document.querySelectorAll('[data-station]').forEach(b=>b.onclick=()=>station(b.dataset.station));
-document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{if(data)choose(topics.findIndex(t=>t[0]===b.dataset.tab));});
-$('topic').onchange=()=>choose(Number($('topic').value));$('draft').oninput=()=>{if(data)save();};$('next').onclick=()=>{if(data)choose((current+1)%topics.length);};
-$('hint').onclick=()=>{if(!data)return;const box=$('hint-content');box.replaceChildren();const s=steps[topics[current][2]];if(s.choices){paragraph(box,'ตัวเลือกเป็นแนวคิดให้พิจารณา ไม่ใช่ทุกข้อที่ถูกต้อง');s.choices.forEach(c=>paragraph(box,c.text));}else(s.content||[]).forEach(t=>paragraph(box,t));box.hidden=false;};
-$('reference').onclick=()=>{if(!data)return;const box=$('reference-content');box.replaceChildren();box.hidden=false;if(!$('draft').value.trim()){paragraph(box,'ลองเขียนข้อสรุปและข้อมูลสนับสนุนก่อน จึงจะเปิดเฉลยเพื่อเทียบกับความคิดของคุณได้');return;}const s=steps[topics[current][2]];paragraph(box,'เฉลยจากเคสเดิม — ใช้ทบทวนด้วยตนเอง ไม่มีการตรวจคำตอบอิสระอัตโนมัติ');if(s.choices){s.choices.filter(c=>c.is_correct||s.correct_answers?.includes(c.id)).forEach(c=>paragraph(box,c.text));paragraph(box,s.clinical_rationale||s.rationale||'ทบทวนเหตุผลและข้อมูลประกอบกับอาจารย์ผู้สอน');}else paragraph(box,'เลือกข้อมูลที่สัมพันธ์กับปัญหา แยกสิ่งที่ทราบออกจากข้อมูลที่ยังขาด แล้วเทียบกับเวชระเบียนต้นฉบับ');};
-$('export').onclick=()=>{if(!data)return;const text=['PharmVille — บันทึกฝึก SOAP',`${data.patient.name} · ${data.case_id} · version ${data.case_version}`,'บันทึกผู้เรียน ยังไม่ได้รับการตรวจความถูกต้อง','',...topics.map(t=>`${t[0]} — ${t[1]}\n${drafts[t[2]]||'(ยังไม่ได้บันทึก)'}\n`)].join('\n');const url=URL.createObjectURL(new Blob([text],{type:'text/plain;charset=utf-8'}));const a=document.createElement('a');a.href=url;a.download='pharmville-soap.txt';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);};
-['patient','nurse','pharmacy'].forEach((name,i)=>{const b=document.createElement('button');b.className='mission';const number=document.createElement('span');number.className='number';number.textContent='0'+(i+1);const content=document.createElement('span');content.textContent=['พบและฟังผู้ป่วย','เปิดเวชระเบียน','คิดและบันทึก SOAP'][i];const sub=document.createElement('small');sub.textContent=['Subjective · ประวัติ','Objective · ผลตรวจ','Assessment & Plan'][i];content.append(sub);b.append(number,content);b.onclick=()=>station(name);$('missions').append(b);});
-fetch('./data/case_001.json').then(r=>{if(!r.ok)throw Error('case load');return r.json();}).then(d=>{if(!d.patient||!d.stages)throw Error('invalid case');data=d;for(const s of Object.values(d.stages))Object.assign(steps,s.steps);if(topics.some(t=>!steps[t[2]]))throw Error('missing topics');key=`pharmville:soap:v1:${d.case_id}:${d.case_version}`;try{const saved=JSON.parse(localStorage.getItem(key)||'{}');if(saved&&typeof saved==='object'&&!Array.isArray(saved))for(const t of topics)if(typeof saved[t[2]]==='string')drafts[t[2]]=saved[t[2]].slice(0,12000);}catch(e){$('save-status').textContent='อ่านร่างเดิมไม่ได้ เริ่มร่างใหม่หรือส่งออกเพื่อเก็บสำรอง';} $('patient-name').textContent=`${d.patient.name} · ${d.patient.age} ปี · เคสจำลอง`;choose(0);progress();}).catch(()=>{$('load-error').hidden=false;$('progress-label').textContent='ยังโหลดเคสไม่ได้';['hint','reference','next','export','draft','topic'].forEach(id=>$(id).disabled=true);});
+  const $ = id => document.getElementById(id);
+  const stations = {
+    pharmacy: {
+      name: 'เภสัชกร',
+      title: 'พร้อมเข้าสู่เกมเภสัชกร',
+      description: 'ไปหน้าเกมหลักเพื่อเข้าสู่ระบบ เลือกเคส และเล่นด้วยระบบคะแนนกับตารางอันดับ',
+      available: true
+    },
+    patient: {
+      name: 'ผู้ป่วย',
+      title: 'สำรวจเส้นทางของคนไข้',
+      description: 'ใช้ปุ่มส่งคนไข้ใต้ฉากเพื่อทดลองการเดิน หรือเปิดโหมดเดินชมอัตโนมัติ การสำรวจฉากไม่เปลี่ยนคะแนนของคุณ'
+    },
+    nurse: { name: 'พยาบาล', title: 'ยังไม่เปิดให้เล่น', description: 'บทบาทพยาบาลจะเพิ่มในอนาคต รุ่นนี้เปิดให้เล่นเฉพาะเภสัชกร' },
+    doctor: { name: 'แพทย์', title: 'ยังไม่เปิดให้เล่น', description: 'บทบาทแพทย์จะเพิ่มในอนาคต รุ่นนี้เปิดให้เล่นเฉพาะเภสัชกร' },
+    dentist: { name: 'ทันตแพทย์', title: 'ยังไม่เปิดให้เล่น', description: 'บทบาททันตแพทย์จะเพิ่มในอนาคต รุ่นนี้เปิดให้เล่นเฉพาะเภสัชกร' }
+  };
+  function selectStation(name) {
+    const station = stations[name];
+    if (!station) return;
+    document.querySelectorAll('[data-station]').forEach(button => {
+      button.classList.toggle('selected', button.dataset.station === name);
+      button.setAttribute('aria-pressed', String(button.dataset.station === name));
+    });
+    window.HospitalScene?.selectStation(name);
+    $('speaker').textContent = station.name;
+    $('dialogue-title').textContent = station.title;
+    $('dialogue-text').textContent = station.description;
+    $('play-link').hidden = !station.available;
+  }
+  for (const [index, name] of ['pharmacy', 'patient', 'nurse', 'doctor', 'dentist'].entries()) {
+    const station = stations[name];
+    const button = document.createElement('button');
+    button.className = 'mission';
+    button.dataset.station = name;
+    const number = document.createElement('span');
+    number.className = 'number';
+    number.textContent = String(index + 1).padStart(2, '0');
+    const label = document.createElement('span');
+    label.textContent = station.name;
+    const status = document.createElement('small');
+    status.textContent = station.available ? 'เปิดให้เล่น' : name === 'patient' ? 'ทดลองเส้นทางเดิน' : 'ยังไม่เปิดให้เล่น';
+    label.append(status);
+    button.append(number, label);
+    $('missions').append(button);
+  }
+  document.querySelectorAll('[data-station]').forEach(button => {
+    button.setAttribute('aria-pressed', 'false');
+    button.addEventListener('click', () => selectStation(button.dataset.station));
+  });
 })();

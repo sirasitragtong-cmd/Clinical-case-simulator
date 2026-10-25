@@ -31,12 +31,11 @@ const UIController = (function() {
 
     const vitalHosts = ['vitals-mobile', 'vitals-tablet', 'vitals-desktop']
         .map(id => document.getElementById(id)).filter(Boolean);
-    const soapHosts  = ['soap-content', 'soap-content-mobile']
+    const chartHosts  = ['soap-content', 'soap-content-mobile']
         .map(id => document.getElementById(id)).filter(Boolean);
 
     // ─── State ─────────────────────────────────────────────────
     let activeCase     = null;
-    let soapTab        = 'subjective';
     let multiSelection = new Set();
     let multiLimit     = 1;
     let multiPerPoint  = 0;
@@ -46,7 +45,7 @@ const UIController = (function() {
     let dtpRequired    = false;  // true only on the case's designated DTP step
     let dtpLastTag     = null;   // survives the step, for the Firestore payload
 
-    // The Monitoring tab holds the efficacy/safety care plan, which is also the
+    // The follow-up section holds the efficacy/safety care plan, which is also the
     // answer key to the monitoring step. It stays locked until that step has
     // been answered, so it reinforces the plan instead of revealing it.
     let monitoringUnlocked = false;
@@ -164,6 +163,7 @@ const UIController = (function() {
         }
         closeDrawer();
         window.scrollTo(0, 0);
+        window.dispatchEvent(new CustomEvent('pharmville:viewchange', { detail: { view: viewName } }));
     }
 
     // ─── Mobile patient drawer ─────────────────────────────────
@@ -172,6 +172,11 @@ const UIController = (function() {
     // drawer is never left half-open if the transition does not run
     // (background tabs, reduced-motion, non-compositing contexts).
     let drawerSettle = null;
+    let drawerReturnFocus = null;
+    if (drawer) {
+        drawer.inert = true;
+        drawer.setAttribute('aria-hidden', 'true');
+    }
 
     // Force an element to a final value, bypassing any in-flight transition.
     // A stalled transition (background tab, no compositor, reduced motion)
@@ -189,11 +194,16 @@ const UIController = (function() {
         if (!drawer) return;
         clearTimeout(drawerSettle);
 
+        drawerReturnFocus = document.activeElement;
+        drawer.inert = false;
+        drawer.setAttribute('aria-hidden', 'false');
         drawer.style.transform = '';
         void drawer.offsetHeight;           // commit the closed position first
         drawer.classList.add('is-open');
         if (drawerBackdrop) drawerBackdrop.classList.add('is-open');
         document.body.style.overflow = 'hidden';
+        const closeButton = byId('btn-close-drawer');
+        if (closeButton) closeButton.focus({ preventScroll: true });
 
         // After the animation window, guarantee the end state.
         drawerSettle = setTimeout(() => {
@@ -208,6 +218,11 @@ const UIController = (function() {
         if (!drawer) return;
         clearTimeout(drawerSettle);
 
+        if (drawer.contains(document.activeElement) && drawerReturnFocus?.isConnected) {
+            drawerReturnFocus.focus({ preventScroll: true });
+        }
+        drawer.inert = true;
+        drawer.setAttribute('aria-hidden', 'true');
         drawer.classList.remove('is-open');
         if (drawerBackdrop) drawerBackdrop.classList.remove('is-open');
         document.body.style.overflow = '';
@@ -267,36 +282,19 @@ const UIController = (function() {
         if (closeBtn) closeBtn.addEventListener('click', closeDrawer);
         if (drawerBackdrop) drawerBackdrop.addEventListener('click', closeDrawer);
 
+        if (drawer) drawer.addEventListener('keydown', event => {
+            if (!drawer.classList.contains('is-open')) return;
+            if (event.key === 'Escape') { event.preventDefault(); closeDrawer(); return; }
+            if (event.key !== 'Tab') return;
+            const controls = Array.from(drawer.querySelectorAll('button:not([disabled]), a[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex="0"]'))
+                .filter(el => el.getClientRects().length > 0);
+            if (!controls.length) return;
+            const first = controls[0], last = controls[controls.length - 1];
+            if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+            else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+        });
         initPanelNav();
 
-        // SOAP tabs exist in both the side panel and the drawer.
-        document.querySelectorAll('.soap-tab').forEach(tab => {
-            tab.addEventListener('click', function() {
-                soapTab = tab.dataset.soap;
-                syncSoapTabs();
-                renderPatientChart(activeCase);
-            });
-        });
-    }
-
-    function syncSoapTabs() {
-        document.querySelectorAll('.soap-tab').forEach(t => {
-            const on = t.dataset.soap === soapTab;
-            t.classList.toggle('bg-teal-400', on);
-            t.classList.toggle('text-navy-900', on);
-            t.classList.toggle('font-bold', on);
-            t.classList.toggle('text-slate-400', !on);
-            t.classList.toggle('font-semibold', !on);
-
-            // The Monitoring tab is the only one that can be empty by design.
-            // Without a marker on the tab itself an empty panel reads as a
-            // broken feature, so the lock state is shown before it is opened.
-            if (t.dataset.soap !== 'monitoring') return;
-            if (!t.dataset.baseLabel) t.dataset.baseLabel = t.textContent.trim().replace(/^\S+\s*/, '');
-            t.textContent = (monitoringUnlocked ? '🎯 ' : '🔒 ') + t.dataset.baseLabel;
-            t.title = tr(monitoringUnlocked ? 'soap.monUnlocked' : 'soap.monLockedTip');
-            t.classList.toggle('is-locked-tab', !monitoringUnlocked && !on);
-        });
     }
 
     // ─── Case Header ───────────────────────────────────────────
@@ -452,7 +450,7 @@ const UIController = (function() {
     }
 
     /**
-     * Renal & pharmacokinetic quick-calc badge for the Objective tab.
+     * Renal & pharmacokinetic quick-calc badge for examination results.
      * Below 60 mL/min it raises the amber "Renal Dose Adjustment Required"
      * tag, which is the trigger a pharmacist is trained to act on.
      */
@@ -666,7 +664,7 @@ const UIController = (function() {
     function renderPatientChart(caseData) {
         if (caseData) activeCase = caseData;
         const data = activeCase;
-        if (!data || soapHosts.length === 0) return;
+        if (!data || chartHosts.length === 0) return;
 
         const p = data.patient || {};
         const nameLine = `${p.name || tr('common.patient')}${p.age ? `, ${p.age}${p.sex || ''}` : ''}`;
@@ -687,19 +685,16 @@ const UIController = (function() {
             return step.content.map(line => `<p class="clinical-text">${line}</p>`).join('');
         }
 
-        let html;
-        if (soapTab === 'subjective') {
-            html = contentBlock(infoSteps[0], tr('soap.noSubjective'));
-        } else if (soapTab === 'objective') {
-            // Renal/PK parameters are objective data, so they lead the tab.
-            html = renderRenalBadge(data) + contentBlock(infoSteps[1], tr('soap.noObjective'));
-        } else if (soapTab === 'monitoring') {
-            html = renderMonitoringBlock(data);
-        } else {
-            html = renderReferenceBlock(data.reference);
+        function section(title, content) {
+            return `<section class="patient-info-section mb-5"><h3 class="text-xs font-bold text-teal-400 mb-2">${esc(title)}</h3>${content}</section>`;
         }
+        const html = section(tr('chart.history'), contentBlock(infoSteps[0], tr('chart.noHistory')))
+            + section(tr('chart.exam'), renderRenalBadge(data) + contentBlock(infoSteps[1], tr('chart.noExam')))
+            + infoSteps.slice(2).map(step => section(tr('chart.additional'), contentBlock(step, ''))).join('')
+            + section(tr('chart.followUp'), renderMonitoringBlock(data))
+            + section(tr('ref.title'), renderReferenceBlock(data.reference));
 
-        soapHosts.forEach(h => { h.innerHTML = html; });
+        chartHosts.forEach(h => { h.innerHTML = html; });
     }
 
     // ─── Step dots ─────────────────────────────────────────────
@@ -734,17 +729,14 @@ const UIController = (function() {
 
     // ─── Render: Info step ─────────────────────────────────────
     // Info steps hold chart data, which belongs in the patient file on the
-    // left — NOT duplicated into the decision column. The right column
-    // stays a pure decision surface and simply points at the right tab.
+    // chart, while the decision column points to the patient information.
     function renderInfoStep(stepData) {
-        const tab = stepData.chart_tab
+        const infoType = stepData.chart_tab
             || (String(state_currentStepId()).indexOf('objective') !== -1 ? 'objective' : 'subjective');
 
-        soapTab = tab;
-        syncSoapTabs();
         renderPatientChart(activeCase);
 
-        const label = tr(tab === 'objective' ? 'info.objective' : 'info.subjective');
+        const label = tr(infoType === 'objective' ? 'info.objective' : 'info.subjective');
 
         gameArea.innerHTML = `
             <div class="animate-fade-in flex flex-col items-center justify-center text-center gap-3 py-8 px-2">
@@ -754,7 +746,7 @@ const UIController = (function() {
                 <p class="text-[.72rem] text-slate-400 leading-relaxed max-w-[16rem]">
                     ${tr('info.body')}
                 </p>
-                <button id="btn-open-chart" class="md:hidden px-4 py-2.5 rounded-xl text-xs font-bold text-teal-400 bg-teal-400/10 border border-teal-400/35">
+                <button id="btn-open-chart" class="px-4 py-2.5 rounded-xl text-xs font-bold text-teal-400 bg-teal-400/10 border border-teal-400/35">
                     ${tr('info.openChart')}
                 </button>
                 <p class="hidden md:block text-[.68rem] text-slate-600">${tr('info.chartHint')}</p>
@@ -765,10 +757,17 @@ const UIController = (function() {
             </div>`;
 
         const openChart = byId('btn-open-chart');
-        if (openChart) openChart.addEventListener('click', openDrawer);
+        if (openChart) openChart.addEventListener('click', () => {
+            if (window.matchMedia('(max-width: 767px)').matches) { openDrawer(); return; }
+            const chart = byId('soap-content');
+            if (!chart) return;
+            chart.setAttribute('tabindex', '-1');
+            chart.scrollIntoView({ behavior: 'auto', block: 'center' });
+            chart.focus({ preventScroll: true });
+        });
     }
 
-    // Small helper so renderInfoStep can pick the right chart tab.
+    // Small helper to identify the current authored step.
     function state_currentStepId() {
         try { return GameEngine.getState().currentStepId || ''; }
         catch (e) { return ''; }
@@ -933,13 +932,6 @@ const UIController = (function() {
         // framework is reinforcement rather than a hint.
         if (String(state_currentStepId()).indexOf('monitoring') !== -1 && !monitoringUnlocked) {
             monitoringUnlocked = true;
-            syncSoapTabs();
-            // Flag the tab so the learner notices something they could not
-            // see before is now available, instead of having to re-check.
-            document.querySelectorAll('.soap-tab[data-soap="monitoring"]').forEach(t => {
-                t.classList.add('tab-just-unlocked');
-                setTimeout(() => t.classList.remove('tab-just-unlocked'), 3400);
-            });
             renderPatientChart(activeCase);
         }
 
@@ -1208,7 +1200,8 @@ const UIController = (function() {
     // learner is being asked to work out. Only the presenting complaint
     // is shown, which is what a pharmacist actually sees first.
     function renderCaseMap(cases, onStart) {
-        allCases = cases || [];
+        cases = (cases || []).slice(0, 2);
+        allCases = cases;
         onStartCase = onStart;
 
         // The campaign panel is the default view at boot, so switchPanel()
@@ -1216,11 +1209,6 @@ const UIController = (function() {
         renderStreakCard();
 
         if (!questTrack) return;
-
-        if (!cases || cases.length === 0) {
-            questTrack.innerHTML = `<p class="text-xs text-slate-500 py-6">${tr('campaign.noCases')}</p>`;
-            return;
-        }
 
         const done = loadProgress().completed;
 
@@ -1242,7 +1230,7 @@ const UIController = (function() {
 
             if (!unlocked) {
                 return `
-                    <div class="quest-node relative panel rounded-2xl p-4 flex flex-col gap-2 opacity-50 border-navy-700">
+                    <div data-case-slot="${i + 1}" class="quest-node relative panel rounded-2xl p-4 flex flex-col gap-2 opacity-50 border-navy-700">
                         ${connector}
                         <div class="flex items-center gap-2">
                             <span class="w-9 h-9 rounded-full grid place-items-center text-base bg-navy-800 border border-navy-600">🔒</span>
@@ -1259,7 +1247,7 @@ const UIController = (function() {
             }
 
             return `
-                <div class="quest-node relative panel rounded-2xl p-4 flex flex-col gap-2 ${cleared ? 'border-teal-400/40' : 'border-teal-400/25 animate-quest-glow'}">
+                <div data-case-slot="${i + 1}" class="quest-node relative panel rounded-2xl p-4 flex flex-col gap-2 ${cleared ? 'border-teal-400/40' : 'border-teal-400/25 animate-quest-glow'}">
                     ${connector}
                     <div class="flex items-center gap-2 flex-wrap">
                         <span class="w-9 h-9 rounded-full grid place-items-center text-sm font-extrabold flex-shrink-0
@@ -1289,6 +1277,24 @@ const UIController = (function() {
                     </button>
                 </div>`;
         }).join('');
+
+        // Two visible slots, but no invented second clinical case or dummy score entry.
+        for (let slot = cases.length + 1; slot <= 2; slot++) {
+            const missingFirst = slot === 1;
+            const title = I18n.isThai()
+                ? (missingFirst ? 'ยังโหลดเคสแรกไม่ได้' : 'เคสที่ 2 · เตรียมพบกัน')
+                : (missingFirst ? 'Case 1 is unavailable' : 'Case 2 · coming later');
+            const message = I18n.isThai()
+                ? (missingFirst ? 'ตรวจสอบการเชื่อมต่อแล้วลองโหลดใหม่' : 'เตรียมพื้นที่ไว้สำหรับเคสถัดไป ยังไม่เปิดให้เล่น')
+                : (missingFirst ? 'Check your connection and retry.' : 'Reserved for the next case. Not playable yet.');
+            questTrack.insertAdjacentHTML('beforeend', `<article class="pv-case-slot panel" data-case-slot="${slot}">
+                <span class="pv-case-number">CASE 0${slot}</span><span class="pv-case-status">${missingFirst ? '↻' : '🔒'}</span>
+                <h3>${title}</h3><p>${message}</p>
+                ${missingFirst
+                    ? `<button class="primary-btn" type="button" data-pv-retry-cases>${I18n.isThai() ? 'ลองโหลดอีกครั้ง' : 'Retry loading'}</button>`
+                    : `<button type="button" disabled>${I18n.isThai() ? 'รอเพิ่มเคส' : 'Awaiting case content'}</button>`}
+                </article>`);
+        }
 
         questTrack.querySelectorAll('[data-case-index]').forEach(btn => {
             btn.addEventListener('click', function() {
@@ -2478,10 +2484,12 @@ const UIController = (function() {
     // ─── Pause ─────────────────────────────────────────────────
     function setPaused(value) {
         if (!gameArea) return;
+        gameArea.inert = Boolean(value);
         gameArea.style.opacity = value ? '.3' : '1';
         gameArea.style.pointerEvents = value ? 'none' : 'auto';
         const dock = document.querySelector('.submit-dock');
         if (dock) {
+            dock.inert = Boolean(value);
             dock.style.opacity = value ? '.3' : '1';
             dock.style.pointerEvents = value ? 'none' : 'auto';
         }
@@ -2547,8 +2555,7 @@ const UIController = (function() {
         });
     }
 
-    // Static markup is translated before anything reads it back. syncSoapTabs()
-    // caches each tab's base label from the DOM, so it has to run after this.
+    // Translate static markup before wiring the interface.
     I18n.applyStatic();
     I18n.initSwitcher();
 
@@ -2601,8 +2608,6 @@ const UIController = (function() {
             // A replay must re-lock the monitoring framework, otherwise the
             // second run starts with the answer key already open.
             monitoringUnlocked = false;
-            soapTab = 'subjective';
-            syncSoapTabs();
         },
         renderInstructorPanel
     };
