@@ -4,8 +4,8 @@ const assert=require('node:assert/strict');
 const vm=require('node:vm');
 const fs=require('node:fs');
 const source=fs.readFileSync(require('node:path').join(__dirname,'../hospital-scene.js'),'utf8');
-function boot({reduced=false,noAudio=false}={}) {
-  const elements=new Map();let callback,clock=0,position,rects=[],contexts=[];
+function boot({reduced=false,noAudio=false,noCanvas=false}={}) {
+  const elements=new Map();let clock=0,position,rects=[],contexts=[],nextId=1;const callbacks=new Map();
   const element=id=>{
     if(!elements.has(id))elements.set(id,{textContent:'',dataset:{},attrs:{},handlers:{},disabled:false,
       classList:{toggle(){}},setAttribute(k,v){this.attrs[k]=v;},
@@ -14,7 +14,7 @@ function boot({reduced=false,noAudio=false}={}) {
   };
   const destinations=['nurse','doctor','pharmacy'].map(n=>{const e=element(n);e.dataset.destination=n;return e;});
   const context={fillStyle:'',clearRect(){rects=[];},strokeRect(){},fillRect(...args){rects.push([this.fillStyle,...args]);},fillText(text,x,y){if(text==='คนไข้สาธิต')position=[x-5,y+41];}};
-  element('map').getContext=()=>context;
+  element('map').getContext=()=>noCanvas?null:context;
   const document={hidden:false,handlers:{},getElementById:element,querySelector:()=>element('scene'),querySelectorAll:()=>destinations,addEventListener(k,v){this.handlers[k]=v;}};
   const parameter=()=>({value:0,setValueAtTime(){},linearRampToValueAtTime(){},exponentialRampToValueAtTime(){}});
   class AudioContext {
@@ -24,10 +24,10 @@ function boot({reduced=false,noAudio=false}={}) {
     async resume(){this.state='running';}async suspend(){this.state='suspended';}
   }
   const window=noAudio?{}:{AudioContext};
-  vm.runInNewContext(source,{window,document,matchMedia:()=>({matches:reduced,addEventListener(){}}),requestAnimationFrame:fn=>callback=fn,console});
-  const tick=(frames=1)=>{for(let i=0;i<frames;i++){clock+=40;callback(clock);}};
+  vm.runInNewContext(source,{window,document,matchMedia:()=>({matches:reduced,addEventListener(){}}),requestAnimationFrame:fn=>{const id=nextId++;callbacks.set(id,fn);return id;},cancelAnimationFrame:id=>callbacks.delete(id),console});
+  const tick=(frames=1)=>{for(let i=0;i<frames;i++){clock+=40;const ready=[...callbacks.values()];callbacks.clear();ready.forEach(fn=>fn(clock));}};
   tick();
-  return {element,document,window,contexts,tick,position:()=>position,rects:()=>rects,
+  return {element,document,window,contexts,tick,pendingFrames:()=>callbacks.size,position:()=>position,rects:()=>rects,
     click:async id=>element(id).handlers.click({target:element(id)})};
 }
 test('scene boots without clinical data or auth and audio starts off',()=>{
@@ -58,4 +58,24 @@ test('audio toggle, hidden-tab suspend and mute use one context',async()=>{
 });
 test('unsupported audio fails locally while scene remains usable',async()=>{
   const s=boot({noAudio:true});await s.click('sound-toggle');assert.equal(s.element('sound-toggle').attrs['aria-pressed'],'false');assert.equal(s.element('sound-toggle').disabled,false);s.tick(10);assert(s.position()[1]<520);
+});
+
+test('inactive game view cancels frames and audio until reactivated',async()=>{
+  const s=boot();await s.click('sound-toggle');s.tick(10);
+  s.window.HospitalScene.setActive(false);const before=s.position();
+  assert.equal(s.pendingFrames(),0);assert.equal(s.contexts[0].state,'suspended');
+  s.tick(100);assert.deepEqual(s.position(),before);
+  s.window.HospitalScene.selectStation('pharmacy');assert.equal(s.pendingFrames(),0);
+  s.document.hidden=false;s.document.handlers.visibilitychange();assert.equal(s.contexts[0].state,'suspended');
+  s.window.HospitalScene.setActive(true);assert.equal(s.pendingFrames(),1);
+  assert.equal(s.contexts[0].state,'running');s.tick(10);assert.notDeepEqual(s.position(),before);
+});
+test('pause draws once and stops scheduling idle frames',async()=>{
+  const s=boot();await s.click('motion-toggle');s.tick();assert.equal(s.pendingFrames(),0);
+  s.window.HospitalScene.selectStation('pharmacy');assert.equal(s.pendingFrames(),1);s.tick();assert.equal(s.pendingFrames(),0);
+});
+test('canvas failure leaves a safe integration API and no animation or audio work',()=>{
+  const s=boot({noCanvas:true});assert.equal(s.pendingFrames(),0);assert.equal(s.contexts.length,0);
+  assert.doesNotThrow(()=>{s.window.HospitalScene.setActive(true);s.window.HospitalScene.selectStation('pharmacy');});
+  assert.match(s.element('scene-status').textContent,/ยังใช้งานบทเรียน/);
 });

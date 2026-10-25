@@ -26,7 +26,7 @@
  * ── What is NOT translated ────────────────────────────────────────────────
  * Strings that were already English stay English in both languages. The login
  * screen, the panel headings and the clinical vocabulary printed on the case
- * (SOAP, Subjective, Objective, DTP, CrCl, Fatal) are the terms the curriculum
+ * (DTP, CrCl, Fatal) are the terms the curriculum
  * itself uses, and Thai pharmacy students read them in English on the ward.
  * Translating them "back" into Thai would change what today's users see for no
  * one's benefit.
@@ -59,8 +59,8 @@
 
         // ── Campaign panel ────────────────────────────────────────────
         'campaign.title':        { th: 'เลือกกรณีศึกษา', en: 'Choose a case' },
-        'campaign.subtitle':     { th: 'แต่ละเคสดำเนินตามกระบวนการ SOAP — DATA → IDENTIFY → ASSESSMENT → PLAN',
-                                   en: 'Every case runs the SOAP process — DATA → IDENTIFY → ASSESSMENT → PLAN' },
+        'campaign.subtitle':     { th: 'ฝึกอ่านข้อมูลผู้ป่วย ประเมินปัญหา และวางแผนการดูแลด้านยา',
+                                   en: 'Review patient information, assess medication problems, and plan pharmaceutical care' },
         'campaign.noCases':      { th: 'ไม่พบข้อมูลเคส — ตรวจสอบไฟล์ใน data/',
                                    en: 'No cases found — check the files in data/' },
         'campaign.lockedTitle':  { th: 'ด่านถัดไป', en: 'Next stage' },
@@ -95,20 +95,20 @@
         // ── Launcher ──────────────────────────────────────────────────
         'launch.caseFailed':     { th: '❌ ไม่สามารถเริ่มเคสได้ — ข้อมูล JSON ไม่ถูกต้อง',
                                    en: '❌ Could not start the case — the JSON is not valid' },
-        'launch.confirmExit':    { th: 'ออกจากเคสนี้? ความก้าวหน้าจะถูกบันทึก',
-                                   en: 'Leave this case? Your progress will be saved.' },
+        'launch.confirmExit':    { th: 'ออกจากเคสนี้? การเล่นรอบที่ยังไม่จบจะเริ่มใหม่เมื่อกลับมา',
+                                   en: 'Leave this case? This unfinished attempt will restart when you return.' },
         'launch.caseFallback':   { th: 'ℹ เคสนี้ยังไม่มีฉบับแปลภาษาอังกฤษ — กำลังแสดงฉบับภาษาไทย',
                                    en: 'ℹ No English version of this case yet — showing the Thai original' },
 
-        // ── SOAP tabs / patient chart ─────────────────────────────────
-        'soap.cpg':              { th: '📚 อ้างอิง', en: '📚 Refs' },
-        'soap.noSubjective':     { th: 'ไม่มีข้อมูล Subjective', en: 'No subjective data' },
-        'soap.noObjective':      { th: 'ไม่มีข้อมูล Objective', en: 'No objective data' },
-        'soap.monUnlocked':      { th: 'กรอบการติดตามผล — เปิดใช้งานแล้ว', en: 'Monitoring framework — unlocked' },
-        'soap.monLockedTip':     { th: 'ยังล็อกอยู่ — จะเปิดเมื่อท่านส่งคำตอบข้อแรกของด่าน Monitoring',
-                                   en: 'Still locked — opens when you submit your first Monitoring answer' },
+        // ── Patient information ──────────────────────────────────────
+        'chart.history':         { th: 'ประวัติผู้ป่วย', en: 'Patient history' },
+        'chart.exam':            { th: 'ผลตรวจและข้อมูลทางห้องปฏิบัติการ', en: 'Examination and laboratory findings' },
+        'chart.additional':      { th: 'ข้อมูลเพิ่มเติม', en: 'Additional information' },
+        'chart.followUp':        { th: 'การติดตามผล', en: 'Follow-up information' },
+        'chart.noHistory':       { th: 'ยังไม่มีข้อมูลประวัติผู้ป่วย', en: 'No patient history available' },
+        'chart.noExam':          { th: 'ยังไม่มีข้อมูลผลตรวจ', en: 'No examination findings available' },
 
-        // ── Reference tab ─────────────────────────────────────────────
+        // ── References ─────────────────────────────────────────────
         'ref.none':              { th: 'เคสนี้ยังไม่มีข้อมูลอ้างอิง — เพิ่มฟิลด์ <code class="text-teal-400">reference</code> ใน case JSON เพื่อแสดงที่นี่',
                                    en: 'This case has no reference material — add a <code class="text-teal-400">reference</code> field to the case JSON to show it here' },
         'ref.title':             { th: 'ข้อมูลอ้างอิง', en: 'Reference' },
@@ -121,8 +121,8 @@
 
         // ── Monitoring lock ───────────────────────────────────────────
         'mon.lockedTitle':       { th: 'ยังไม่เปิดใช้งาน', en: 'Not unlocked yet' },
-        'mon.lockedBody':        { th: 'แท็บนี้เก็บ <strong class="text-slate-200">กรอบการติดตามผล (Monitoring Framework)</strong> ซึ่งเป็นเฉลยของด่าน Monitoring โดยตรง จึงถูกล็อกไว้จนกว่าท่านจะวางแผนการติดตามด้วยตนเองก่อน',
-                                   en: 'This tab holds the <strong class="text-slate-200">monitoring framework</strong>, which is the answer key to the Monitoring stage. It stays locked until you have planned your own follow-up first.' },
+        'mon.lockedBody':        { th: 'ส่วนนี้แสดง <strong class="text-slate-200">กรอบการติดตามผล (Monitoring Framework)</strong> ซึ่งเป็นเฉลยของด่าน Monitoring โดยตรง จึงถูกล็อกไว้จนกว่าท่านจะวางแผนการติดตามด้วยตนเองก่อน',
+                                   en: 'This section holds the <strong class="text-slate-200">monitoring framework</strong>, which is the answer key to the Monitoring stage. It stays locked until you have planned your own follow-up first.' },
         'mon.lockedOpens':       { th: '🔓 จะเปิดอัตโนมัติทันทีที่ท่านส่งคำตอบข้อแรกของด่าน',
                                    en: '🔓 Opens automatically the moment you submit your first answer in the' },
         'mon.lockedStage':       { th: '—', en: 'stage —' },
@@ -130,8 +130,8 @@
                                    en: 'this case has a monitoring framework ready to show' },
         'mon.noFramework':       { th: 'แต่เคสนี้ยังไม่ได้เขียนกรอบการติดตามไว้ จึงจะขึ้นข้อความแจ้งแทน',
                                    en: 'but no framework was authored for this case, so a notice will appear instead' },
-        'mon.notABug':           { th: 'ระหว่างนี้ใช้แท็บ Subj / Obj / อ้างอิง ได้ตามปกติ — นี่ไม่ใช่ข้อผิดพลาด',
-                                   en: 'Meanwhile the Subj / Obj / Refs tabs work as usual — this is not a fault' },
+        'mon.notABug':           { th: 'ระหว่างนี้สามารถอ่านประวัติผู้ป่วย ผลตรวจ และข้อมูลอ้างอิงได้',
+                                   en: 'Patient history, examination findings, and references remain available' },
         'mon.empty':             { th: 'ยังไม่มีกรอบการติดตามสำหรับเคสนี้',
                                    en: 'No monitoring framework has been written for this case' },
 
@@ -150,13 +150,13 @@
         'dtp.7':                 { th: 'ไม่ให้ความร่วมมือในการใช้ยา', en: 'Non-adherence' },
 
         // ── Info step ─────────────────────────────────────────────────
-        'info.objective':        { th: 'Objective — ผลตรวจร่างกายและแล็บ', en: 'Objective — examination and laboratory findings' },
-        'info.subjective':       { th: 'Subjective — ประวัติจากผู้ป่วย', en: 'Subjective — history from the patient' },
+        'info.objective':        { th: 'ผลตรวจร่างกายและแล็บ', en: 'Examination and laboratory findings' },
+        'info.subjective':       { th: 'ประวัติจากผู้ป่วย', en: 'History from the patient' },
         'info.tag':              { th: 'รวบรวมข้อมูล', en: 'Data gathering' },
         'info.body':             { th: 'เปิดแฟ้มผู้ป่วยเพื่ออ่านข้อมูลให้ครบก่อน แล้วจึงดำเนินการต่อ',
                                    en: 'Open the patient file and read it through before moving on' },
         'info.openChart':        { th: '📄 เปิดแฟ้มผู้ป่วย', en: '📄 Open patient file' },
-        'info.chartHint':        { th: '← ดูแฟ้มผู้ป่วยที่คอลัมน์ซ้าย', en: '← The patient file is in the left column' },
+        'info.chartHint':        { th: 'อ่านข้อมูลในส่วนแฟ้มผู้ป่วย', en: 'Read the patient information section' },
         'info.next':             { th: 'อ่านเข้าใจแล้ว / ถัดไป →', en: 'Read and understood / Next →' },
 
         // ── MCQ ───────────────────────────────────────────────────────

@@ -4,11 +4,11 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="description" content="Clinical Case Simulator — Medical RPG case-based learning platform" />
-    <meta name="theme-color" content="#0A0F1D" />
-    <title>Clinical Case Simulator — Medical RPG</title>
+    <meta name="theme-color" content="#355d49" />
+    <title>PharmVille — Pharmacy Learning Hospital</title>
 
     <!-- PWA — installable on iPad for clinical rotations -->
-    <link rel="manifest" href="./manifest.json?v=202610241150" />
+    <link rel="manifest" href="./manifest.json?v=202610250827" />
     <link rel="apple-touch-icon" href="./icons/icon-192.png" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
@@ -26,10 +26,11 @@
 
     <!-- Compiled production stylesheet (node build.js). Replaces the
          cdn.tailwindcss.com in-browser compiler and its production warning. -->
-    <link rel="stylesheet" href="./css/style.min.css?v=202610241150" />
+    <link rel="stylesheet" href="./css/style.min.css?v=202610250827" />
+    <link rel="stylesheet" href="./css/pharmville.css?v=202610250827" />
 </head>
-<body>
-<a href="./hospital.html" aria-label="ทดลองโรงพยาบาลพิกเซล PharmVille" style="position:fixed;bottom:18px;left:18px;z-index:40;padding:10px 16px;border:1px solid #b9c8a4;border-radius:10px;background:#f4f5e8;color:#315443;font:600 12px sans-serif;box-shadow:0 3px 12px #0002">✚ ทดลองโรงพยาบาลพิกเซล ↗</a>
+<body class="pharmville-app">
+
 
 <!-- ═══════════════════════════════════════════════════════════════
      LOADING SPLASH — first paint, covers everything until auth resolves
@@ -57,7 +58,7 @@
       <svg class="w-11 h-6 text-teal-400 mb-2" viewBox="0 0 80 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
         <path d="M2 12h12l4-8 6 16 5-12 4 6h12l4-4 5 8 4-6h18" />
       </svg>
-      <p class="text-[.7rem] font-bold tracking-[.32em] text-slate-400 uppercase">Medical RPG Simulator</p>
+      <p class="text-[.7rem] font-bold tracking-[.32em] text-slate-400 uppercase">Medical PHARMACY HOSPITAL</p>
     </div>
 
     <!-- Language switch. Present on the login screen as well as the dashboard
@@ -79,8 +80,8 @@
         </div>
       </div>
 
-      <h1 class="text-center text-2xl font-extrabold text-white tracking-tight">Clinical Case Simulator</h1>
-      <p class="text-center text-sm text-slate-400 mt-1">Train. Diagnose. Level Up.</p>
+      <h1 class="text-center text-2xl font-extrabold text-white tracking-tight">PharmVille</h1>
+      <p class="text-center text-sm text-slate-400 mt-1">เรียนรู้ผ่านบทบาทเภสัชกร · Learn through practice</p>
 
       <p class="text-center text-[.65rem] font-bold tracking-[.22em] text-slate-500 uppercase mt-7 mb-3">Select Sign-In Method</p>
 
@@ -151,15 +152,15 @@
             </svg>
           </div>
           <div class="hidden sm:block leading-tight">
-            <p class="text-sm font-extrabold text-white">ClinicalCS</p>
-            <p class="text-[.62rem] text-slate-500 font-medium">RPG Simulator</p>
+            <p class="text-sm font-extrabold text-white">PharmVille</p>
+            <p class="text-[.62rem] text-slate-500 font-medium">PHARMACY HOSPITAL</p>
           </div>
         </div>
 
         <div class="flex-1 text-center hidden md:block">
           <p class="text-[.68rem] font-bold tracking-[.2em] text-slate-500 uppercase">Campaign Map</p>
           <p class="text-xs font-semibold text-white mt-0.5">
-            <span id="case-count">0</span> Cases Available
+            <span id="case-count">0</span> <span data-pv-th="เคสพร้อมเล่น · 2 ช่องเคส" data-pv-en="playable · 2 case slots">เคสพร้อมเล่น · 2 ช่องเคส</span>
           </p>
         </div>
 
@@ -227,12 +228,16 @@
         <div class="p-3 sm:p-5">
           <!-- CAMPAIGN -->
           <section data-panel-body="campaign">
+            <div class="pv-intro"><div><p class="pv-eyebrow">YOUR PHARMACY JOURNEY</p><h1 data-pv-th="พร้อมเข้าเวรแล้วหรือยัง?" data-pv-en="Your next shift starts here.">พร้อมเข้าเวรแล้วหรือยัง?</h1><p data-pv-th="เลือกบทบาท เลือกเคส แล้วฝึกตัดสินใจทีละขั้นในโรงพยาบาลของคุณ" data-pv-en="Choose your role and case. Practise one decision at a time.">เลือกบทบาท เลือกเคส แล้วฝึกตัดสินใจทีละขั้นในโรงพยาบาลของคุณ</p><span class="pv-intro-badge" data-pv-th="PHARMACY EDITION · คะแนนและอันดับจากการเล่นจริง" data-pv-en="PHARMACY EDITION · Scores from real attempts">PHARMACY EDITION · คะแนนและอันดับจากการเล่นจริง</span></div><svg class="pv-hero-art" viewBox="0 0 260 150" aria-hidden="true" shape-rendering="crispEdges"><rect x="10" y="20" width="230" height="115" fill="#dbe4cb"/><path d="M25 110H225M25 75H225" stroke="#9eb58f" stroke-width="5"/><rect x="35" y="40" width="22" height="30" fill="#faf7df"/><rect x="39" y="35" width="14" height="8" fill="#708e66"/><rect x="40" y="50" width="12" height="10" fill="#a1bc8d"/><rect x="70" y="40" width="22" height="30" fill="#faf7df"/><rect x="74" y="35" width="14" height="8" fill="#bca174"/><rect x="155" y="30" width="44" height="38" fill="#f8faec"/><path d="M177 37V61M165 49H189" stroke="#63895b" stroke-width="8"/><rect x="120" y="74" width="27" height="20" fill="#dfb78f"/><rect x="117" y="69" width="32" height="10" fill="#5c5846"/><rect x="113" y="94" width="40" height="31" fill="#fffef2"/><path d="M132 98V121" stroke="#799f78" stroke-width="5"/><rect x="57" y="119" width="143" height="23" fill="#c6b28a"/><rect x="53" y="115" width="150" height="7" fill="#eadbbe"/><rect x="70" y="104" width="30" height="10" fill="#fdfbf0"/></svg></div>
+<h2 class="pv-section-title" data-pv-th="01 เลือกบทบาทของคุณ" data-pv-en="01 Choose your role">01 เลือกบทบาทของคุณ</h2>
+<div class="pv-role-grid" role="group" aria-label="Choose profession">
+<button type="button" class="pv-role-card is-selected" data-pv-role="pharmacist" aria-pressed="true"><span class="pv-role-icon" aria-hidden="true">💊</span><span class="pv-role-title" data-pv-th="เภสัชกร" data-pv-en="Pharmacist">เภสัชกร</span><span class="pv-role-status" data-pv-th="พร้อมเล่น" data-pv-en="Available">พร้อมเล่น</span></button><button type="button" class="pv-role-card " data-pv-role="doctor" aria-pressed="false"><span class="pv-role-icon" aria-hidden="true">🩺</span><span class="pv-role-title" data-pv-th="แพทย์" data-pv-en="Doctor">แพทย์</span><span class="pv-role-status" data-pv-th="ยังไม่เปิดให้เล่น" data-pv-en="Coming later">ยังไม่เปิดให้เล่น</span></button><button type="button" class="pv-role-card " data-pv-role="nurse" aria-pressed="false"><span class="pv-role-icon" aria-hidden="true">🩹</span><span class="pv-role-title" data-pv-th="พยาบาล" data-pv-en="Nurse">พยาบาล</span><span class="pv-role-status" data-pv-th="ยังไม่เปิดให้เล่น" data-pv-en="Coming later">ยังไม่เปิดให้เล่น</span></button><button type="button" class="pv-role-card " data-pv-role="dentist" aria-pressed="false"><span class="pv-role-icon" aria-hidden="true">🦷</span><span class="pv-role-title" data-pv-th="ทันตแพทย์" data-pv-en="Dentist">ทันตแพทย์</span><span class="pv-role-status" data-pv-th="ยังไม่เปิดให้เล่น" data-pv-en="Coming later">ยังไม่เปิดให้เล่น</span></button></div><details class="pv-rules"><summary data-pv-th="วิธีเล่น คะแนน และการบันทึกผล" data-pv-en="How to play, scoring & saving">วิธีเล่น คะแนน และการบันทึกผล</summary><ol><li data-pv-th="เลือกเคส → อ่านประวัติและผลตรวจ → ประเมินปัญหา → วางแผนและติดตาม" data-pv-en="Choose a case → review records → assess problems → plan and monitor.">เลือกเคส → อ่านประวัติและผลตรวจ → ประเมินปัญหา → วางแผนและติดตาม</li><li data-pv-th="เลือกคำตอบแล้วกดยืนยัน คะแนนและผลของคำตอบใช้กติกาจากเคสเดิม ไม่ได้คิดจากการเดินในฉาก" data-pv-en="Confirm your answers. The existing case rules determine points; scene movement earns no points.">เลือกคำตอบแล้วกดยืนยัน คะแนนและผลของคำตอบใช้กติกาจากเคสเดิม ไม่ได้คิดจากการเดินในฉาก</li><li data-pv-th="เข้าสู่ระบบ Google เพื่อบันทึกผลเมื่อจบเคส และดูอันดับ สถิติ กับเหรียญรางวัล โหมดผู้เยี่ยมชมไม่บันทึกคะแนนออนไลน์" data-pv-en="Sign in with Google to save completed attempts and view rankings, stats and achievements. Guest attempts are not saved online.">เข้าสู่ระบบ Google เพื่อบันทึกผลเมื่อจบเคส และดูอันดับ สถิติ กับเหรียญรางวัล โหมดผู้เยี่ยมชมไม่บันทึกคะแนนออนไลน์</li><li data-pv-th="พักเกมได้ ออกก่อนจบรอบจะเริ่มใหม่เมื่อเข้าเคสอีกครั้ง" data-pv-en="You can pause. Leaving an unfinished attempt restarts it next time.">พักเกมได้ ออกก่อนจบรอบจะเริ่มใหม่เมื่อเข้าเคสอีกครั้ง</li></ol></details>
             <!-- Daily practice streak -->
             <div id="streak-card" class="mb-4"></div>
 
             <h2 class="text-base font-extrabold text-white" data-i18n="campaign.title">เลือกกรณีศึกษา</h2>
-            <p class="text-[.7rem] text-slate-500 mt-0.5 mb-4" data-i18n="campaign.subtitle">แต่ละเคสดำเนินตามกระบวนการ SOAP — DATA → IDENTIFY → ASSESSMENT → PLAN</p>
-            <div id="quest-track" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3"></div>
+            <p class="text-[.7rem] text-slate-500 mt-0.5 mb-4" data-i18n="campaign.subtitle">เลือกเคส อ่านข้อมูลคนไข้ แล้วตัดสินใจทีละขั้นในบทบาทเภสัชกร</p>
+            <div id="quest-track" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
           </section>
 
 
@@ -318,7 +323,7 @@
         <!-- Patient data FAB — mobile only -->
         <button id="btn-open-drawer"
                 class="md:hidden flex items-center gap-1.5 px-2.5 h-9 rounded-lg text-[.68rem] font-bold text-teal-400 bg-teal-400/10 border border-teal-400/35 flex-shrink-0">
-          📄 <span class="hidden xs:inline">SOAP</span>
+          📄 <span data-pv-th="ข้อมูลคนไข้" data-pv-en="Patient info">ข้อมูลคนไข้</span>
         </button>
 
         <div class="flex items-center gap-1.5 flex-shrink-0">
@@ -362,15 +367,28 @@
       </div>
     </div>
 
-    <!-- ── Responsive grid ──
-         base : 1 column  (question + choices; SOAP in drawer)
-         md   : 2 columns (40% left = vitals + SOAP | 60% right = bedside + decision)
-         lg   : 3 columns (30% patient | 40% bedside/narrative | 30% vitals + decision) -->
-    <!-- fr units (not %) so the gaps and padding do not push the row past 100vw -->
-    <div class="flex-1 grid grid-cols-1 md:grid-cols-[2fr_3fr] lg:grid-cols-[3fr_4fr_3fr] gap-3 p-3 min-h-0 overflow-x-hidden">
+    <div class="pv-game-layout">
+<section class="pv-world-shell" aria-label="Hospital world"><div class="world-heading"><div><span class="pv-eyebrow">PHARMACY FLOOR</span><h2 data-pv-th="เภสัชกรประจำเวร" data-pv-en="Pharmacist on duty">เภสัชกรประจำเวร</h2></div><button type="button" id="pv-open-work" data-pv-th="เปิดงานเภสัชกร →" data-pv-en="Open pharmacy task →">เปิดงานเภสัชกร →</button></div><div class="scene-tools"><div class="scene-caption" data-pv-th="คลิกผู้ป่วยเพื่อดูข้อมูล · คลิกเภสัชกรเพื่อทำภารกิจ" data-pv-en="Patient: records · Pharmacist: current task">คลิกผู้ป่วยเพื่อดูข้อมูล · คลิกเภสัชกรเพื่อทำภารกิจ</div><div class="scene-controls"><button type="button" id="sound-toggle" aria-pressed="false">เสียง: ปิด</button><label for="sound-volume">Volume <input id="sound-volume" type="range" min="0" max="100" value="25"></label><button type="button" id="motion-toggle" aria-pressed="false">หยุดภาพเคลื่อนไหว</button></div></div>
+<div class="scene"><canvas id="map" width="960" height="620" aria-label="Pixel hospital with stationary staff and a demonstration patient"></canvas><button type="button" class="spot patient" data-pv-action="patient"><span data-pv-th="ผู้ป่วย · เวชระเบียน" data-pv-en="Patient · records">ผู้ป่วย · เวชระเบียน</span></button><button type="button" class="spot nurse" data-pv-role="nurse"><span data-pv-th="พยาบาล · ยังไม่เปิด" data-pv-en="Nurse · unavailable">พยาบาล · ยังไม่เปิด</span></button><button type="button" class="spot doctor" data-pv-role="doctor"><span data-pv-th="แพทย์ · ยังไม่เปิด" data-pv-en="Doctor · unavailable">แพทย์ · ยังไม่เปิด</span></button><button type="button" class="spot pharmacy" data-pv-action="pharmacy"><span data-pv-th="เภสัชกร · เริ่มทำงาน" data-pv-en="Pharmacist · start task">เภสัชกร · เริ่มทำงาน</span></button><button type="button" class="spot dentist" data-pv-role="dentist"><span data-pv-th="ทันตแพทย์ · ยังไม่เปิด" data-pv-en="Dentist · unavailable">ทันตแพทย์ · ยังไม่เปิด</span></button></div>
+<div class="scene-foot"><span data-pv-th="คนไข้ในฉากเป็นภาพสาธิต ไม่ใช่ผลการรักษาหรือคะแนน" data-pv-en="Scene animation is illustrative, not treatment outcome or score.">คนไข้ในฉากเป็นภาพสาธิต ไม่ใช่ผลการรักษาหรือคะแนน</span><span id="scene-status" role="status"></span></div><details class="pv-scene-options"><summary data-pv-th="ควบคุมฉากสาธิต" data-pv-en="Scene controls">ควบคุมฉากสาธิต</summary><div class="patient-controls"><button type="button" data-destination="nurse">จุดพยาบาล</button><button type="button" data-destination="doctor">ห้องตรวจ</button><button type="button" data-destination="pharmacy">ห้องยา</button><button type="button" id="tour-toggle" aria-pressed="true">เดินชมอัตโนมัติ: เปิด</button></div></details><p id="audio-status" class="pv-audio-status" role="status"></p></section>
+        <section class="pv-decision-shell panel rounded-2xl flex flex-col overflow-hidden min-h-0 flex-1 lg:h-full">
+          <div id="vitals-desktop" class="hidden lg:grid grid-cols-4 gap-px bg-navy-700/40 border-b border-navy-700/60 flex-shrink-0"></div>
 
-      <!-- COLUMN 1 — Patient (md and lg only; mobile uses the drawer) -->
-      <aside class="hidden md:flex flex-col gap-3 min-h-0">
+          <div class="flex items-center gap-2 p-3 border-b border-navy-700/60 flex-shrink-0">
+            <span id="decision-step-chip" class="tag-pill !bg-teal-400/12 !text-teal-400 !border-teal-400/35">Step 0/0</span>
+            <span id="decision-stage-chip" class="tag-pill truncate max-w-[8rem]">—</span>
+            <!-- The per-step point total used to sit here. It was removed:
+                 points are awarded per correct option, so "⚡ 400" told the
+                 learner there were exactly four correct answers of seven. -->
+            <span class="text-[.66rem] font-mono font-bold text-gold-400">
+              <span id="current-score">0</span><span class="text-slate-600">/</span><span id="max-score">0</span>
+            </span>
+          </div>
+
+          <!-- Single render host for ALL step content (info + MCQ) -->
+          <div id="game-content-area" class="flex-1 overflow-y-auto p-3 pb-28 md:pb-3 min-h-0"></div>
+        </section>
+      <aside class="pv-chart-shell hidden md:flex flex-col gap-3 min-h-0">
         <!-- Tablet-only vitals card (desktop shows it in column 3) -->
         <div id="vitals-tablet" class="lg:hidden panel rounded-2xl overflow-hidden flex-shrink-0 grid grid-cols-4 gap-px bg-navy-700/40"></div>
 
@@ -382,21 +400,13 @@
               <p id="patient-cc" class="text-[.65rem] text-slate-400 line-clamp-2">—</p>
             </div>
           </div>
-          <div class="flex gap-1 p-2 border-b border-navy-700/60 flex-shrink-0">
-            <button class="soap-tab flex-1 px-2 py-2 rounded-lg text-[.68rem] font-bold text-navy-900 bg-teal-400 transition" data-soap="subjective">💬 Subj</button>
-            <button class="soap-tab flex-1 px-2 py-2 rounded-lg text-[.68rem] font-semibold text-slate-400 transition" data-soap="objective">🔬 Obj</button>
-            <button class="soap-tab flex-1 px-2 py-2 rounded-lg text-[.68rem] font-semibold text-slate-400 transition" data-soap="cpg" data-i18n="soap.cpg">📚 อ้างอิง</button>
-            <button class="soap-tab flex-1 px-2 py-2 rounded-lg text-[.68rem] font-semibold text-slate-400 transition" data-soap="monitoring">🎯 Mon</button>
-          </div>
+          <div class="p-3 font-bold text-xs" data-pv-th="ข้อมูลคนไข้และเอกสารอ้างอิง" data-pv-en="Patient information and references">ข้อมูลคนไข้และเอกสารอ้างอิง</div>
           <div id="soap-content" class="flex-1 overflow-y-auto p-3 text-xs"></div>
         </div>
       </aside>
 
-      <!-- WORK AREA — flex on md (stacked), display:contents on lg (splits into 2 grid columns) -->
-      <div class="flex flex-col gap-3 min-h-0 lg:contents">
 
-        <!-- COLUMN 2 — Bedside + step tracker + narrative (md/lg only) -->
-        <section class="hidden md:flex panel rounded-2xl flex-col overflow-hidden min-h-0 lg:h-full">
+        <section class="pv-case-context hidden md:flex panel rounded-2xl flex-col overflow-hidden min-h-0 lg:h-full">
           <div class="p-4 flex flex-col items-center justify-center relative flex-shrink-0"
                style="background-image: radial-gradient(ellipse 70% 90% at 50% 40%, rgba(28,37,65,.75), rgba(19,27,46,.6));">
             <div id="bedside-status-badge"
@@ -433,25 +443,7 @@
           </div>
         </section>
 
-        <!-- COLUMN 3 — Vitals card (lg) + Clinical Decision Engine -->
-        <section class="panel rounded-2xl flex flex-col overflow-hidden min-h-0 flex-1 lg:h-full">
-          <div id="vitals-desktop" class="hidden lg:grid grid-cols-4 gap-px bg-navy-700/40 border-b border-navy-700/60 flex-shrink-0"></div>
 
-          <div class="flex items-center gap-2 p-3 border-b border-navy-700/60 flex-shrink-0">
-            <span id="decision-step-chip" class="tag-pill !bg-teal-400/12 !text-teal-400 !border-teal-400/35">Step 0/0</span>
-            <span id="decision-stage-chip" class="tag-pill truncate max-w-[8rem]">—</span>
-            <!-- The per-step point total used to sit here. It was removed:
-                 points are awarded per correct option, so "⚡ 400" told the
-                 learner there were exactly four correct answers of seven. -->
-            <span class="hidden sm:inline text-[.66rem] font-mono font-bold text-gold-400">
-              <span id="current-score">0</span><span class="text-slate-600">/</span><span id="max-score">0</span>
-            </span>
-          </div>
-
-          <!-- Single render host for ALL step content (info + MCQ) -->
-          <div id="game-content-area" class="flex-1 overflow-y-auto p-3 pb-28 md:pb-3 min-h-0"></div>
-        </section>
-      </div>
     </div>
   </div>
 </div>
@@ -473,17 +465,13 @@
             class="ml-auto mt-2 w-9 h-9 grid place-items-center rounded-lg text-slate-400 bg-navy-700/70 border border-navy-600 flex-shrink-0">✕</button>
   </div>
 
-  <div class="flex gap-1 p-2 border-b border-navy-700/60 flex-shrink-0">
-    <button class="soap-tab flex-1 px-2 py-2.5 rounded-lg text-xs font-bold text-navy-900 bg-teal-400 transition" data-soap="subjective">💬 Subjective</button>
-    <button class="soap-tab flex-1 px-2 py-2.5 rounded-lg text-xs font-semibold text-slate-400 transition" data-soap="objective">🔬 Objective</button>
-    <button class="soap-tab flex-1 px-2 py-2.5 rounded-lg text-xs font-semibold text-slate-400 transition" data-soap="cpg" data-i18n="soap.cpg">📚 อ้างอิง</button>
-    <button class="soap-tab flex-1 px-2 py-2.5 rounded-lg text-xs font-semibold text-slate-400 transition" data-soap="monitoring">🎯 Monitoring</button>
-  </div>
+  <div class="p-3 font-bold text-xs" data-pv-th="ข้อมูลคนไข้และเอกสารอ้างอิง" data-pv-en="Patient information and references">ข้อมูลคนไข้และเอกสารอ้างอิง</div>
 
   <div id="soap-content-mobile" class="flex-1 overflow-y-auto p-3 text-xs"></div>
 </div>
 
 
+<dialog id="pv-role-dialog" aria-labelledby="pv-role-dialog-title"><div class="pv-dialog-icon" aria-hidden="true">🔒</div><h2 id="pv-role-dialog-title"></h2><p data-pv-th="บทบาทนี้ยังไม่เปิดให้เล่น ตอนนี้คุณสามารถเล่นเป็นเภสัชกรได้" data-pv-en="This role is not available yet. You can play as the pharmacist now.">บทบาทนี้ยังไม่เปิดให้เล่น ตอนนี้คุณสามารถเล่นเป็นเภสัชกรได้</p><form method="dialog"><button class="primary-btn" data-pv-th="เข้าใจแล้ว" data-pv-en="Got it">เข้าใจแล้ว</button></form></dialog>
 <!-- TOAST -->
 <div id="toast" class="fixed bottom-24 md:bottom-6 left-1/2 -translate-x-1/2 z-[70] hidden px-4 w-full max-w-sm">
   <div class="glass-card rounded-xl px-4 py-3 text-sm font-medium text-white shadow-2xl text-center">
@@ -495,11 +483,13 @@
 <!-- ═══════════════════════════════════════════════════════════════
      SCRIPTS
      ═══════════════════════════════════════════════════════════════ -->
-<script src="./js/i18n.js?v=202610241150"></script>
-<script src="./js/qrcode.js?v=202610241150"></script>
-<script src="./js/firebase-service.js?v=202610241150"></script>
-<script src="./js/ui-controller.js?v=202610241150"></script>
-<script src="./js/game-engine.js?v=202610241150"></script>
+<script src="./js/i18n.js?v=202610250827"></script>
+<script src="./js/qrcode.js?v=202610250827"></script>
+<script src="./js/firebase-service.js?v=202610250827"></script>
+<script src="./js/ui-controller.js?v=202610250827"></script>
+<script src="./js/game-engine.js?v=202610250827"></script>
+<script src="./hospital-scene.js?v=202610250827"></script>
+<script src="./js/pharmville-shell.js?v=202610250827"></script>
 
 <script>
 (function() {
@@ -576,6 +566,10 @@
         stopTimer();
         elapsedSeconds = 0;
         isPaused = false;
+        timerEl.textContent = '00:00';
+        btnPause.innerHTML = '⏸<span class="hidden lg:inline ml-1">Pause</span>';
+        UIController.setPaused(false);
+        window.HospitalScene?.setActive(true);
         timerHandle = setInterval(() => {
             if (isPaused) return;
             elapsedSeconds++;
@@ -595,6 +589,7 @@
             ? '▶<span class="hidden lg:inline ml-1">Resume</span>'
             : '⏸<span class="hidden lg:inline ml-1">Pause</span>';
         UIController.setPaused(isPaused);
+        window.HospitalScene?.setActive(!isPaused);
     });
 
     // ─── Case loading ──────────────────────────────────────
@@ -634,7 +629,7 @@
 
     // ─── Start a case ──────────────────────────────────────
     function startCase(caseData) {
-        if (!caseData) return;
+        if (!caseData || !caseData.stages || !cases.includes(caseData)) return;
         activeCase = caseData;
 
         UIController.navigateTo('game');
@@ -674,10 +669,20 @@
     btnBack.addEventListener('click', exitCase);
     btnExit.addEventListener('click', exitCase);
 
+    window.addEventListener('pharmville:viewchange', function(event) {
+        if (event.detail.view !== 'game') {
+            stopTimer();
+            isPaused = false;
+            UIController.setPaused(false);
+        }
+    });
+    window.addEventListener('pharmville:retrycases', loadCases);
+
     // ─── HUD ───────────────────────────────────────────────
     function updateHUD() {
         const st = GameEngine.getState();
         if (!st) return;
+        if (st.isGameOver) stopTimer();
         currentScoreEl.textContent = st.currentScore;
         maxScoreEl.textContent = st.maxPossibleScore;
         if (st.totalSteps > 0) {
