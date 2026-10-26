@@ -16,12 +16,12 @@ test('retired clinical data, generators, chart, avatar and audio sources are abs
     for (const file of retired) assert.equal(fs.existsSync(path.join(root, file)), false, file + ' must not remain deployable');
 });
 
-function worker() {
+function worker(options = {}) {
     const handlers = new Map();
     const activity = { opened: [], deleted: [], fetched: [], matched: [], claimed: 0 };
     const cache = {
         match: async request => { activity.matched.push(request); return new Response('stale clinical material'); },
-        put: async () => {}, add: async () => {}
+        put: async () => { if(options.putFails) throw Error("quota"); }, add: async () => {}
     };
     const keys = [];
     const context = vm.createContext({
@@ -34,7 +34,7 @@ function worker() {
         },
         caches: {
             keys: async () => keys,
-            open: async name => { activity.opened.push(name); return cache; },
+            open: async name => { activity.opened.push(name); if(options.openFails) throw Error("storage unavailable"); return cache; },
             delete: async name => { activity.deleted.push(name); return true; }
         },
         fetch: async request => { activity.fetched.push(request); return new Response('network material'); }
@@ -102,3 +102,5 @@ test('new game scripts contain no audio constructors or backend scoring access',
     assert.doesNotMatch(hub, /\bDBService\b|\b(?:saveAttempt|getLeaderboard|getUserAttempts|getAllAttempts)\s*\(|\bfirebase\s*\.\s*(?:firestore|database)\s*\(/,
         'sandbox missions and empty ranking scaffolds must not access attempt records');
 });
+
+test('successful network response survives cache quota and storage errors',async()=>{for(const options of [{putFails:true},{openFails:true}]){const s=worker(options);const r=await s.fetch('https://sirasitragtong-cmd.github.io/Clinical-case-simulator/index.html');assert.equal(r.status,200);assert.equal(await r.text(),'network material');}});
