@@ -93,3 +93,6 @@ test('optional auth uses safe text without anonymous account creation or score p
     assert.equal(h.nodes['login-button'].hidden,true);h.click('logout-button');await new Promise(resolve=>setImmediate(resolve));
     assert.equal(h.nodes['player-name'].textContent,'ผู้เยี่ยมชม');
 });
+
+test('start and reset resume a paused round instead of leaving travel stuck',()=>{const h=harness();h.click('motion-button');h.click('mission-start');assert.equal(h.nodes['motion-button'].attrs['aria-pressed'],'false');h.click('motion-button');h.click('mission-reset');assert.equal(h.nodes['motion-button'].attrs['aria-pressed'],'false');assert.equal(h.progress(),'0 / 3');});
+test('map travel immediately updates selected room and heading',()=>{const h=harness();h.window.ClinicRoom.selectRoom('exam');assert.equal(h.nodes['room-title'].textContent,'ห้องตรวจ');assert.equal(h.nodes['room-exam'].classList.contains('is-selected'),true);assert.equal(h.nodes['room-reception'].classList.contains('is-selected'),false);});

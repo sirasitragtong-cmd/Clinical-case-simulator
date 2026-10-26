@@ -48,6 +48,7 @@
             else button.removeAttribute('aria-current');
         });
         window.ClinicRoom?.setActive?.(view === 'hub');
+        put('breadcrumb-view', {hub:'คลินิกของฉัน',missions:'คู่มือการเล่น',stages:'เลือกด่าน',ranking:'อันดับผู้เล่น'}[view]);
     }
 
     function renderMissions() {
@@ -77,6 +78,9 @@
     }
 
     function resetRound() {
+        setPaused(false);
+        clearTimeout(toastTimer);
+        if (byId('toast')) byId('toast').hidden = true;
         completed = 0;
         started = false;
         arrivedRoom = null;
@@ -121,6 +125,7 @@
     }
 
     function startSandbox() {
+        setPaused(false);
         if (completed === tasks.length) resetRound();
         if (!started) {
             window.ClinicRoom?.reset?.();
@@ -193,6 +198,9 @@
         if (!Object.hasOwn(rooms, room)) return;
         travelTarget = room;
         arrivedRoom = null;
+        document.querySelectorAll('[data-room]').forEach(el => el.classList.toggle('is-selected', el.dataset.room === room));
+        put('room-title', rooms[room]);
+        put('room-caption', captions[room]);
         renderMissions();
     });
     window.addEventListener('clinic:visit', event => {

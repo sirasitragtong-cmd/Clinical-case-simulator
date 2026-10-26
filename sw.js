@@ -1,6 +1,6 @@
 'use strict';
-const CACHE_NAME = 'pharmsim-20261025143326';
-const SHELL = ['./', './index.html', './css/game-hub.css?v=20261025143326', './js/game-hub.js?v=20261025143326', './js/clinic-room.js?v=20261025143326', './js/firebase-service.js?v=20261025143326', './manifest.json?v=20261025143326', './icons/icon-192.png', './icons/icon-512.png'];
+const CACHE_NAME = 'pharmsim-20261026042910';
+const SHELL = ['./', './index.html', './css/game-hub.css?v=20261026042910', './js/game-hub.js?v=20261026042910', './js/clinic-room.js?v=20261026042910', './js/firebase-service.js?v=20261026042910', './manifest.json?v=20261026042910', './icons/icon-192.png', './icons/icon-512.png'];
 const RETIRED = /\/(?:data\/|tools\/build-case-001\.js|js\/(?:game-engine|ui-controller|i18n|pharmville-shell)\.js|hospital(?:-scene)?\.js)/;
 self.addEventListener('install', event => event.waitUntil((async () => {
   const cache = await caches.open(CACHE_NAME);
@@ -20,13 +20,17 @@ self.addEventListener('fetch', event => {
     return;
   }
   event.respondWith((async () => {
-    const cache = await caches.open(CACHE_NAME);
+    let cache;
+    try { cache = await caches.open(CACHE_NAME); } catch (_) {}
     try {
       const response = await fetch(request);
-      if (response.ok) await cache.put(request, response.clone());
+      if (response.ok && cache) { try { await cache.put(request, response.clone()); } catch (_) {} }
       return response;
     } catch (error) {
-      return await cache.match(request) || (request.mode === 'navigate' ? await cache.match('./index.html') : null) || new Response('Offline', {status:503});
+      try {
+        if (cache) { const saved = await cache.match(request) || (request.mode === 'navigate' ? await cache.match('./index.html') : null); if (saved) return saved; }
+      } catch (_) {}
+      return new Response('Offline', {status:503});
     }
   })());
 });
