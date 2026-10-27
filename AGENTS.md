@@ -4,7 +4,7 @@
 
 The user directs the product through one lead agent. The lead translates requests into bounded assignments, delegates relevant work, integrates results, verifies them, and reports back in Thai. This file is a repository workflow, not a background service or a grant of credentials. Follow applicable platform instructions and current user directions first. Delegate when supported and useful; do not pretend that specialist agents ran when they did not. If delegation is unavailable, perform the roles sequentially and disclose that distinction.
 
-Current product priority: a fresh, content-free pharmacy game framework. The user explicitly removed all old clinical cases, case generators, chart/portrait UI and audio. Keep two future case slots, onboarding missions, empty scoring/ranking scaffolds and existing authentication. No real score writes. Preserve database records and existing browser drafts without reading, rewriting or deleting them.
+Current product priority (2026-10-27): living hospital simulation with autonomous staff and patients, click pharmacist possession, and bounded SOAP learning. Latest user explicitly restores clinical cases and SOAP. Use anonymized source-grounded cases; flag source contradictions rather than inventing facts. Preserve existing authentication and legacy browser/database records. New practice scores/drafts use a separate namespace; do not claim local scores are a global leaderboard.
 
 ## Roles and default ownership
 
@@ -12,7 +12,7 @@ Current product priority: a fresh, content-free pharmacy game framework. The use
 | --- | --- | --- |
 | Lead / architect / integrator | Scope, acceptance criteria, interfaces, task allocation, integration, release and rollback | Cross-cutting decisions, build/deploy files, AGENTS.md, task coordination |
 | UX / UI | Layout, visual language, Thai copy, accessibility, responsive behavior | index.html, css/game-hub.css, design specification |
-| Game / animation | Actors, routes, stationary staff, movement, visual effects and performance | js/clinic-room.js |
+| Game / animation | Actors, routes, autonomous staff, movement, visual effects and performance | js/clinic-room.js |
 | Frontend / learning workflow | Panels, interactions, onboarding missions and future case integration | js/game-hub.js |
 | Data / backend / security | Schemas, persistence, validation, identity, authorization, data migration | js/firebase-service.js, firestore.rules, firestore.indexes.json, case schema decisions |
 | QA / regression reviewer | Independently check acceptance criteria, regression risk, failure paths and verification evidence | tests/ and review findings; no production rewrites without assignment |
@@ -34,7 +34,7 @@ These are responsibility areas, not permanent exclusive file permissions. For ea
 ## Integration and regression rules
 
 - The current app is index.html, css/game-hub.css, js/game-hub.js and js/clinic-room.js. hospital.html is a compatibility redirect. Old clinical files and renderers are retired.
-- World motion must work without case loading or Firebase. Learning events can highlight stations but must not move staff. Never mix case-dependent rules into decorative animation.
+- World motion must work without case loading or Firebase. Learning tasks may route the controlled pharmacist to a workstation, but never choose answers automatically. Never mix case-dependent rules into decorative animation.
 - Preserve the current draft key and data shape unless an explicit, tested migration is included. Do not read or rewrite live user data to test a visual feature.
 - Keep clinical content out of a visual/structural task unless the user expands scope. Do not invent patient facts, treatment guidance or automatic correctness scores. An AI content review does not replace a qualified clinical review.
 - Changes to the original asset pipeline follow BUILD.md. A standalone prototype change needs appropriate syntax/behavior checks and updated asset versions; avoid unnecessary rebuild churn. Test altered service-worker behavior if caching changes.

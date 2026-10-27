@@ -1,0 +1,6 @@
+'use strict';
+const test=require('node:test'),assert=require('node:assert/strict');
+const {fixture,imported,startLast,answerFirst}=require('./hub-fixture.cjs');
+test('observation boots without selecting clinical answers',async()=>{const f=fixture();await f.settle();assert.equal(f.context.PharmVille.getState().controlled,false);assert.equal(f.context.PharmVille.getState().caseId,undefined);assert.equal(f.ids.get('case-list').children.length,1);});
+test('multiple case imports persist together across reloads',async()=>{const f=fixture();await f.settle();await f.import(imported('custom-one'));await f.import(imported('custom-two'));const stored=JSON.parse(f.storage.get('pharmville-practice-v2-imports'));assert.deepEqual(stored.map(c=>c.id),['custom-one','custom-two']);});
+test('imported case draft resumes after browser reload without signature drift',async()=>{const f=fixture();await f.settle();await f.import(imported('custom-one'));startLast(f);answerFirst(f);assert.equal(f.context.PharmVille.getState().caseId,'custom-one');const before=JSON.parse(f.storage.get('pharmville-practice-v2-draft-custom-one'));assert.ok(Object.keys(before.answers).length);const second=fixture(f.storage);await second.settle();startLast(second);const notice=second.ids.get('toast').textContent;assert.ok(!notice.includes('ฉบับร่างเก่าไม่ตรง'),notice);});

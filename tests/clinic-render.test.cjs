@@ -1,13 +1,13 @@
 'use strict';
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
 function scene(){
- const pixels=new Array(480*300),jobs=new Map();let id=0;
- const ctx={fillStyle:'',fillRect(x,y,w,h){for(let yy=Math.max(0,y);yy<Math.min(300,y+h);yy++)for(let xx=Math.max(0,x);xx<Math.min(480,x+w);xx++)pixels[yy*480+xx]=this.fillStyle;}};
+ const pixels=new Array(960*600),jobs=new Map(),labels=[];let id=0;
+ const ctx={fillStyle:'',fillText(s){labels.push(s);},fillRect(x,y,w,h){for(let yy=Math.max(0,Math.ceil(y));yy<Math.min(600,y+h);yy++)for(let xx=Math.max(0,Math.ceil(x));xx<Math.min(960,x+w);xx++)pixels[yy*960+xx]=this.fillStyle;}};
  const window={matchMedia:()=>({matches:true,addEventListener(){}}),requestAnimationFrame:f=>{jobs.set(++id,f);return id;},cancelAnimationFrame:i=>jobs.delete(i),dispatchEvent(){}};
  vm.runInNewContext(fs.readFileSync(require('node:path').join(__dirname,'../js/clinic-room.js'),'utf8'),{window,document:{hidden:false,getElementById:()=>({style:{},getContext:()=>ctx,addEventListener(){}}),addEventListener(){}},CustomEvent:class{}});
  const paint=()=>{const list=[...jobs.values()];jobs.clear();list.forEach(f=>f(100));};paint();
- return{pixel:(x,y)=>pixels[y*480+x],api:window.ClinicRoom,paint};
+ return{pixel:(x,y)=>pixels[y*960+x],api:window.ClinicRoom,paint,labels};
 }
-test('patient has two visible dark eyes at rest and after arriving',()=>{const s=scene();for(const room of [null,'reception','exam','pharmacy']){if(room){s.api.selectRoom(room);s.paint();}const p=s.api.getState().patient;assert.equal(p.face,'down');assert.equal(s.pixel(p.x-4,p.y-20),'#172d2c');assert.equal(s.pixel(p.x+3,p.y-20),'#172d2c');}});
-test('foreground trees cover fence rails while adjacent fence remains visible',()=>{const s=scene();assert.equal(s.pixel(72,289),'#4d7354');assert.equal(s.pixel(401,289),'#4d7354');assert.equal(s.pixel(103,288),'#c3a377');});
-test('reception counter occludes staff feet and floor tiles stay within right wall',()=>{const s=scene();assert.equal(s.pixel(92,115),'#c09d70');assert.equal(s.pixel(436,80),'#8ba27b');});
+test('patient has two visible eyes and pharmacy actor is identifiable',()=>{const s=scene(),p=s.api.getState().patient;assert.equal(s.pixel(p.x-5,p.y-33),'#263c43');assert.equal(s.pixel(p.x+3,p.y-33),'#263c43');assert(s.labels.includes('!'));});
+test('all clinical departments receive labels and central hallway is rendered',()=>{const s=scene();for(const r of Object.values(s.api.getState().rooms))if(r.side!=='hall')assert(s.labels.includes(r.label));assert.equal(s.pixel(270,300),'#e7e9de');assert.notEqual(s.pixel(10,300),s.pixel(270,300));});
+test('controlled pharmacist receives visual selection marker',()=>{const s=scene();s.api.setControlled(true);s.paint();const p=s.api.getState().staff[0];assert.equal(s.pixel(p.x,p.y+6),'#e8b735');assert(s.labels.includes('✓'));});

@@ -1,7 +1,7 @@
 'use strict';
-const CACHE_NAME = 'pharmsim-20261026042910';
-const SHELL = ['./', './index.html', './css/game-hub.css?v=20261026042910', './js/game-hub.js?v=20261026042910', './js/clinic-room.js?v=20261026042910', './js/firebase-service.js?v=20261026042910', './manifest.json?v=20261026042910', './icons/icon-192.png', './icons/icon-512.png'];
-const RETIRED = /\/(?:data\/|tools\/build-case-001\.js|js\/(?:game-engine|ui-controller|i18n|pharmville-shell)\.js|hospital(?:-scene)?\.js)/;
+const CACHE_NAME = 'pharmsim-20261027104344';
+const SHELL = ['./', './index.html', './css/game-hub.css?v=20261027104344', './js/game-hub.js?v=20261027104344', './js/clinic-room.js?v=20261027104344', './js/firebase-service.js?v=20261027104344', './manifest.json?v=20261027104344', './js/learning-engine.js?v=20261027104344', './data/demo-case.json?v=20261027104344', './data/pain-migraine-case.json?v=20261027104344', './icons/icon-192.png', './icons/icon-512.png'];
+const RETIRED = /\/(?:tools\/build-case-001\.js|js\/(?:game-engine|ui-controller|i18n|pharmville-shell)\.js|hospital(?:-scene)?\.js)/;
 self.addEventListener('install', event => event.waitUntil((async () => {
   const cache = await caches.open(CACHE_NAME);
   await Promise.all(SHELL.map(url => cache.add(new Request(url, {cache:'reload'})).catch(() => {})));

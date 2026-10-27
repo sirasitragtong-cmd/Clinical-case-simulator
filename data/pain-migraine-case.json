@@ -1,0 +1,1029 @@
+{
+  "schemaVersion": 1,
+  "id": "pain-phn-source",
+  "version": "1.0.0",
+  "language": "th-TH",
+  "title": "ปวดหลังงูสวัด · ทบทวนยาร่วมโรคลมชัก",
+  "subtitle": "เคสจากรายงาน Pain_Migraine · โหมดฝึกพร้อมตรวจข้อขัดแย้ง",
+  "description": "ผู้ป่วยชายอายุ 55 ปีมีอาการปวดแสบร้อนและ allodynia หลังงูสวัด ร่วมกับประวัติลมชัก ฝึกเลือกหลักฐานและประสานทบทวนแผนก่อนยืนยันข้อมูลที่ขัดกัน",
+  "provenance": {
+    "source": "รายงานกลุ่มที่ 3_Pain_Migraine.pdf หน้า 2–9 ที่ผู้ใช้ส่ง",
+    "status": "draft",
+    "notice": "เคสฝึกถอดจากรายงานนักศึกษา เกณฑ์ยังรอผู้สอนทบทวน ขนาดยาที่รายงานขัดกันต้องตรวจสอบก่อนยืนยัน ไม่ใช่คำสั่งรักษาผู้ป่วยจริง",
+    "reviewer": "",
+    "sourcePages": [
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9
+    ]
+  },
+  "patient": {
+    "name": "ผู้ป่วยเคส PHN-01 (ไม่ระบุตัวตน)",
+    "hn": "SIM-PHN-01",
+    "age": "55 ปี",
+    "sex": "ชาย",
+    "chiefComplaint": "ปวดแสบร้อนลำตัวขวาเพิ่มขึ้น 7 วัน เสื้อสัมผัสแล้วปวด"
+  },
+  "chart": [
+    {
+      "id": "s-cc",
+      "label": "คำบอกเล่า · CC",
+      "value": "ปวดแสบร้อนบริเวณลำตัวขวาเพิ่มขึ้น 7 วัน บางครั้งเหมือนเข็มตำหรือไฟฟ้าช็อต"
+    },
+    {
+      "id": "s-touch",
+      "label": "คำบอกเล่า · การใช้ชีวิต",
+      "value": "3 วันก่อนมาโรงพยาบาล เสื้อสัมผัสบริเวณปวดแล้วเจ็บ บางครั้งทนไม่ไหว"
+    },
+    {
+      "id": "s-response",
+      "label": "คำบอกเล่า · ผลจากยา",
+      "value": "กิน ibuprofen แล้วอาการปวดไม่ดีขึ้น"
+    },
+    {
+      "id": "s-history",
+      "label": "ประวัติที่บันทึก",
+      "value": "3 เดือนก่อนวินิจฉัย herpes zoster ได้ acyclovir 800 mg วันละ 5 ครั้ง 7 วัน หลังแผลตกสะเก็ดยังปวดเป็นระยะ"
+    },
+    {
+      "id": "o-epilepsy",
+      "label": "ฐานข้อมูลโรงพยาบาล · โรคร่วม",
+      "value": "Epilepsy 5 ปี ไม่มีชักมา 6 เดือน (คำอธิบายอีกหน้าระบุ 6 ปี จึงต้องทวนประวัติ)"
+    },
+    {
+      "id": "o-med",
+      "label": "ฐานข้อมูลโรงพยาบาล · ยาเดิม",
+      "value": "Phenytoin kapseal 100 mg ครั้งละ 3 เม็ดก่อนนอน; ibuprofen 400 mg ทุก 8 ชั่วโมงเมื่อปวด"
+    },
+    {
+      "id": "o-exam",
+      "label": "ผลประเมินและตรวจร่างกาย",
+      "value": "Pain score 8/10; mechanical allodynia บริเวณลำตัวขวา positive; น้ำหนัก 50 kg ส่วนสูง 160 cm"
+    },
+    {
+      "id": "o-vital",
+      "label": "Vital signs",
+      "value": "BP 120/80 mmHg, P 72/min, RR 20/min, T 37.5°C"
+    },
+    {
+      "id": "o-lab",
+      "label": "ผลแล็บ",
+      "value": "SCr 0.75 mg/dL, BUN 12 mg/dL, AST 20 IU/L, ALT 25 IU/L"
+    },
+    {
+      "id": "o-rx",
+      "label": "ใบสั่งยาที่ให้ประเมิน",
+      "value": "Tramadol 50 mg วันละ 3 ครั้งหลังอาหาร; diclofenac gel ทาบริเวณปวด"
+    },
+    {
+      "id": "s-allergy",
+      "label": "ประวัติแพ้ยาและสังคม",
+      "value": "บันทึก NKDA; ปฏิเสธสูบบุหรี่และดื่มสุรา"
+    },
+    {
+      "id": "goal",
+      "label": "เป้าหมายในรายงาน",
+      "value": "Pain score 0–3/10 หรือลดอย่างน้อย 50% จาก 8/10; ใส่เสื้อและทำกิจวัตรได้ดีขึ้น"
+    },
+    {
+      "id": "conflict",
+      "label": "จุดต้องตรวจสอบก่อนยืนยัน",
+      "value": "หน้าประเมินยาใหม่ระบุ pregabalin 75 mg วันละครั้ง แต่หน้าแผนระบุ 75 mg วันละ 2 ครั้ง; ตาราง IESAC มีขนาดยาที่ควรตรวจสอบ ไม่เลือกขนาดใดเป็นเฉลยเด็ดขาด"
+    },
+    {
+      "id": "monitor-source",
+      "label": "แผนติดตามในรายงาน",
+      "value": "ติดตาม pain score และ allodynia ทุก 1 สัปดาห์; ง่วง เวียนศีรษะ เดินเซใน 1–2 สัปดาห์แรก; บวมและน้ำหนักใน 2–4 สัปดาห์แรก"
+    },
+    {
+      "id": "future-source",
+      "label": "แผนอนาคตในรายงาน",
+      "value": "ถ้าดีขึ้นและทนยาได้ให้พิจารณาคงแผน; ถ้าไม่ดีขึ้นใน 4–8 สัปดาห์ให้ประเมินและทบทวนแผนกับทีม ไม่เพิ่มยาเอง"
+    }
+  ],
+  "formulary": [
+    {
+      "id": "pregabalin",
+      "label": "Pregabalin — ตัวเลือกในรายงาน; ขนาดเริ่มต้นขัดกัน ต้องยืนยัน"
+    },
+    {
+      "id": "gabapentin",
+      "label": "Gabapentin — ตัวเลือกเปรียบเทียบในรายงาน"
+    },
+    {
+      "id": "tramadol",
+      "label": "Tramadol — อยู่ในใบสั่งยาที่ต้องทบทวน"
+    },
+    {
+      "id": "ibuprofen",
+      "label": "Ibuprofen — ผู้ป่วยรายงานว่าใช้แล้วอาการไม่ดีขึ้น"
+    },
+    {
+      "id": "diclofenac",
+      "label": "Diclofenac gel — อยู่ในใบสั่งยาเดิม"
+    }
+  ],
+  "sections": [
+    {
+      "id": "problem",
+      "title": "Problem list และ DRP",
+      "group": "A",
+      "dependsOn": [],
+      "fields": [
+        {
+          "id": "active",
+          "label": "เลือกปัญหาหลักจากรายการที่กำหนด",
+          "type": "single",
+          "category": "decision",
+          "weight": 3,
+          "options": [
+            {
+              "id": "phn",
+              "label": "Neuropathic pain หลังงูสวัด"
+            },
+            {
+              "id": "epilepsy",
+              "label": "ลมชักที่ควบคุมได้ เป็นปัญหาร่วม"
+            },
+            {
+              "id": "migraine",
+              "label": "Migraine ที่ยืนยันแล้ว"
+            },
+            {
+              "id": "infection",
+              "label": "การติดเชื้องูสวัดใหม่ที่ยืนยันแล้ว"
+            },
+            {
+              "id": "bp",
+              "label": "ความดันสูงที่ยืนยันแล้ว"
+            }
+          ],
+          "correct": [
+            "phn"
+          ],
+          "feedback": "ทบทวนชาร์ตและข้อจำกัดของรายงานต้นฉบับ"
+        },
+        {
+          "id": "drp",
+          "label": "เลือกประเด็นเกี่ยวกับยาที่ต้องทบทวน",
+          "type": "multi",
+          "category": "decision",
+          "weight": 3,
+          "options": [
+            {
+              "id": "efficacy",
+              "label": "ผลบรรเทาปวดจาก ibuprofen ไม่เพียงพอตามชาร์ต"
+            },
+            {
+              "id": "safety",
+              "label": "ความเหมาะสมของ tramadol เมื่อมีประวัติลมชัก"
+            },
+            {
+              "id": "adherence",
+              "label": "ยืนยันว่าผู้ป่วยหยุด phenytoin เอง"
+            },
+            {
+              "id": "allergy",
+              "label": "ยืนยันแพ้ diclofenac"
+            },
+            {
+              "id": "overdose",
+              "label": "ยืนยันใช้ pregabalin เกินขนาดแล้ว"
+            }
+          ],
+          "correct": [
+            "efficacy",
+            "safety"
+          ],
+          "feedback": "ทบทวนชาร์ตและข้อจำกัดของรายงานต้นฉบับ"
+        },
+        {
+          "id": "evidence",
+          "label": "เลือกหลักฐานที่รองรับประเด็นข้างต้น",
+          "type": "multi",
+          "category": "evidence",
+          "weight": 3,
+          "options": [
+            {
+              "id": "response",
+              "label": "ผู้ป่วยบอกว่า ibuprofen ไม่ช่วย"
+            },
+            {
+              "id": "epilepsy",
+              "label": "ฐานข้อมูลยืนยันโรคลมชักและ phenytoin"
+            },
+            {
+              "id": "family",
+              "label": "มารดามีความดันสูง"
+            },
+            {
+              "id": "hdl",
+              "label": "HDL-C 45 mg/dL"
+            },
+            {
+              "id": "smoke",
+              "label": "ไม่สูบบุหรี่"
+            }
+          ],
+          "correct": [
+            "response",
+            "epilepsy"
+          ],
+          "feedback": "ทบทวนชาร์ตและข้อจำกัดของรายงานต้นฉบับ"
+        }
+      ],
+      "description": "ทีมกำหนดปัญหาหลักให้แล้ว เนื้อหา PDF นี้เป็น Pain management ไม่พบเคส migraine แยกต่างหาก"
+    },
+    {
+      "id": "subjective",
+      "title": "Subjective · ข้อมูลคำบอกเล่า",
+      "group": "S",
+      "dependsOn": [],
+      "fields": [
+        {
+          "id": "evidence",
+          "label": "เลือกคำบอกเล่าที่สัมพันธ์กับปัญหาปวด",
+          "type": "multi",
+          "category": "evidence",
+          "weight": 3,
+          "options": [
+            {
+              "id": "burning",
+              "label": "รู้สึกปวดแสบร้อนเหมือนไฟฟ้าช็อต"
+            },
+            {
+              "id": "clothes",
+              "label": "เสื้อสัมผัสแล้วเจ็บจนทนไม่ไหว"
+            },
+            {
+              "id": "no-relief",
+              "label": "กิน ibuprofen แล้วไม่ดีขึ้น"
+            },
+            {
+              "id": "scr",
+              "label": "ผล SCr 0.75 mg/dL"
+            },
+            {
+              "id": "exam",
+              "label": "ตรวจ mechanical allodynia positive"
+            }
+          ],
+          "correct": [
+            "burning",
+            "clothes",
+            "no-relief"
+          ],
+          "feedback": "ทบทวนชาร์ตและข้อจำกัดของรายงานต้นฉบับ"
+        }
+      ],
+      "description": "เลือกตามที่มาของข้อมูล ไม่ถือว่าทุกข้อความใต้หัวข้อ PI เป็น Objective โดยอัตโนมัติ"
+    },
+    {
+      "id": "objective",
+      "title": "Objective · ข้อมูลตรวจและยืนยัน",
+      "group": "O",
+      "dependsOn": [],
+      "fields": [
+        {
+          "id": "evidence",
+          "label": "เลือกข้อมูลที่ตรวจหรือยืนยันได้จากชาร์ต",
+          "type": "multi",
+          "category": "evidence",
+          "weight": 3,
+          "options": [
+            {
+              "id": "exam",
+              "label": "ตรวจ mechanical allodynia positive"
+            },
+            {
+              "id": "lab",
+              "label": "SCr 0.75 mg/dL"
+            },
+            {
+              "id": "record",
+              "label": "ประวัติลมชักและ phenytoin ตรงฐานข้อมูล"
+            },
+            {
+              "id": "quote",
+              "label": "คนไข้บอกว่าเสื้อสัมผัสแล้วปวด"
+            },
+            {
+              "id": "assume",
+              "label": "สมมติว่ามีไตวายโดยไม่มีหลักฐาน"
+            }
+          ],
+          "correct": [
+            "exam",
+            "lab",
+            "record"
+          ],
+          "feedback": "ทบทวนชาร์ตและข้อจำกัดของรายงานต้นฉบับ"
+        }
+      ],
+      "description": ""
+    },
+    {
+      "id": "risk",
+      "title": "ปัจจัยเสี่ยงและข้อควรคำนึง",
+      "group": "A",
+      "dependsOn": [
+        "problem",
+        "objective"
+      ],
+      "fields": [
+        {
+          "id": "risk",
+          "label": "เลือกปัจจัยที่รายงานนำมาใช้ประเมิน",
+          "type": "multi",
+          "category": "decision",
+          "weight": 3,
+          "options": [
+            {
+              "id": "age",
+              "label": "อายุ 55 ปี เป็นปัจจัยที่รายงานกล่าวถึง"
+            },
+            {
+              "id": "seizure",
+              "label": "ประวัติลมชัก มีผลต่อการประเมินความปลอดภัยยา"
+            },
+            {
+              "id": "renal",
+              "label": "ยืนยันไตวายรุนแรงแล้ว"
+            },
+            {
+              "id": "smoker",
+              "label": "สูบบุหรี่จัด"
+            },
+            {
+              "id": "alcohol",
+              "label": "ดื่มสุราทุกวัน"
+            }
+          ],
+          "correct": [
+            "age",
+            "seizure"
+          ],
+          "feedback": "ทบทวนชาร์ตและข้อจำกัดของรายงานต้นฉบับ"
+        },
+        {
+          "id": "evidence",
+          "label": "หลักฐานเรื่องโรคร่วมที่ควรใช้",
+          "type": "single",
+          "category": "evidence",
+          "weight": 3,
+          "options": [
+            {
+              "id": "record",
+              "label": "ฐานข้อมูลโรงพยาบาลยืนยันโรคลมชัก"
+            },
+            {
+              "id": "family",
+              "label": "ใช้ประวัติมารดาแทนโรคของผู้ป่วย"
+            },
+            {
+              "id": "guess",
+              "label": "คาดเดาจากอายุเพียงอย่างเดียว"
+            }
+          ],
+          "correct": [
+            "record"
+          ],
+          "feedback": "ทบทวนชาร์ตและข้อจำกัดของรายงานต้นฉบับ"
+        }
+      ],
+      "description": ""
+    },
+    {
+      "id": "etiology",
+      "title": "Etiology · เรียงเหตุการณ์และผล",
+      "group": "A",
+      "dependsOn": [
+        "problem",
+        "subjective"
+      ],
+      "fields": [
+        {
+          "id": "chain",
+          "label": "เรียงสายเหตุที่รองรับ PHN จากเคส",
+          "type": "ordered",
+          "category": "reason",
+          "weight": 3,
+          "options": [
+            {
+              "id": "zoster",
+              "label": "เคยได้รับการวินิจฉัย herpes zoster"
+            },
+            {
+              "id": "persist",
+              "label": "แผลตกสะเก็ดแล้วแต่ยังปวดต่อเนื่องเป็นระยะ"
+            },
+            {
+              "id": "pain",
+              "label": "ปัจจุบันปวดแสบร้อนร่วมกับ allodynia"
+            },
+            {
+              "id": "new-zoster",
+              "label": "ยืนยันติดเชื้องูสวัดครั้งใหม่โดยไม่มีข้อมูล"
+            },
+            {
+              "id": "migraine",
+              "label": "ยืนยัน migraine จากอาการลำตัว"
+            }
+          ],
+          "correct": [
+            "zoster",
+            "persist",
+            "pain"
+          ],
+          "feedback": "ทบทวนชาร์ตและข้อจำกัดของรายงานต้นฉบับ"
+        }
+      ],
+      "description": "การ์ดชุดนี้ใช้ลำดับเหตุการณ์ที่เอกสารระบุ ไม่เติมกลไกระดับเซลล์ที่ไม่มีในต้นฉบับ"
+    },
+    {
+      "id": "current",
+      "title": "Assessment of current therapy",
+      "group": "A",
+      "dependsOn": [
+        "problem",
+        "subjective",
+        "objective",
+        "risk"
+      ],
+      "fields": [
+        {
+          "id": "conclusion",
+          "label": "ข้อสรุปต่อแผนแก้ปวดเดิม",
+          "type": "single",
+          "category": "decision",
+          "weight": 3,
+          "options": [
+            {
+              "id": "review",
+              "label": "ควรทบทวนทั้งประสิทธิผลและความปลอดภัยกับทีม"
+            },
+            {
+              "id": "same",
+              "label": "ทุกอย่างเหมาะสมและถึงเป้าหมายแล้ว"
+            },
+            {
+              "id": "stop-all",
+              "label": "หยุดยาทุกชนิดรวม phenytoin เอง"
+            },
+            {
+              "id": "diagnose",
+              "label": "วินิจฉัยแพ้ยาทุกชนิด"
+            }
+          ],
+          "correct": [
+            "review"
+          ],
+          "feedback": "ทบทวนชาร์ตและข้อจำกัดของรายงานต้นฉบับ"
+        },
+        {
+          "id": "reason",
+          "label": "เลือกเหตุผลที่รายงานใช้ทบทวน",
+          "type": "multi",
+          "category": "reason",
+          "weight": 3,
+          "options": [
+            {
+              "id": "no-relief",
+              "label": "ยังปวดและ ibuprofen ไม่ช่วยตามคำบอกเล่า"
+            },
+            {
+              "id": "tramadol",
+              "label": "รายงานระบุความเสี่ยงชักจาก tramadol ในผู้มีลมชัก"
+            },
+            {
+              "id": "controlled",
+              "label": "ไม่ชัก 6 เดือนแปลว่าใช้ยาใดก็ปลอดภัย"
+            },
+            {
+              "id": "family",
+              "label": "ประวัติครอบครัวยืนยันว่าผู้ป่วยมีความดันสูง"
+            }
+          ],
+          "correct": [
+            "no-relief",
+            "tramadol"
+          ],
+          "feedback": "ทบทวนชาร์ตและข้อจำกัดของรายงานต้นฉบับ"
+        },
+        {
+          "id": "evidence",
+          "label": "หลักฐานสำคัญในเคส",
+          "type": "multi",
+          "category": "evidence",
+          "weight": 3,
+          "options": [
+            {
+              "id": "pain",
+              "label": "ปวด 8/10 และ allodynia"
+            },
+            {
+              "id": "rx",
+              "label": "มี tramadol ในใบสั่งยาและมีโรคลมชัก"
+            },
+            {
+              "id": "unknown",
+              "label": "ผลแพ้ยาที่ไม่มีในชาร์ต"
+            }
+          ],
+          "correct": [
+            "pain",
+            "rx"
+          ],
+          "feedback": "ทบทวนชาร์ตและข้อจำกัดของรายงานต้นฉบับ"
+        }
+      ],
+      "description": ""
+    },
+    {
+      "id": "new",
+      "title": "Assessment of new therapy",
+      "group": "A",
+      "dependsOn": [
+        "current"
+      ],
+      "fields": [
+        {
+          "id": "therapy",
+          "label": "เลือกยาที่รายงานนำมาเปรียบเทียบสำหรับแนวทางใหม่",
+          "type": "multi",
+          "category": "decision",
+          "weight": 3,
+          "options": [
+            {
+              "id": "gabapentin",
+              "label": "Gabapentin"
+            },
+            {
+              "id": "pregabalin",
+              "label": "Pregabalin"
+            },
+            {
+              "id": "ibuprofen",
+              "label": "Ibuprofen"
+            },
+            {
+              "id": "diclofenac",
+              "label": "Diclofenac gel"
+            },
+            {
+              "id": "tramadol",
+              "label": "Tramadol"
+            }
+          ],
+          "correct": [
+            "gabapentin",
+            "pregabalin"
+          ],
+          "feedback": "ทบทวนชาร์ตและข้อจำกัดของรายงานต้นฉบับ"
+        },
+        {
+          "id": "reason",
+          "label": "วิธีตัดสินใจก่อนยืนยันยาและขนาด",
+          "type": "single",
+          "category": "reason",
+          "weight": 3,
+          "options": [
+            {
+              "id": "compare",
+              "label": "เปรียบเทียบความเหมาะสมรายบุคคลและแก้ข้อมูลขนาดยาที่ขัดกัน"
+            },
+            {
+              "id": "always",
+              "label": "Pregabalin ต้องเหนือกว่า gabapentin ในผู้ป่วยทุกคน"
+            },
+            {
+              "id": "copy",
+              "label": "คัดลอกขนาดจากตารางทันทีโดยไม่ตรวจสอบ"
+            },
+            {
+              "id": "random",
+              "label": "สุ่มยาเพราะเป็นตัวเลือกในบัญชี"
+            }
+          ],
+          "correct": [
+            "compare"
+          ],
+          "feedback": "ทบทวนชาร์ตและข้อจำกัดของรายงานต้นฉบับ"
+        }
+      ],
+      "description": "รายงานเสนอ pregabalin แต่ข้อมูลเปรียบเทียบและขนาดยาต้องทบทวน จึงไม่บังคับคำตอบว่ามียาที่เหมาะสมได้เพียงตัวเดียว"
+    },
+    {
+      "id": "plan",
+      "title": "Therapeutic plan · ตรวจสอบก่อนยืนยัน",
+      "group": "P",
+      "dependsOn": [
+        "new"
+      ],
+      "fields": [
+        {
+          "id": "action",
+          "label": "การดำเนินการที่เหมาะกับข้อมูลที่ขัดกัน",
+          "type": "single",
+          "category": "decision",
+          "weight": 3,
+          "options": [
+            {
+              "id": "clarify",
+              "label": "ประสานผู้สั่งใช้/ผู้สอนให้ยืนยันสูตร pregabalin ก่อนสรุปแผน"
+            },
+            {
+              "id": "daily",
+              "label": "ยืนยัน 75 mg วันละครั้งโดยไม่ตรวจสอบ"
+            },
+            {
+              "id": "bid",
+              "label": "ยืนยัน 75 mg วันละสองครั้งโดยไม่ตรวจสอบ"
+            },
+            {
+              "id": "triple",
+              "label": "ให้ทั้งสองสูตรพร้อมกัน"
+            }
+          ],
+          "correct": [
+            "clarify"
+          ],
+          "feedback": "ทบทวนชาร์ตและข้อจำกัดของรายงานต้นฉบับ"
+        },
+        {
+          "id": "details",
+          "label": "ข้อมูลใดต้องนำไปยืนยัน",
+          "type": "single",
+          "category": "evidence",
+          "weight": 3,
+          "options": [
+            {
+              "id": "conflict",
+              "label": "หน้า Assessment ระบุวันละครั้ง แต่หน้า Plan ระบุวันละสองครั้ง"
+            },
+            {
+              "id": "ignored",
+              "label": "มีสีตารางต่างกันจึงเลือกตามสี"
+            },
+            {
+              "id": "phenytoin",
+              "label": "ไม่มีประวัติยากันชักในเอกสาร"
+            }
+          ],
+          "correct": [
+            "conflict"
+          ],
+          "feedback": "ทบทวนชาร์ตและข้อจำกัดของรายงานต้นฉบับ"
+        }
+      ],
+      "description": ""
+    },
+    {
+      "id": "monitoring",
+      "title": "Therapeutic monitoring",
+      "group": "P",
+      "dependsOn": [
+        "plan"
+      ],
+      "fields": [
+        {
+          "id": "parameter",
+          "label": "เลือกผลที่ต้องติดตามตามรายงาน",
+          "type": "multi",
+          "category": "decision",
+          "weight": 3,
+          "options": [
+            {
+              "id": "pain",
+              "label": "Pain score และความถี่ของอาการปวด"
+            },
+            {
+              "id": "allodynia",
+              "label": "Allodynia และความสามารถใส่เสื้อ/ทำกิจวัตร"
+            },
+            {
+              "id": "hdl",
+              "label": "HDL-C เป็นผลหลักของการบรรเทาปวด"
+            },
+            {
+              "id": "hair",
+              "label": "สีผมเป็นเป้าหมายหลัก"
+            }
+          ],
+          "correct": [
+            "pain",
+            "allodynia"
+          ],
+          "feedback": "ทบทวนชาร์ตและข้อจำกัดของรายงานต้นฉบับ"
+        },
+        {
+          "id": "target",
+          "label": "เป้าหมายที่รายงานกำหนด",
+          "type": "single",
+          "category": "decision",
+          "weight": 3,
+          "options": [
+            {
+              "id": "goal",
+              "label": "Pain score 0–3 หรือดีขึ้นอย่างน้อย 50% พร้อมกิจวัตรดีขึ้น"
+            },
+            {
+              "id": "unchanged",
+              "label": "คง pain score 8/10"
+            },
+            {
+              "id": "immediate",
+              "label": "ต้องหายปวดทันทีหลังยาครั้งแรก"
+            }
+          ],
+          "correct": [
+            "goal"
+          ],
+          "feedback": "ทบทวนชาร์ตและข้อจำกัดของรายงานต้นฉบับ"
+        },
+        {
+          "id": "time",
+          "label": "จังหวะประเมินอาการปวดตามรายงาน",
+          "type": "single",
+          "category": "decision",
+          "weight": 3,
+          "options": [
+            {
+              "id": "week",
+              "label": "ทุก 1 สัปดาห์"
+            },
+            {
+              "id": "year",
+              "label": "รอ 1 ปีโดยไม่ประเมิน"
+            },
+            {
+              "id": "never",
+              "label": "ไม่ต้องประเมินเมื่อเริ่มยา"
+            }
+          ],
+          "correct": [
+            "week"
+          ],
+          "feedback": "ทบทวนชาร์ตและข้อจำกัดของรายงานต้นฉบับ"
+        }
+      ],
+      "description": ""
+    },
+    {
+      "id": "adr",
+      "title": "ADR monitoring",
+      "group": "P",
+      "dependsOn": [
+        "plan"
+      ],
+      "fields": [
+        {
+          "id": "parameter",
+          "label": "เลือกอาการที่รายงานให้ติดตาม",
+          "type": "multi",
+          "category": "decision",
+          "weight": 3,
+          "options": [
+            {
+              "id": "cns",
+              "label": "ง่วงซึม เวียนศีรษะ เดินเซ"
+            },
+            {
+              "id": "edema",
+              "label": "บวมและน้ำหนักเพิ่ม"
+            },
+            {
+              "id": "seizure",
+              "label": "การกลับมาชักหรือความถี่ชัก"
+            },
+            {
+              "id": "hair",
+              "label": "สีผมเปลี่ยนเป็นตัวชี้วัดหลัก"
+            }
+          ],
+          "correct": [
+            "cns",
+            "edema",
+            "seizure"
+          ],
+          "feedback": "ทบทวนชาร์ตและข้อจำกัดของรายงานต้นฉบับ"
+        },
+        {
+          "id": "threshold",
+          "label": "อาการใดควรประเมินทันทีตามคำแนะนำในรายงาน",
+          "type": "single",
+          "category": "decision",
+          "weight": 3,
+          "options": [
+            {
+              "id": "urgent",
+              "label": "เกิดชัก หายใจลำบาก หรือซึมลงผิดปกติ"
+            },
+            {
+              "id": "wait",
+              "label": "รอครบกำหนดแม้เกิดชัก"
+            },
+            {
+              "id": "ignore",
+              "label": "ไม่ต้องประเมินถ้าคะแนนปวดลดลง"
+            }
+          ],
+          "correct": [
+            "urgent"
+          ],
+          "feedback": "ทบทวนชาร์ตและข้อจำกัดของรายงานต้นฉบับ"
+        },
+        {
+          "id": "time",
+          "label": "ติดตามอาการง่วง เวียนศีรษะ เดินเซช่วงเริ่มยาตามรายงาน",
+          "type": "single",
+          "category": "decision",
+          "weight": 3,
+          "options": [
+            {
+              "id": "early",
+              "label": "ใกล้ชิดใน 1–2 สัปดาห์แรก"
+            },
+            {
+              "id": "late",
+              "label": "ประเมินครั้งแรกหลัง 1 ปี"
+            },
+            {
+              "id": "none",
+              "label": "ไม่ต้องติดตาม"
+            }
+          ],
+          "correct": [
+            "early"
+          ],
+          "feedback": "ทบทวนชาร์ตและข้อจำกัดของรายงานต้นฉบับ"
+        }
+      ],
+      "description": ""
+    },
+    {
+      "id": "education",
+      "title": "Patient education · เลือกบทสนทนา",
+      "group": "P",
+      "dependsOn": [
+        "plan"
+      ],
+      "fields": [
+        {
+          "id": "dialogue",
+          "label": "เลือกคำแนะนำที่อยู่ในรายงานและสอดคล้องกับเคส",
+          "type": "multi",
+          "category": "decision",
+          "weight": 3,
+          "options": [
+            {
+              "id": "regular",
+              "label": "ใช้ยาตามแผนที่ยืนยัน ไม่หยุดหรือปรับยาเอง"
+            },
+            {
+              "id": "clothes",
+              "label": "หลีกเลี่ยงเสื้อผ้ารัดแน่นสัมผัสบริเวณปวด"
+            },
+            {
+              "id": "seek",
+              "label": "ถ้าปวดเพิ่ม มีตุ่มน้ำใหม่ ชัก หายใจลำบาก หรือซึมผิดปกติ ให้พบแพทย์"
+            },
+            {
+              "id": "double",
+              "label": "ปวดเมื่อใดให้เพิ่มยาเป็นสองเท่าเอง"
+            },
+            {
+              "id": "stop",
+              "label": "ไม่ชัก 6 เดือนแล้วหยุด phenytoin ได้เอง"
+            }
+          ],
+          "correct": [
+            "regular",
+            "clothes",
+            "seek"
+          ],
+          "feedback": "ทบทวนชาร์ตและข้อจำกัดของรายงานต้นฉบับ"
+        },
+        {
+          "id": "teachback",
+          "label": "ผู้ป่วยทวนว่า “ถ้าปวดอีก ผมเพิ่มยาเองได้ใช่ไหม” เลือกตอบ",
+          "type": "single",
+          "category": "reason",
+          "weight": 3,
+          "options": [
+            {
+              "id": "correct",
+              "label": "ยังไม่ควรปรับเอง ให้ติดต่อทีมเพื่อประเมินและยืนยันแผน"
+            },
+            {
+              "id": "agree",
+              "label": "ได้ครับ เพิ่มเองตามความรู้สึก"
+            },
+            {
+              "id": "dismiss",
+              "label": "ไม่ต้องติดตามอาการอีก"
+            }
+          ],
+          "correct": [
+            "correct"
+          ],
+          "feedback": "ทบทวนชาร์ตและข้อจำกัดของรายงานต้นฉบับ"
+        }
+      ],
+      "description": ""
+    },
+    {
+      "id": "future",
+      "title": "Future plan · ถ้า…ให้…เมื่อ…",
+      "group": "P",
+      "dependsOn": [
+        "monitoring",
+        "adr",
+        "education"
+      ],
+      "fields": [
+        {
+          "id": "condition",
+          "label": "เลือกสถานการณ์ที่รายงานให้ทบทวนแผน",
+          "type": "single",
+          "category": "decision",
+          "weight": 3,
+          "options": [
+            {
+              "id": "persistent",
+              "label": "อาการปวดยังไม่ดีขึ้นหรือยังกระทบคุณภาพชีวิต"
+            },
+            {
+              "id": "good",
+              "label": "ดีขึ้นและทนยาได้ โดยไม่มีประเด็นใหม่"
+            },
+            {
+              "id": "hair",
+              "label": "สีผมเปลี่ยน"
+            }
+          ],
+          "correct": [
+            "persistent"
+          ],
+          "feedback": "ทบทวนชาร์ตและข้อจำกัดของรายงานต้นฉบับ"
+        },
+        {
+          "id": "action",
+          "label": "การดำเนินการเมื่อเข้าเงื่อนไข",
+          "type": "single",
+          "category": "decision",
+          "weight": 3,
+          "options": [
+            {
+              "id": "review",
+              "label": "ประเมินผล/ความปลอดภัยและประสานทีมทบทวนหรือปรับแผน"
+            },
+            {
+              "id": "self",
+              "label": "เพิ่มขนาดเองโดยไม่ยืนยันสูตรเดิม"
+            },
+            {
+              "id": "abandon",
+              "label": "หยุดติดตามทั้งหมด"
+            }
+          ],
+          "correct": [
+            "review"
+          ],
+          "feedback": "ทบทวนชาร์ตและข้อจำกัดของรายงานต้นฉบับ"
+        },
+        {
+          "id": "time",
+          "label": "ช่วงทบทวนผลไม่ดีขึ้นตามรายงาน (หากไม่มีสัญญาณอันตราย)",
+          "type": "single",
+          "category": "decision",
+          "weight": 3,
+          "options": [
+            {
+              "id": "weeks",
+              "label": "4–8 สัปดาห์"
+            },
+            {
+              "id": "year",
+              "label": "1 ปี"
+            },
+            {
+              "id": "never",
+              "label": "ไม่กำหนดเวลา"
+            }
+          ],
+          "correct": [
+            "weeks"
+          ],
+          "feedback": "ทบทวนชาร์ตและข้อจำกัดของรายงานต้นฉบับ"
+        }
+      ],
+      "description": "สัญญาณอันตรายต้องประเมินทันทีตามหัวข้อ ADR ไม่รอ 4–8 สัปดาห์; ไม่ให้ตัวเลขปรับยาเป็นเฉลยอัตโนมัติ"
+    }
+  ]
+}

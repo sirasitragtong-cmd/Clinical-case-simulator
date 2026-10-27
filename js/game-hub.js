@@ -1,231 +1,41 @@
-/** PharmVille sandbox hub. No clinical data, scores, or persistence. */
-(function () {
-    'use strict';
-    const byId = id => document.getElementById(id);
-    const rooms = { reception: 'จุดต้อนรับ', exam: 'ห้องตรวจ', pharmacy: 'ห้องเภสัชกร' };
-    const captions = {
-        reception: 'ทำความรู้จักจุดเริ่มต้นของพื้นที่ทดลอง',
-        exam: 'สำรวจพื้นที่และทดลองการเดินทางระหว่างห้อง',
-        pharmacy: 'พื้นที่หลักสำหรับโหมดเภสัชกร — ยังไม่มีเคสให้เล่น'
-    };
-    const roles = { pharmacist: 'เภสัชกร', doctor: 'แพทย์', nurse: 'พยาบาล', dentist: 'ทันตแพทย์' };
-    const tasks = [
-        { room: 'reception', title: 'รับบัตรคิว', action: 'ตรวจบัตรคิวเรียบร้อย', done: 'ตรวจบัตรคิวแล้ว' },
-        { room: 'exam', title: 'เตรียมพื้นที่รับบริการ', action: 'ยืนยันว่าห้องพร้อม', done: 'เตรียมห้องแล้ว' },
-        { room: 'pharmacy', title: 'ส่งมอบชุดเรียนรู้', action: 'ส่งมอบชุดเรียนรู้เปล่า', done: 'ส่งมอบชุดเรียนรู้แล้ว' }
-    ];
-    let completed = 0;
-    let started = false;
-    let arrivedRoom = null;
-    let travelTarget = null;
-    let paused = false;
-    let authBusy = false;
-    const put = (id, text) => { const el = byId(id); if (el) el.textContent = text; };
-    let toastTimer;
-    const toast = text => { put('toast', text); const el=byId('toast'); if(el){el.hidden=false; clearTimeout(toastTimer); toastTimer=setTimeout(()=>{el.hidden=true;},5000);} };
-
-    function showInfo(title, copy) {
-        put('dialog-title', title);
-        put('dialog-copy', copy);
-        const dialog = byId('info-dialog');
-        if (dialog && typeof dialog.showModal === 'function') {
-            if (!dialog.open) dialog.showModal();
-        } else toast(title + ' — ' + copy);
-    }
-
-    function navigate(view) {
-        if (!['hub', 'missions', 'stages', 'ranking'].includes(view)) return;
-        document.querySelectorAll('[data-panel]').forEach(panel => {
-            const active = panel.dataset.panel === view;
-            panel.classList.toggle('is-active', active);
-            panel.hidden = !active;
-            panel.inert = !active;
-        });
-        document.querySelectorAll('[data-view]').forEach(button => {
-            const active = button.dataset.view === view;
-            button.classList.toggle('is-active', active);
-            if (active) button.setAttribute('aria-current', 'page');
-            else button.removeAttribute('aria-current');
-        });
-        window.ClinicRoom?.setActive?.(view === 'hub');
-        put('breadcrumb-view', {hub:'คลินิกของฉัน',missions:'คู่มือการเล่น',stages:'เลือกด่าน',ranking:'อันดับผู้เล่น'}[view]);
-    }
-
-    function renderMissions() {
-        put('mission-progress', completed + ' / 3');
-        const fill = byId('mission-progress-fill');
-        if (fill) fill.style.width = (completed / 3 * 100) + '%';
-        const host = byId('mission-list');
-        if (host) host.innerHTML = tasks.map((task, i) =>
-            `<li class="mission-item${i < completed ? ' is-complete' : ''}${started && i === completed ? ' is-current' : ''}"><span aria-hidden="true">${i < completed ? '✓' : i + 1}</span><div><strong>${task.title}</strong><p>${i < completed ? task.done : rooms[task.room]}</p></div><button type="button" data-room="${task.room}">ไปที่ห้อง</button></li>`
-        ).join('');
-        const task = tasks[completed];
-        const ready = started && task && arrivedRoom === task.room;
-        const action = byId('service-button');
-        if (action) {
-            action.disabled = !ready;
-            action.textContent = completed === 3 ? 'ภารกิจรอบนี้เสร็จแล้ว' : ready ? task.action : 'รอคนไข้ถึงจุดบริการ';
-        }
-        put('mission-start', completed === 3 ? 'เล่นรอบใหม่' : started ? 'ไปยังภารกิจถัดไป' : 'เริ่มรับคนไข้');
-        put('tour-button', completed === 3 ? 'เล่นอีกรอบ' : started ? 'ไปยังจุดบริการ' : 'เริ่มเล่น');
-        let status = 'กดเริ่มรับคนไข้ แล้วพาไปจุดบริการตามลำดับ';
-        if (completed === 3) status = 'ดูแลครบ 3 จุดแล้ว! เล่นรอบใหม่ได้ ไม่มีคะแนนหรือผลบันทึก';
-        else if (started) status = ready
-            ? 'ถึง' + rooms[task.room] + 'แล้ว · กด “' + task.action + '” เพื่อทำภารกิจ'
-            : travelTarget ? 'คนไข้กำลังเดินไป' + rooms[travelTarget] + ' · ภารกิจปัจจุบัน: ' + task.title
-            : 'ภารกิจต่อไป: ' + task.title + ' · พาคนไข้ไป' + rooms[task.room];
-        put('game-status', status);
-    }
-
-    function resetRound() {
-        setPaused(false);
-        clearTimeout(toastTimer);
-        if (byId('toast')) byId('toast').hidden = true;
-        completed = 0;
-        started = false;
-        arrivedRoom = null;
-        travelTarget = null;
-        window.ClinicRoom?.reset?.();
-        document.querySelectorAll('[data-room]').forEach(el => el.classList.toggle('is-selected', false));
-        put('room-title', 'พร้อมต้อนรับคนไข้คนต่อไป');
-        put('room-caption', 'เริ่มรอบใหม่ได้เมื่อพร้อม · เกมทดลองการจัดการพื้นที่ ไม่มีเนื้อหาการรักษา');
-        renderMissions();
-    }
-
-    function completeService() {
-        const task = tasks[completed];
-        if (!started || !task || arrivedRoom !== task.room) return;
-        completed++;
-        arrivedRoom = null;
-        travelTarget = null;
-        renderMissions();
-        if (completed === tasks.length) {
-            showInfo('จบรอบแล้ว! ครบทั้ง 3 จุด', 'ตรวจบัตรคิว เตรียมห้อง และส่งมอบชุดเรียนรู้ครบแล้ว กดเล่นรอบใหม่เพื่อเริ่มอีกครั้ง เกมนี้ไม่มีการรักษาหรือการให้คะแนน');
-            toast('ภารกิจสำเร็จ 3 / 3 · ไม่มีการบันทึกคะแนน');
-        } else toast(task.done + ' · ต่อไปที่' + rooms[tasks[completed].room]);
-    }
-
-    function selectRoom(room) {
-        if (!Object.hasOwn(rooms, room)) return;
-        navigate('hub');
-        document.querySelectorAll('[data-room]').forEach(el => el.classList.toggle('is-selected', el.dataset.room === room));
-        put('room-title', rooms[room]);
-        put('room-caption', captions[room]);
-        window.ClinicRoom?.selectRoom?.(room);
-    }
-
-    function setPaused(value) {
-        paused = Boolean(value);
-        window.ClinicRoom?.setPaused?.(paused);
-        const button = byId('motion-button');
-        if (button) {
-            button.textContent = paused ? 'เล่นภาพเคลื่อนไหว' : 'พักภาพเคลื่อนไหว';
-            button.setAttribute('aria-pressed', String(paused));
-        }
-    }
-
-    function startSandbox() {
-        setPaused(false);
-        if (completed === tasks.length) resetRound();
-        if (!started) {
-            window.ClinicRoom?.reset?.();
-            arrivedRoom = null;
-            travelTarget = null;
-            started = true;
-        }
-        renderMissions();
-        selectRoom(tasks[completed].room);
-        const canvas = byId('clinic-room');
-        if (canvas) {
-            canvas.setAttribute('tabindex', '0');
-            canvas.scrollIntoView?.({ behavior: 'auto', block: 'center' });
-            canvas.focus({ preventScroll: true });
-        }
-    }
-
-    function renderSession() {
-        const user = window.AuthService?.getCurrentUser?.();
-        const signedIn = Boolean(user && !user.isAnonymous);
-        put('player-name', signedIn ? (user.displayName || 'ผู้เล่น') : 'ผู้เยี่ยมชม');
-        if (byId('login-button')) byId('login-button').hidden = signedIn;
-        if (byId('logout-button')) byId('logout-button').hidden = !signedIn;
-    }
-
-    async function authAction(action) {
-        if (authBusy) return;
-        const service = window.AuthService;
-        const method = action === 'login' ? 'loginWithGoogle' : 'logout';
-        if (!service || typeof service[method] !== 'function') {
-            showInfo('บัญชีผู้เล่น', 'ระบบบัญชียังไม่พร้อม คุณสามารถสำรวจโหมดทดลองได้ทันที');
-            return;
-        }
-        authBusy = true;
-        ['login-button', 'logout-button'].forEach(id => { if (byId(id)) byId(id).disabled = true; });
-        try {
-            await service[method]();
-            renderSession();
-            toast(action === 'login' ? 'เข้าสู่ระบบแล้ว — โหมดทดลองยังไม่มีการบันทึกคะแนน' : 'ออกจากระบบแล้ว');
-        } catch (_) {
-            toast('ดำเนินการบัญชีไม่สำเร็จ กรุณาลองอีกครั้ง หรือสำรวจต่อในโหมดผู้เยี่ยมชม');
-        } finally {
-            authBusy = false;
-            ['login-button', 'logout-button'].forEach(id => { if (byId(id)) byId(id).disabled = false; });
-        }
-    }
-
-    document.addEventListener('click', event => {
-        const button = event.target.closest('button');
-        if (!button || button.disabled) return;
-        if (button.dataset.view) return navigate(button.dataset.view);
-        if (button.dataset.room) return selectRoom(button.dataset.room);
-        if (button.dataset.stage) return showInfo('เคสที่ ' + button.dataset.stage + ' — ยังไม่เปิด', 'พื้นที่นี้เตรียมไว้สำหรับเนื้อหาในอนาคต ขณะนี้ยังไม่มีเคส คำถาม หรือคะแนน');
-        if (button.dataset.role) {
-            if (button.dataset.role === 'pharmacist') return selectRoom('pharmacy');
-            if (Object.hasOwn(roles, button.dataset.role)) return showInfo(roles[button.dataset.role] + ' — ยังไม่เปิดให้เล่น', 'ขณะนี้เปิดเฉพาะพื้นที่ทดลองของเภสัชกร');
-            return;
-        }
-        switch (button.id) {
-            case 'tour-button': case 'mission-start': startSandbox(); break;
-            case 'mission-reset': resetRound(); toast('รีเซ็ตรอบแล้ว กดเริ่มรับคนไข้เมื่อพร้อม'); break;
-            case 'service-button': completeService(); break;
-            case 'motion-button': setPaused(!paused); break;
-            case 'login-button': void authAction('login'); break;
-            case 'logout-button': void authAction('logout'); break;
-        }
-    });
-    window.addEventListener('clinic:travel', event => {
-        const room = event.detail?.room;
-        if (!Object.hasOwn(rooms, room)) return;
-        travelTarget = room;
-        arrivedRoom = null;
-        document.querySelectorAll('[data-room]').forEach(el => el.classList.toggle('is-selected', el.dataset.room === room));
-        put('room-title', rooms[room]);
-        put('room-caption', captions[room]);
-        renderMissions();
-    });
-    window.addEventListener('clinic:visit', event => {
-        const room = event.detail?.room;
-        if (!Object.hasOwn(rooms, room) || room !== travelTarget) return;
-        travelTarget = null;
-        arrivedRoom = room;
-        document.querySelectorAll('[data-room]').forEach(el => el.classList.toggle('is-selected', el.dataset.room === room));
-        put('room-title', rooms[room]);
-        put('room-caption', captions[room]);
-        renderMissions();
-        if (!started || completed === tasks.length) return;
-        const task = tasks[completed];
-        toast(room === task.room ? 'ถึงจุดบริการแล้ว · ' + task.action : 'จุดนี้ยังไม่ใช่ภารกิจปัจจุบัน ไปที่' + rooms[task.room] + 'ก่อน');
-    });
-
-    const stages = byId('stage-list');
-    if (stages) stages.innerHTML = [1, 2].map(n => `<button type="button" class="stage-card" data-stage="${n}"><span class="stage-number">0${n}</span><strong>เคสที่ ${n}</strong><span>ยังไม่เปิด · รอเพิ่มเนื้อหา</span></button>`).join('');
-    const ranking = byId('ranking-list');
-    if (ranking) ranking.innerHTML = '<div class="empty-state"><strong>ยังไม่มีอันดับคะแนน</strong><p>โหมดทดลองไม่มีคะแนนและไม่บันทึกผลการเล่น</p></div>';
-    renderMissions();
-    renderSession();
-    navigate('hub');
-    paused = Boolean(window.ClinicRoom?.isPaused?.() ?? window.matchMedia?.('(prefers-reduced-motion: reduce)').matches);
-    setPaused(paused);
-    if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(() => {});
-    if (window.authReadyPromise) Promise.resolve(window.authReadyPromise).then(renderSession).catch(() => toast('ระบบบัญชีไม่พร้อม แต่ยังสำรวจโหมดทดลองได้'));
+/* PharmVille: observation, pharmacist possession and bounded SOAP practice. */
+(function(){
+'use strict';
+const $=id=>document.getElementById(id), E=window.LearningEngine;
+const KEY='pharmville-practice-v2', names={hub:'โรงพยาบาลของเรา',missions:'คู่มือการเล่น',stages:'เคสการเรียนรู้',ranking:'ผลการฝึกในเครื่องนี้'};
+let importedCases=[], cases=[], session=null, current=0, controlled=false, pendingTask=null, zoom=1, authBusy=false, savedSignature='', toastTimer;
+const put=(id,value)=>{if($(id))$(id).textContent=value;};
+const node=(tag,text,cls)=>{const n=document.createElement(tag);if(text!==undefined)n.textContent=text;if(cls)n.className=cls;return n;};
+const button=(text,fn,cls='button subtle')=>{const b=node('button',text,cls);b.type='button';b.onclick=fn;return b;};
+function toast(text){put('toast',text);if($('toast')){$('toast').hidden=false;clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('toast').hidden=true,5000);}}
+function read(key,fallback){try{return JSON.parse(localStorage.getItem(KEY+key))??fallback;}catch(_){return fallback;}}
+function write(key,value){try{localStorage.setItem(KEY+key,JSON.stringify(value));return true;}catch(_){toast('พื้นที่บันทึกในเครื่องไม่พร้อม กรุณาส่งออกฉบับร่างเพื่อเก็บงาน');return false;}}
+function persist(){if(session)write('-draft-'+session.caseId,JSON.parse(E.exportDraft(session)));}
+function navigate(view){if(!names[view])return;document.querySelectorAll('[data-panel]').forEach(p=>{p.hidden=p.dataset.panel!==view;p.classList.toggle('is-active',!p.hidden);});document.querySelectorAll('[data-view]').forEach(b=>{const yes=b.dataset.view===view;b.classList.toggle('is-active',yes);if(yes)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current');});put('breadcrumb-view',names[view]);window.ClinicRoom?.setActive(view==='hub');if(view==='ranking')renderRanking();}
+function possession(value){controlled=value;window.ClinicRoom?.setControlled(value);put('mode-label',value?'กำลังสวมบทเภสัชกร':'โหมดชมโรงพยาบาล');$('possess-button').hidden=value;$('watch-button').hidden=!value;put('world-status',value?'คุณตัดสินใจ • เภสัชกรเดินไปทำงานตามคำสั่ง':'โรงพยาบาลกำลังทำงาน • คลิกเภสัชกรเพื่อสวมบท');if(!value){pendingTask=null;closeWorkspace();}renderProgress();}
+function renderProgress(){const r=session?E.score(session):null;put('mission-progress',r?`${r.completed} / ${r.total}`:'0 / 12');if($('mission-progress-fill'))$('mission-progress-fill').style.width=(r?r.completed/r.total*100:0)+'%';const host=$('mission-list');host.replaceChildren();const items=session?session.caseData.sections:[{title:'คลิกเภสัชกรเพื่อสวมบท'},{title:'รับเคสและเปิดเวชระเบียน'},{title:'ประเมินและประกอบแผน SOAP'},{title:'ส่งคำตอบและทบทวนผล'}];items.forEach((s,i)=>{const done=r?.breakdown[i]?.reviewed&&!r?.breakdown[i]?.stale;const li=node('li',undefined,done?'is-complete':'');li.append(node('span',done?'✓':String(i+1)),node('span',s.title));if(session)li.append(button('เปิด',()=>{current=i;openWorkspace();},'text-button'));host.append(li);});put('game-status',session?`${session.caseData.title}${r.stale.length?' • มีหัวข้อที่ต้องทบทวน':''}`:controlled?'เลือกเคสเพื่อเริ่มเวรของคุณ':'คลิกเภสัชกรในฉาก หรือกดสวมบทด้านล่าง');put('start-case',session?'ทำเคสต่อ':'รับเคสแรก');}
+function chooseCase(data,fresh=false){persist();let draft=fresh?null:read('-draft-'+data.id,null);try{session=E.createSession(data,draft);}catch(_){session=E.createSession(data);toast('ฉบับร่างเก่าไม่ตรงกับรุ่นเคส เริ่มฉบับใหม่โดยเก็บข้อมูลเดิมไว้');}current=0;savedSignature='';navigate('hub');possession(true);renderProgress();openWorkspace();}
+function openWorkspace(){if(!session){if(cases.length)chooseCase(cases[0]);else toast('ยังโหลดเคสไม่สำเร็จ กรุณาลองใหม่หรือนำเข้าเคส');return;}if(!controlled)possession(true);const s=session.caseData.sections[current];const task=s.id.includes('education')?'counsel':s.id.includes('monitor')?'monitor':s.id.includes('plan')?'dispense':'review';pendingTask=task;window.ClinicRoom?.performTask(task);$('learning-workspace').hidden=false;$('learning-workspace').setAttribute('aria-modal','true');document.querySelector('.game-shell')?.setAttribute('inert','');renderSection();$('close-workspace')?.focus();}
+function closeWorkspace(){persist();$('learning-workspace').hidden=true;document.querySelector('.game-shell')?.removeAttribute('inert');$('start-case')?.focus();}
+function renderSection(){if(!session)return;const data=session.caseData,s=data.sections[current],result=E.evaluate(session,s.id);put('case-title',data.title);put('section-progress',`${current+1} / ${data.sections.length} · ${s.title}`);const p=data.patient||{};put('patient-summary',[p.name,p.age?`อายุ ${p.age}`:'',p.sex,p.chiefComplaint].filter(Boolean).join(' · '));const tabs=$('section-tabs');tabs.replaceChildren();data.sections.forEach((sec,i)=>{const r=E.evaluate(session,sec.id);const b=button(`${sec.group} · ${sec.title}${r.stale?' ↻':r.reviewed?' ✓':''}`,()=>{current=i;renderSection();},`section-tab group-${sec.group.toLowerCase()}${i===current?' is-active':''}`);b.setAttribute('aria-pressed',String(i===current));tabs.append(b);});
+const host=$('section-content');host.replaceChildren();host.append(node('h2',s.title),node('p',s.description||'เลือกคำตอบจากข้อมูลที่มี พร้อมเหตุผลและหลักฐานที่เกี่ยวข้อง','section-intro'));if(result.stale)host.append(node('p','ข้อมูลต้นทางเปลี่ยนแล้ว โปรดทบทวนและบันทึกหัวข้อนี้อีกครั้ง','feedback warning'));
+for(const f of s.fields){const field=node('fieldset',undefined,'field-group');field.append(node('legend',f.label));const val=session.answers[s.id]?.[f.id];const grid=node('div',undefined,'choice-grid');if(f.type==='ordered'){field.append(node('p','กดเพิ่มตามลำดับเหตุและผล • กดรายการที่เลือกแล้วเพื่อนำออก'));const selected=Array.isArray(val)?val:[];const order=node('div',undefined,'ordered-answer');selected.forEach((id,i)=>order.append(button(`${i+1}. ${f.options.find(o=>o.id===id)?.label}`,()=>{E.setAnswer(session,s.id,f.id,selected.filter(x=>x!==id));afterAnswer();},'choice-card is-selected')));field.append(order);f.options.forEach(o=>{const b=button(o.label,()=>{E.setAnswer(session,s.id,f.id,[...selected,o.id]);afterAnswer();},'choice-card');b.disabled=selected.includes(o.id);grid.append(b);});}else{f.options.forEach(o=>{const label=node('label',undefined,'choice-card');const input=document.createElement('input');input.type=f.type==='single'?'radio':'checkbox';input.name=s.id+'-'+f.id;input.value=o.id;input.id='answer-'+s.id+'-'+f.id+'-'+o.id;input.checked=f.type==='single'?val===o.id:Array.isArray(val)&&val.includes(o.id);input.onchange=()=>{let next=o.id;if(f.type==='multi'){const old=Array.isArray(val)?val:[];next=input.checked?[...old,o.id]:old.filter(id=>id!==o.id);}E.setAnswer(session,s.id,f.id,next);afterAnswer();};label.append(input,node('span',o.label));grid.append(label);});}field.append(grid);host.append(field);}
+$('section-feedback').replaceChildren();$('prev-section').disabled=current===0;$('next-section').disabled=current===data.sections.length-1;renderChart();renderProgress();}
+function afterAnswer(){const focusId=document.activeElement?.id;persist();renderSection();if(focusId)$(focusId)?.focus();}
+function renderChart(){const host=$('evidence-list'),data=session.caseData;host.replaceChildren();host.append(node('p',data.provenance.notice||data.provenance.source,'source-note'));for(const item of data.chart||[]){const card=node('article',undefined,'evidence-item');card.append(node('strong',item.label),node('p',String(item.value??item.text??'')));host.append(card);}if(data.formulary?.length){host.append(node('h3','บัญชียาของโรงพยาบาล'));for(const item of data.formulary)host.append(node('p',item.label||item.name));}}
+function saveSection(){const s=session.caseData.sections[current],r=E.validateSection(session,s.id);persist();renderSection();const host=$('section-feedback');host.append(node('p',r.complete?`บันทึกแล้ว · ${r.score} / ${r.maxScore} คะแนน`:'ยังเลือกไม่ครบทุกช่อง กรุณาทบทวน','feedback'));for(const f of r.feedback){const p=node('p',`${f.correct?'✓':'•'} ${f.label}: ${f.message}`);host.append(p);}renderProgress();return r.complete;}
+function download(name,value){const url=URL.createObjectURL(new Blob([JSON.stringify(value,null,2)],{type:'application/json'})),a=node('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}
+function submit(){if(!session)return;const r=E.score(session);if(!r.ready){toast('บันทึกให้ครบทุกหัวข้อ และทบทวนหัวข้อที่มีเครื่องหมาย ↻ ก่อนส่ง');return;}persist();const signature=JSON.stringify(session.answers);const history=read('-results',[]);if(signature!==savedSignature){history.push({id:Date.now(),caseId:session.caseId,title:session.caseData.title,percent:r.percent,score:r.score,maxScore:r.maxScore,date:new Date().toISOString(),status:session.caseData.provenance.status});write('-results',history.slice(-100));savedSignature=signature;}const host=$('result-content');host.replaceChildren();host.append(node('div',r.percent>=80?'★★★':r.percent>=50?'★★☆':'★☆☆','result-stars'),node('h2',`${r.percent} / 100`),node('p',session.caseData.provenance.notice||'ผลการฝึกตามเกณฑ์ของเคส'));for(const [key,title]of Object.entries({decision:'การตัดสินใจ',reason:'เหตุผล',evidence:'หลักฐาน'})){const c=r.categories[key];host.append(node('p',`${title} · ${Math.round(c.score*100)/100} / ${c.maxScore}`));}for(const item of r.breakdown){const detail=node('details');detail.append(node('summary',`${session.caseData.sections.find(s=>s.id===item.sectionId).title} · ${item.score}/${item.maxScore}`));for(const feedback of item.feedback){const f=session.caseData.sections.find(s=>s.id===item.sectionId).fields.find(f=>f.id===feedback.fieldId);detail.append(node('p',`${f.label}: ${feedback.expected.map(id=>f.options.find(o=>o.id===id).label).join(' • ')} — ${feedback.message}`));}host.append(detail);}host.append(button('ฝึกเคสนี้ใหม่',()=>{$('result-dialog').close();chooseCase(session.caseData,true);},'button orange'));$('result-dialog').showModal();renderRanking();}
+function renderCases(){const host=$('case-list');host.replaceChildren();cases.forEach((data,i)=>{const card=node('article',undefined,'case-card');card.append(node('span',`CASE ${String(i+1).padStart(2,'0')}`,'eyebrow'),node('h2',data.title),node('p',data.subtitle||data.description||''),node('p',data.provenance.status==='system-demo'?'สาธิตการใช้ระบบ':data.provenance.status==='draft'?'โหมดฝึก · รอผู้สอนทบทวนเกณฑ์':'ผ่านการทบทวนจากผู้สอน','source-note'),button('เริ่ม / ทำต่อ',()=>chooseCase(data),'button orange'));host.append(card);});}
+function renderRanking(){const rows=read('-results',[]);const best=new Map();for(const row of rows){if(!best.has(row.caseId)||best.get(row.caseId).percent<row.percent)best.set(row.caseId,row);}const xp=[...best.values()].reduce((n,r)=>n+r.percent,0);put('player-xp',xp);put('player-level',String(1+Math.floor(xp/100)));const host=$('ranking-list');host.replaceChildren();host.append(node('p','คะแนนฝึกบันทึกเฉพาะเบราว์เซอร์นี้ ไม่ใช่อันดับรวมออนไลน์'));if(!rows.length)host.append(node('p','จบเคสแรกเพื่อบันทึกผลการฝึกของคุณ'));rows.slice().sort((a,b)=>b.percent-a.percent||b.id-a.id).forEach((r,i)=>host.append(node('p',`${i+1}. ${r.title} · ${r.percent}/100 · ${new Date(r.date).toLocaleDateString('th-TH')}`)));}
+async function importFile(file){if(!file)return;try{if(file.size>500000)throw new Error('ไฟล์ต้องไม่เกิน 500 KB');const data=JSON.parse(await file.text());if(data.answers&&!data.sections){const matching=cases.find(c=>c.id===data.caseId);if(!matching)throw new Error('กรุณานำเข้าเคสที่ตรงกับฉบับร่างก่อน');session=E.importDraft(matching,data);current=0;persist();possession(true);navigate('hub');openWorkspace();}else{const check=E.validateCase(data);if(!check.valid)throw new Error(check.errors.join(' · '));const idx=cases.findIndex(c=>c.id===data.id);if(idx<0)cases.push(data);else cases[idx]=data;importedCases=importedCases.filter(c=>c.id!==data.id);importedCases.push(data);write('-imports',importedCases);renderCases();toast('นำเข้าเคสเรียบร้อย เลือกเริ่มเพื่อฝึก');}}catch(err){toast('นำเข้าไม่สำเร็จ: '+err.message);}finally{$('import-input').value='';}}
+function bind(id,fn){$(id)?.addEventListener('click',fn);}
+document.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>navigate(b.dataset.view));document.querySelectorAll('[data-room]').forEach(b=>b.onclick=()=>window.ClinicRoom?.selectRoom(b.dataset.room));
+bind('possess-button',()=>possession(true));bind('watch-button',()=>possession(false));bind('start-case',()=>{if(session)openWorkspace();else if(cases.length)chooseCase(cases[0]);else navigate('stages');});bind('motion-button',()=>{const p=!window.ClinicRoom?.isPaused();window.ClinicRoom?.setPaused(p);put('motion-button',p?'เล่นแอนิเมชัน':'หยุดแอนิเมชัน');$('motion-button').setAttribute('aria-pressed',String(p));});
+function setZoom(n){zoom=Math.max(1,Math.min(2.5,n));$('clinic-room').style.width=(zoom*100)+'%';$('clinic-room').style.maxWidth='none';put('zoom-reset',Math.round(zoom*100)+'%');}bind('zoom-in',()=>setZoom(zoom+.25));bind('zoom-out',()=>setZoom(zoom-.25));bind('zoom-reset',()=>setZoom(1));bind('close-workspace',closeWorkspace);bind('prev-section',()=>{if(current>0){current--;renderSection();}});bind('next-section',()=>{if(current<session.caseData.sections.length-1){current++;renderSection();}});bind('save-section',saveSection);bind('submit-case',submit);bind('result-close',()=>$('result-dialog').close());bind('export-draft',()=>session?download('PharmVille-draft.json',JSON.parse(E.exportDraft(session))):toast('ยังไม่มีฉบับร่าง'));bind('export-button',()=>cases.length&&download('PharmVille-case-template.json',cases.find(c=>c.provenance.status==='system-demo')||cases[0]));$('import-input')?.addEventListener('change',e=>importFile(e.target.files[0]));
+bind('login-button',()=>$('auth-dialog').showModal());bind('auth-close',()=>$('auth-dialog').close());bind('auth-guest',()=>$('auth-dialog').close());bind('auth-google',async()=>{if(authBusy)return;authBusy=true;$('auth-google').disabled=true;try{await window.AuthService.loginWithGoogle();$('auth-dialog').close();}catch(_){put('auth-error','เข้าสู่ระบบไม่สำเร็จ ลองใหม่หรือเล่นแบบผู้เยี่ยมชมได้');}finally{authBusy=false;$('auth-google').disabled=false;}});bind('logout-button',async()=>{try{await window.AuthService.logout();}catch(_){toast('ออกจากระบบไม่สำเร็จ กรุณาลองใหม่');}});window.AuthService?.onAuthStateChanged(user=>{put('player-name',user?.displayName||'ผู้มาเยือน');$('login-button').hidden=!!user;$('logout-button').hidden=!user;});
+window.addEventListener('clinic:role',e=>{if(e.detail.role==='pharmacist'||e.detail.role==='pharmacy'){possession(true);toast('รับช่วงเภสัชกรแล้ว เลือกรับเคสเพื่อเริ่มงาน');}else toast('บทบาทนี้ยังไม่เปิดให้เล่น · ชมการทำงานได้');});window.addEventListener('clinic:task-arrived',e=>{if(e.detail.task===pendingTask){pendingTask=null;put('world-status','เภสัชกรพร้อมที่จุดทำงาน • รอการตัดสินใจจากคุณ');}});window.addEventListener('beforeunload',persist);document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('learning-workspace').hidden&&!$('result-dialog').open)closeWorkspace();if(e.key==='Tab'&&!$('learning-workspace').hidden&&!$('result-dialog').open){const list=[...$('learning-workspace').querySelectorAll('button:not(:disabled),input,a[href],select')].filter(x=>!x.hidden&&x.offsetParent!==null);const first=list[0],last=list[list.length-1];if(e.shiftKey&&document.activeElement===first){e.preventDefault();last?.focus();}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first?.focus();}}});
+async function init(){const loaded=await Promise.allSettled(['./data/pain-migraine-case.json','./data/demo-case.json'].map(async url=>{const r=await fetch(url);if(!r.ok)throw new Error();const d=await r.json();if(!E.validateCase(d).valid)throw new Error();return d;}));cases=loaded.filter(x=>x.status==='fulfilled').map(x=>x.value);importedCases=read('-imports',[]);if(!Array.isArray(importedCases))importedCases=[];for(const d of importedCases){if(E.validateCase(d).valid&&!cases.some(c=>c.id===d.id))cases.push(d);}renderCases();renderProgress();renderRanking();if(!cases.length)toast('โหลดเคสไม่สำเร็จ สามารถนำเข้าไฟล์เคส JSON ได้');}
+possession(false);init();if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js').catch(()=>{});
+window.PharmVille=Object.freeze({getState:()=>({controlled,current,caseId:session?.caseId,progress:session?E.score(session):null}),navigate});
 })();

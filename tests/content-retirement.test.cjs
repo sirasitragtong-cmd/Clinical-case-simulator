@@ -7,7 +7,7 @@ const vm = require('node:vm');
 const root = path.join(__dirname, '..');
 
 // Protect the deployable tree, not historical Git commits or user/backend records.
-test('retired clinical data, generators, chart, avatar and audio sources are absent', () => {
+test('obsolete legacy case payloads and old renderers remain absent', () => {
     const retired = [
         'data/case_001.json', 'data/case_001.en.json', 'tools/build-case-001.js',
         'tools/preview-avatar.js', 'js/game-engine.js', 'js/ui-controller.js',
@@ -37,7 +37,7 @@ function worker(options = {}) {
             open: async name => { activity.opened.push(name); if(options.openFails) throw Error("storage unavailable"); return cache; },
             delete: async name => { activity.deleted.push(name); return true; }
         },
-        fetch: async request => { activity.fetched.push(request); return new Response('network material'); }
+        fetch: async request => { activity.fetched.push(request); if(options.offline) throw Error('offline'); return new Response('network material'); }
     });
     vm.runInContext(fs.readFileSync(path.join(root, 'sw.js'), 'utf8'), context, { filename: 'sw.js' });
     return {
@@ -66,10 +66,10 @@ test('worker activation removes old app caches and preserves current and unrelat
     assert.equal(s.activity.opened.length, 0);
 });
 
-test('retired case URLs return 410 before cache or network access, including version queries', async () => {
+test('retired script URLs return 410 before cache or network access, including version queries', async () => {
     const s = worker();
-    for (const file of ['case_001.json', 'case_001.en.json?v=202608060958', 'case_001.json?v=latest']) {
-        const response = await s.fetch('https://sirasitragtong-cmd.github.io/Clinical-case-simulator/data/' + file);
+    for (const file of ['game-engine.js', 'ui-controller.js?v=202608060958', 'pharmville-shell.js?v=latest']) {
+        const response = await s.fetch('https://sirasitragtong-cmd.github.io/Clinical-case-simulator/js/' + file);
         assert.ok(response, 'retired request must be handled explicitly');
         assert.equal(response.status, 410);
         assert.doesNotMatch(await response.text(), /stale clinical material|network material/);
@@ -100,7 +100,10 @@ test('new game scripts contain no audio constructors or backend scoring access',
     }
     const hub = fs.readFileSync(path.join(root, 'js/game-hub.js'), 'utf8');
     assert.doesNotMatch(hub, /\bDBService\b|\b(?:saveAttempt|getLeaderboard|getUserAttempts|getAllAttempts)\s*\(|\bfirebase\s*\.\s*(?:firestore|database)\s*\(/,
-        'sandbox missions and empty ranking scaffolds must not access attempt records');
+        'local practice results must not access legacy backend attempt records');
 });
 
 test('successful network response survives cache quota and storage errors',async()=>{for(const options of [{putFails:true},{openFails:true}]){const s=worker(options);const r=await s.fetch('https://sirasitragtong-cmd.github.io/Clinical-case-simulator/index.html');assert.equal(r.status,200);assert.equal(await r.text(),'network material');}});
+
+test('new source and demo cases are fetched rather than retired',async()=>{for(const file of ['demo-case.json','pain-migraine-case.json']){const s=worker();const r=await s.fetch('https://sirasitragtong-cmd.github.io/Clinical-case-simulator/data/'+file);assert.equal(r.status,200);assert.equal(await r.text(),'network material');assert.equal(s.activity.fetched.length,1);}});
+test('offline shell requests use stored content',async()=>{const s=worker({offline:true});const r=await s.fetch('https://sirasitragtong-cmd.github.io/Clinical-case-simulator/index.html');assert.equal(r.status,200);assert.equal(await r.text(),'stale clinical material');assert.equal(s.activity.matched.length,1);});
