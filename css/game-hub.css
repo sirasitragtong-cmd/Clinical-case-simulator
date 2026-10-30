@@ -92,6 +92,9 @@ main{padding-top:23px}
 .evidence-item,.evidence-card{border-radius:4px;border-color:#c7dbe0;box-shadow:0 2px #e3ecec}
 .source-note,.notice,.demo-notice{border-radius:4px;border-width:2px}
 .toast{border-radius:5px;border:2px solid #fff1be;box-shadow:0 5px 0 #102c42}
+.mission-list li>div{flex:1;min-width:0}
+.mission-list li>div strong{overflow-wrap:anywhere}
+.mission-list li>.text-button{flex:none;align-self:center;white-space:nowrap}
 @media(max-width:1200px){.welcome-art{right:22px}.welcome-row .welcome-copy{max-width:72%}}
 @media(max-width:760px){.welcome-row{min-height:138px;padding:18px 16px}.welcome-row .welcome-copy{max-width:78%}.welcome-art{right:18px;transform:scale(.78);transform-origin:bottom right}.welcome-row h1{font-size:24px}.welcome-row p{max-width:80%}.patient-summary{grid-template-columns:44px minmax(0,1fr);gap:9px;margin:12px;padding:10px}.patient-stamp{width:42px;height:42px;grid-row:span 2}.patient-complaint{grid-column:2}.case-card{min-height:0;padding:20px 18px 18px 24px}.case-code{top:20px;right:16px}}
 @media(max-width:390px){.welcome-row{min-height:145px}.welcome-art{right:4px;transform:scale(.58)}.welcome-row .welcome-copy{max-width:90%}.welcome-row h1{font-size:22px}.welcome-row p{max-width:100%;font-size:11px}.hospital-badge{display:none}.patient-summary{grid-template-columns:38px minmax(0,1fr)}.patient-stamp{width:36px;height:38px;font-size:10px}.patient-identity-card strong{font-size:12px}.patient-identity-card span{font-size:9px}}
