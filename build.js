@@ -7,6 +7,7 @@ function run() {
   for (const name of ['index.html', 'sw.js']) {
     const file = path.join(__dirname, name);
     let source = fs.readFileSync(file, 'utf8').replace(/((?:src|href)="\.\/[^"?]+\.(?:js|css|json))(?:\?v=[A-Za-z0-9_.-]*)?"/g, '$1?v=' + version + '"');
+    source = source.replace(/(["']\.\/[^"']+\.(?:js|css|json))(?:\?v=[A-Za-z0-9_.-]*)?(["'])/g, '$1?v=' + version + '$2');
     source = source.replace(/const CACHE_NAME = '[^']*';/, `const CACHE_NAME = 'pharmsim-${version}';`);
     fs.writeFileSync(file, source);
   }
